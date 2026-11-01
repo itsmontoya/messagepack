@@ -385,7 +385,7 @@ The report distinguishes compilation from execution. Applied `gofmt`;
 
 ### 10. Measure allocations and establish a performance baseline
 
-- [ ] Complete task 10.
+- [x] Complete task 10.
 
 **Deliverables:** `benchmark_test.go`, allocation regression tests, and
 `docs/poc-benchmarks.md`.
@@ -407,6 +407,20 @@ The report distinguishes compilation from execution. Applied `gofmt`;
 
 **Acceptance:** reproducible results support every allocation claim. No arbitrary
 nanosecond threshold, competitor ranking, or blanket zero-allocation claim is required.
+
+**Progress:** added primitive, header, 8-byte/64 KiB payload, and representative
+message benchmarks, separating fresh/reused encoding and owned/borrowed decoding.
+`testing.AllocsPerRun(1000, ...)` regression checks measure zero allocations for
+explicit successful primitive/borrowed/header read batches and preallocated
+appends. Escaping owned-string reads measure their intended copying cost.
+The required `go test -run '^$' -bench . -benchmem -count=5 ./...` run passed:
+42 cases, five samples each, 294.882 seconds. Every measured scoped zero-allocation
+path met its target; ordinary fresh-buffer growth and owned-string/message-name
+copies remain documented exceptions. The [benchmark report](docs/poc-benchmarks.md)
+records environment, inputs, methodology, median/range results, allocation counts,
+and complete raw output. No production changes were needed. Applied `gofmt`;
+unit tests, allocation checks, `go vet ./...`, and `git diff --check` pass with
+`GOCACHE=/private/tmp/messagepack-go-cache`. No unresolved issues.
 
 ### 11. Finish documentation and review the PoC
 
