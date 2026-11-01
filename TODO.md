@@ -316,7 +316,7 @@ No unresolved issues.
 
 ### 8. Demonstrate a complete application message
 
-- [ ] Complete task 8.
+- [x] Complete task 8.
 
 **Deliverables:** `example_test.go` and focused integration tests.
 
@@ -334,6 +334,19 @@ No unresolved issues.
 
 **Acceptance:** runnable examples have stable expected output, validate their input,
 handle errors explicitly, and show useful end-to-end behavior without adding public APIs.
+
+**Progress:** added a test-only `applicationMessage` with six ordered map fields
+(ID, name, boolean, float64, binary payload, and a two-value nested array). Its
+explicit typed decoder checks every field name and both container counts; unknown,
+duplicate, or reordered fields are rejected, and unknown-field skipping remains
+deferred. Independently literal wire fixtures verify encoding and decoding;
+integration tests cover schema/type failures, every truncated prefix, input
+preservation, borrowed-payload copying, trailing data, and destination reuse.
+Runnable examples demonstrate complete-message validation, `dst[:0]` reuse,
+ownership, and advancing through concatenated messages with stable output.
+No production files or public APIs changed. Applied `gofmt`; `go test ./...`,
+`go vet ./...`, and `git diff --check` pass with
+`GOCACHE=/private/tmp/messagepack-go-cache`. No unresolved issues.
 
 ### 9. Harden decoding with fuzz and portability checks
 
