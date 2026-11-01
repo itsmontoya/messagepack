@@ -288,7 +288,7 @@ fixtures; overflow preserves the destination backing storage. Applied `gofmt`;
 
 ### 7. Encode and decode array and map headers
 
-- [ ] Complete task 7.
+- [x] Complete task 7.
 
 **Deliverables:** `array.go`, `map.go`, and corresponding tests.
 
@@ -302,6 +302,17 @@ fixtures; overflow preserves the destination backing storage. Applied `gofmt`;
 **Acceptance:** header bytes/counts/consumption are correct. Reading a complete header
 with no children succeeds; reading the required child from that input fails normally.
 No container allocation, recursive traversal, or collection-building API is introduced.
+
+**Progress:** added `AppendArrayHeader`, `ReadArrayHeader`, `AppendMapHeader`, and
+`ReadMapHeader` with `uint32` counts and explicit compact/16-bit/32-bit headers.
+Literal fixtures cover the planned boundaries through maximum `uint32`, wider
+valid encodings, trailing bytes, preserved input/prefixes, and capacity reuse.
+Tests verify every truncated header prefix, error precedence, and zero failure
+values/consumption. Header-only success is documented and tested with missing or
+malformed children; subsequent child reads fail normally. No container allocation
+or traversal was added. Applied `gofmt`; `go test ./...`, `go vet ./...`, and
+`git diff --check` pass with `GOCACHE=/private/tmp/messagepack-go-cache`.
+No unresolved issues.
 
 ### 8. Demonstrate a complete application message
 
