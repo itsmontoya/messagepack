@@ -350,7 +350,7 @@ No production files or public APIs changed. Applied `gofmt`; `go test ./...`,
 
 ### 9. Harden decoding with fuzz and portability checks
 
-- [ ] Complete task 9.
+- [x] Complete task 9.
 
 **Deliverables:** focused fuzz tests and any missing regression cases.
 
@@ -370,6 +370,18 @@ No production files or public APIs changed. Applied `gofmt`; `go test ./...`,
 **Acceptance:** all unit tests pass, each fuzz target completes its recorded smoke run,
 and no decoding path allocates based solely on an advertised size. If production fixes
 are needed, respect the repository's implementation authorization boundary.
+
+**Progress:** added eleven focused arbitrary-input read fuzz targets and six
+generated-value roundtrip targets, with literal tag/boundary/truncation seeds,
+input/consumption/failure-value invariants, borrowed-view capacity checks, and a
+4 KiB roundtrip payload cap. Every target passed a separate 30-second smoke run;
+the [fuzz report](docs/poc-fuzzing.md) records exact targets, commands, elapsed
+times, and execution totals. No failures or production corrections were needed.
+Linux/386 tests cross-compiled successfully and were identified as a 32-bit ELF;
+they were not executed because no accessible compatible runtime was available.
+The report distinguishes compilation from execution. Applied `gofmt`;
+`go test ./...`, `go vet ./...`, and `git diff --check` pass with
+`GOCACHE=/private/tmp/messagepack-go-cache`. No unresolved codec issues.
 
 ### 10. Measure allocations and establish a performance baseline
 
