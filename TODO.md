@@ -201,7 +201,7 @@ reuse, and reset destinations. No integer readers were added. Applied `gofmt`;
 
 ### 4. Decode signed and unsigned integers
 
-- [ ] Complete task 4.
+- [x] Complete task 4.
 
 **Deliverables:** `ReadInt64` and `ReadUint64` in `integer.go`, with expanded tests.
 
@@ -214,6 +214,16 @@ reuse, and reset destinations. No integer readers were added. Applied `gofmt`;
 **Acceptance:** exact values, consumption counts, trailing-byte preservation, error
 classification, and zero consumption on all failures are verified independently of
 round-trip tests.
+
+**Progress:** added `ReadInt64` and `ReadUint64` in `integer.go`. Both accept
+every integer wire form when representable, including wider encodings of small
+values; signedness and range checks precede conversions. Literal table fixtures
+cover encoding boundaries, extrema, nonminimal forms, error precedence, unchanged
+input, trailing values, and zero failure values/consumption. Every truncated prefix
+of all eight multi-byte integer forms is tested, including values that overflow
+only once complete. Applied `gofmt`; `go test ./...`, `go vet ./...`, and
+`git diff --check` pass with `GOCACHE=/private/tmp/messagepack-go-cache`.
+No unresolved issues or later-task APIs were added.
 
 ### 5. Encode and decode floating-point values
 
