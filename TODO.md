@@ -188,6 +188,39 @@ agents; a maintainer has settled architectural decisions and the applicable
 production-work authority is recorded before S02 begins. Documentation preparation
 alone does not imply that approval or authorization has occurred.
 
+**Handoff (documentation proposal, 2026-11-01):**
+
+- Added [the proposed streaming contract](docs/streaming-contract.md); changed
+  files are `docs/streaming-contract.md` and this handoff in `TODO.md`. No
+  production code, tests, dependencies, `AGENTS.md`, or `STYLEGUIDE.md` changed.
+- Proposed exact Encoder/Decoder typed methods, reset, `DecoderLimits` and
+  `SetLimits`, uint64 transfer progress, owned decode results, and direct
+  `ErrUninitialized`/`ErrInvalidArgument`/`ErrLimitExceeded` sentinels. Proposed
+  defaults are a 16 MiB materialization cap and Skip limits of 64 container levels,
+  1048576 values, and 64 MiB wire bytes, with a hard depth ceiling of 256.
+- Specified 32 KiB bounded payload transfers, fixed-length source behavior,
+  destination-accepted progress, simultaneous I/O-error precedence, pending EOF,
+  sticky failures, retry/reset boundaries, checked Skip accounting, nil-interface
+  handling, caller-owned buffering/lifetimes, and HTTP/file proof obligations.
+- Checked proposed wire choices against the official MessagePack specification
+  linked in the contract on 2026-11-01. No wire compatibility issue was identified;
+  existing slice APIs and their distinct ownership/error behavior remain the
+  compatibility baseline.
+- Validation: `git diff --check` and `git diff --cached --check` pass. The
+  following local-link check passes with `8 local links: PASS`; opening the linked
+  official specification also succeeded. Go tests/vet were not rerun for this
+  documentation-only task, and no implementation behavior is claimed.
+
+  ```sh
+  python3 -c 'from pathlib import Path; import re; p=[Path("TODO.md"),Path("docs/streaming-contract.md")]; links=[f.parent/t for f in p for t in re.findall(r"\[[^\]]+\]\(([^)]+)\)",f.read_text()) if "://" not in t]; assert all(f.exists() for f in links); print(len(links),"local links: PASS")'
+  ```
+
+- **S01 remains incomplete.** The contract is unapproved, and no explicit
+  production-work authorization for S01–S11 has been recorded. The maintainer
+  must settle the proposed architectural choices and record applicable authority
+  in the contract before S01 is checked or a fresh S02 agent begins. Do not infer
+  approval from the earlier PoC authorization or this documentation commit.
+
 ## S02 — Encoder foundation and scalar writes
 
 - [ ] Complete S02.
