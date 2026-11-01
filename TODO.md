@@ -227,7 +227,7 @@ No unresolved issues or later-task APIs were added.
 
 ### 5. Encode and decode floating-point values
 
-- [ ] Complete task 5.
+- [x] Complete task 5.
 
 **Deliverables:** `float.go` and `float_test.go`.
 
@@ -241,6 +241,16 @@ No unresolved issues or later-task APIs were added.
 
 **Acceptance:** independent wire fixtures and same-width bit-preservation tests pass;
 widened float32 values follow the documented conversion contract.
+
+**Progress:** added `AppendFloat32`, `AppendFloat64`, `ReadFloat32`, and
+`ReadFloat64` in `float.go` using standard-library bit conversions and big-endian
+helpers. Independent literal fixtures verify same-width bits for finite values,
+subnormals, signed zero, infinities, and quiet/signaling NaN payloads. Tests cover
+float32 widening, NaN conversion, rejected narrowing/integer coercion, every
+truncated prefix, error precedence, unchanged input, trailing values, preserved
+prefixes, and destination capacity reuse. Applied `gofmt`; `go test ./...`,
+`go vet ./...`, and `git diff --check` pass with
+`GOCACHE=/private/tmp/messagepack-go-cache`. No unresolved issues.
 
 ### 6. Encode and decode strings and binary payloads
 
