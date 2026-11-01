@@ -33,9 +33,8 @@ recursive skipping or validation, map sorting, pooling, concurrency machinery,
 
 ## Public API contract
 
-These signatures document the eventual surface across tasks 2–7. Task 1 introduces
-only package documentation and the five sentinel errors; it adds no placeholder
-codec functions.
+These signatures are the codec surface implemented in tasks 2–7. Task 1 added
+package documentation and the five sentinel errors without placeholder functions.
 
 ```go
 func AppendNil(dst []byte) (out []byte)
@@ -185,11 +184,13 @@ and checking full-message consumption. Header success does not validate a messag
 Borrowed storage must not be reused while an independent consumer needs its
 contents; this API supplies no synchronization for shared mutable buffers.
 
-Target zero heap allocations for successful primitive reads, borrowed payload
-reads, header reads, and appends with sufficient destination capacity. These are
-measurement targets for task 10, not verified guarantees. Destination growth and
-owned string reads may allocate. Prefer clarity when avoiding an allocation would
-complicate ownership or implementation.
+The scoped zero-allocation targets for successful primitive reads, borrowed payload
+reads, header reads, and appends with sufficient destination capacity were met for
+the inputs measured in task 10. The [benchmark report](poc-benchmarks.md) records
+the environment, cases, and allocation assertions. These measurements do not
+guarantee every path or caller lifetime. Destination growth and owned string reads
+may allocate. Prefer clarity when avoiding an allocation would complicate ownership
+or implementation.
 
 ## Task 1 handoff
 
@@ -199,6 +200,6 @@ complicate ownership or implementation.
   in `errors.go`. No codec placeholders or third-party dependencies were added.
 - Applied `gofmt` to the Go files. `go build ./...`, `go test ./...` (no test files
   yet), and `go vet ./...` pass with `GOCACHE=/private/tmp/messagepack-go-cache`.
-- Task 1 is complete with no unresolved contract issues. Tasks 2–7 introduce the
-  codec functions listed above in their prescribed order.
-- The title-only README remains scheduled for expansion in task 11.
+- Task 1 is complete with no unresolved contract issues. Tasks 2–7 subsequently
+  added the codec functions listed above in their prescribed order.
+- Task 11 expanded the README and recorded the final review in the task handoff.

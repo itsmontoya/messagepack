@@ -424,7 +424,7 @@ unit tests, allocation checks, `go vet ./...`, and `git diff --check` pass with
 
 ### 11. Finish documentation and review the PoC
 
-- [ ] Complete task 11.
+- [x] Complete task 11.
 
 **Deliverables:** replacement `README.md`, reviewed GoDoc, and completed task handoff.
 
@@ -445,3 +445,22 @@ unit tests, allocation checks, `go vet ./...`, and `git diff --check` pass with
 **Acceptance:** documentation matches implemented behavior, every completed task has
 verification evidence, and remaining limitations are explicit. The PoC is complete
 without implementing any deferred feature.
+
+**Progress:** expanded `README.md` with a verified runnable buffer/ownership example,
+the supported typed API, conversion and error rules, container/schema responsibilities,
+deferred scope, contribution policy, and links to the contract, fuzz, and benchmark
+reports. Reviewed all exported GoDoc and APIs; expanded package GoDoc with shared
+append/read/ownership contracts. No surplus convenience API or abstraction requiring
+removal was found, and no implementation logic changed. Updated stale forward-looking
+contract wording to reflect implemented APIs and measured allocation evidence.
+`go build ./...`, `go test ./...`, `go vet ./...`, both explicit executable examples,
+the extracted README program, `go test -race ./...`, formatting, local README links,
+and `git diff --check` pass; Go commands used
+`GOCACHE=/private/tmp/messagepack-go-cache`. README output matches its documented
+output. Prior fuzz and benchmark evidence remains applicable without rerunning those
+unchanged suites. The representative message, malformed fixtures, and scoped allocation
+checks pass; owned strings and fresh-buffer growth remain documented allocation
+exceptions. Linux/386 execution remains unverified after successful cross-compilation.
+Passing race tests does not support concurrent mutation of shared buffers. All eleven
+tasks now have verification evidence; no deferred features or unresolved codec issues
+were introduced. `AGENTS.md` and `STYLEGUIDE.md` remain unchanged.
