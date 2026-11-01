@@ -4,7 +4,7 @@
 
 Approved by the maintainer on 2026-11-01. In this session, the maintainer explicitly
 authorized agents to implement production code for tasks 1–11 in
-[`TODO.md`](../TODO.md), overriding the production-code restriction in
+[the archived PoC TODO](poc-todo.md), overriding the production-code restriction in
 [`AGENTS.md`](../AGENTS.md) for this work, and approved this contract, including
 the Go 1.27.2 baseline. The repository policy itself remains unchanged.
 

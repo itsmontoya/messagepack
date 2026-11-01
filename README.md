@@ -157,6 +157,6 @@ objects or a configuration framework.
 
 [AGENTS.md](AGENTS.md) reserves production code for human contributors and limits
 AI assistance. This PoC was implemented under the maintainer's explicit
-session-specific authorization for [TODO tasks 1–11](TODO.md), recorded in the
-approved contract. That authorization does not change the standing policy.
+session-specific authorization for [original TODO tasks 1–11](docs/poc-todo.md),
+recorded in the approved contract. That authorization does not change the standing policy.
 Follow [STYLEGUIDE.md](STYLEGUIDE.md) for comments, documentation, and tests.
