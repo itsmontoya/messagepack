@@ -2,23 +2,22 @@
 
 ## Status and environment
 
-Draft for maintainer review. This document records the proposals in
-[`TODO.md`](../TODO.md); it does not authorize production implementation or settle
-architectural decisions on the maintainer's behalf. Task 1 remains incomplete
-until the maintainer confirms the contract and authorizes the package foundation
-under [`AGENTS.md`](../AGENTS.md).
+Approved by the maintainer on 2026-11-01. In this session, the maintainer explicitly
+authorized agents to implement production code for tasks 1–11 in
+[`TODO.md`](../TODO.md), overriding the production-code restriction in
+[`AGENTS.md`](../AGENTS.md) for this work, and approved this contract, including
+the Go 1.27.2 baseline. The repository policy itself remains unchanged.
 
-The proposed module is `github.com/itsmontoya/messagepack`, with package name
-`messagepack`. The proposed minimum Go version is **1.27.2**, matching the installed
+The module is `github.com/itsmontoya/messagepack`, with package name `messagepack`.
+The minimum Go version is **1.27.2**, matching the installed
 `go1.27.2 darwin/arm64` toolchain inspected for task 1. No third-party dependencies
-or additional tooling are proposed. No changes to the TODO's API or behavior
-proposals have been made; the concrete Go version is the environment-based addition
-for maintainer confirmation.
+or additional tooling are included. The TODO's API and behavior proposals were
+approved without changes; the concrete Go version is the environment-based addition.
 
 This is a supported subset of MessagePack. The wire-format reference is the
 [official MessagePack specification](https://github.com/msgpack/msgpack/blob/master/spec.md).
 The API, conversion rules, ownership rules, and error precedence below are project
-choices proposed in the TODO.
+choices approved from the TODO.
 
 ## Scope
 
@@ -32,7 +31,7 @@ reflection, `any` dispatch, struct tags and automatic mapping, code generation,
 recursive skipping or validation, map sorting, pooling, concurrency machinery,
 `unsafe`, assembly, and speculative fast paths are deferred.
 
-## Proposed public API
+## Public API contract
 
 These signatures document the eventual surface across tasks 2–7. Task 1 introduces
 only package documentation and the five sentinel errors; it adds no placeholder
@@ -151,7 +150,7 @@ untrusted advertised length alone.
 
 ## Errors and precedence
 
-The proposed `errors.go` exports these direct sentinel errors, each with GoDoc.
+The package's `errors.go` exports these direct sentinel errors, each with GoDoc.
 Callers inspect errors with `errors.Is`; error message text is not a contract.
 Ordinary contract failures do not allocate formatted errors.
 
@@ -194,11 +193,12 @@ complicate ownership or implementation.
 
 ## Task 1 handoff
 
-- Prepared this contract draft from the existing proposals and inspected the local
-  Go toolchain.
-- Pending maintainer confirmation: the proposed contract, Go 1.27.2 baseline, and
-  authorization to add `go.mod`, `doc.go`, and `errors.go` for task 1 only.
-- No production files or public APIs have been added. No later task is started.
-- Package build, `go test ./...`, and `go vet ./...` remain pending because there
-  is no module or Go package yet. There are no changed Go files to format.
+- Recorded the maintainer-approved contract and session authorization for tasks
+  1–11; confirmed the local Go 1.27.2 toolchain.
+- Added `go.mod`, package GoDoc in `doc.go`, and the five documented sentinel errors
+  in `errors.go`. No codec placeholders or third-party dependencies were added.
+- Applied `gofmt` to the Go files. `go build ./...`, `go test ./...` (no test files
+  yet), and `go vet ./...` pass with `GOCACHE=/private/tmp/messagepack-go-cache`.
+- Task 1 is complete with no unresolved contract issues. Tasks 2–7 introduce the
+  codec functions listed above in their prescribed order.
 - The title-only README remains scheduled for expansion in task 11.

@@ -12,12 +12,12 @@ depends on all earlier tasks being complete. Give each agent this entire file,
 `AGENTS.md`, `STYLEGUIDE.md`, and the current repository; task details below build on
 the shared contract. Do not implement later tasks early.
 
-**Implementation authorization:** `AGENTS.md` currently limits agents to documentation,
-comments, and tests, and reserves production code and architectural decisions for
-humans. This plan proposes a design; it does not change those instructions. Before
-delegating production implementation, the maintainer must explicitly authorize that
-scope or update the repository policy. Until then, agents can prepare documentation
-and tests for human-authored implementations. Do not silently edit the policy.
+**Implementation authorization:** on 2026-11-01, the maintainer explicitly authorized
+agents to implement production code for tasks 1–11, overriding the production-code
+restriction in `AGENTS.md` for this work, and approved
+[`docs/poc-contract.md`](docs/poc-contract.md), including Go 1.27.2. This session-specific
+authorization covers this plan; `AGENTS.md` itself remains unchanged. Preserve the
+other repository instructions and do not silently broaden this scope.
 
 At task 1 review, the repository contained no Go source or `go.mod`.
 The README contained only the title `# Message Pack`.
@@ -40,10 +40,10 @@ For every task:
 - If a task reveals a contract conflict, record it for the maintainer rather than
   silently changing an earlier task's API or broadening scope.
 
-## Proposed PoC contract
+## Approved PoC contract
 
-These are proposed project choices for the maintainer to settle in task 1. Subsequent
-agents should use the recorded contract consistently.
+The maintainer approved these project choices for task 1. Subsequent agents must
+use the recorded contract consistently.
 
 ### Scope and API shape
 
@@ -109,7 +109,7 @@ count pairs, while arrays count elements.
   float32; `ReadFloat64` accepts either float width. Do not narrow float64 implicitly.
 - Choose the smallest supported payload/container header when encoding. Readers accept
   valid larger headers too. Reject payload lengths above the wire limit before writing.
-- Proposed direct sentinel errors in `errors.go`: `ErrTruncated`, `ErrInvalidFormat`,
+- Direct sentinel errors in `errors.go`: `ErrTruncated`, `ErrInvalidFormat`,
   `ErrUnsupportedType`, `ErrTypeMismatch`, and `ErrOverflow`. Define exported GoDoc.
   Keep errors inspectable with `errors.Is`, without allocating formatted errors on
   ordinary contract failures.
@@ -126,7 +126,7 @@ count pairs, while arrays count elements.
 
 ### 1. Establish the contract and package foundation
 
-- [ ] Complete task 1.
+- [x] Complete task 1.
 
 **Deliverables:** `go.mod`, `doc.go`, `errors.go`, and `docs/poc-contract.md`.
 
@@ -142,10 +142,12 @@ count pairs, while arrays count elements.
 **Acceptance:** the empty package builds, tests and vet run, and subsequent tasks can
 implement the agreed signatures without inventing behavior.
 
-**Progress:** the [contract draft](docs/poc-contract.md) records the proposed API
-and behavior, with Go 1.27.2 matching the installed toolchain. Maintainer
-confirmation of the contract and explicit task 1 production authorization are
-pending. No package files have been added or package checks run yet.
+**Progress:** the [approved contract](docs/poc-contract.md) records the API and
+behavior, with Go 1.27.2 matching the installed toolchain. Added `go.mod`, package
+GoDoc in `doc.go`, and the five documented sentinel errors in `errors.go`; no codec
+placeholders or third-party dependencies were added. Applied `gofmt`; `go build ./...`,
+`go test ./...` (no test files yet), and `go vet ./...` pass with
+`GOCACHE=/private/tmp/messagepack-go-cache`.
 
 ### 2. Encode and decode nil and booleans
 
