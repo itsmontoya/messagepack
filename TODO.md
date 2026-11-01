@@ -254,7 +254,7 @@ prefixes, and destination capacity reuse. Applied `gofmt`; `go test ./...`,
 
 ### 6. Encode and decode strings and binary payloads
 
-- [ ] Complete task 6.
+- [x] Complete task 6.
 
 **Deliverables:** `string.go`, `bytes.go`, and corresponding tests.
 
@@ -273,6 +273,18 @@ prefixes, and destination capacity reuse. Applied `gofmt`; `go test ./...`,
 
 **Acceptance:** exact bytes, ownership behavior, safe bounds handling, wider valid
 headers, append failure atomicity where testable, and trailing values are covered.
+
+**Progress:** added `AppendString`, `AppendBytes`, `ReadString`, `ReadStringBytes`,
+and `ReadBytes` with direct string appends, safely owned strings, and borrowed views
+whose capacity equals their length. Shared payload bounds checking compares the
+advertised length with available input before converting to `int`; no read allocates
+from an advertised size alone. Literal header fixtures cover all planned size
+boundaries, wider headers, raw bytes, source aliasing, string-copy isolation, trailing
+values, prefixes, and buffer reuse. Tests cover every truncated header/payload prefix,
+huge advertised lengths, error precedence, and private header overflow without large
+fixtures; overflow preserves the destination backing storage. Applied `gofmt`;
+`go test ./...`, `go vet ./...`, and `git diff --check` pass with
+`GOCACHE=/private/tmp/messagepack-go-cache`. No unresolved issues.
 
 ### 7. Encode and decode array and map headers
 
