@@ -201,4 +201,4 @@ complicate ownership or implementation.
 - No production files or public APIs have been added. No later task is started.
 - Package build, `go test ./...`, and `go vet ./...` remain pending because there
   is no module or Go package yet. There are no changed Go files to format.
-- The inherited streambuf README remains scheduled for replacement in task 11.
+- The title-only README remains scheduled for expansion in task 11.

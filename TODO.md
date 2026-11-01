@@ -19,8 +19,8 @@ delegating production implementation, the maintainer must explicitly authorize t
 scope or update the repository policy. Until then, agents can prepare documentation
 and tests for human-authored implementations. Do not silently edit the policy.
 
-At the time this plan was written, the repository contained no Go source or `go.mod`.
-The README describes a different library, `streambuf`.
+At task 1 review, the repository contained no Go source or `go.mod`.
+The README contained only the title `# Message Pack`.
 
 For every task:
 
@@ -327,7 +327,7 @@ nanosecond threshold, competitor ranking, or blanket zero-allocation claim is re
 
 **Deliverables:** replacement `README.md`, reviewed GoDoc, and completed task handoff.
 
-- Replace inherited streambuf material with the actual MessagePack PoC scope, a small
+- Expand the minimal README with the actual MessagePack PoC scope, a small
   verified usage example, buffer reuse, borrowed-view lifetimes, string-copy behavior,
   error semantics, and links to the contract and benchmark results.
 - State extension/timestamp and other deferred features explicitly. Explain that callers
