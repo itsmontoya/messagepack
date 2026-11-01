@@ -151,7 +151,7 @@ placeholders or third-party dependencies were added. Applied `gofmt`; `go build 
 
 ### 2. Encode and decode nil and booleans
 
-- [ ] Complete task 2.
+- [x] Complete task 2.
 
 **Deliverables:** `nil.go`, `bool.go`, and corresponding test files.
 
@@ -164,6 +164,14 @@ placeholders or third-party dependencies were added. Applied `gofmt`; `go build 
 input, unexpected supported tags, the reserved tag, extension tags, trailing values,
 preserved destination prefixes, and the error return contract. Check reuse of a
 destination with sufficient capacity.
+
+**Progress:** added `AppendNil`, `ReadNil`, `AppendBool`, and `ReadBool` with
+documented prefix/consumption rules and a shared private unexpected-tag error
+classifier in `errors.go`. Literal fixtures cover nil and both booleans; table
+tests verify all extension tags, reserved/empty/mismatched input, zero failure
+values and consumption, unchanged input, trailing values, preserved prefixes, and
+destination capacity reuse. Applied `gofmt`; `go test ./...` and `go vet ./...`
+pass with `GOCACHE=/private/tmp/messagepack-go-cache`. No unresolved issues.
 
 ### 3. Encode signed and unsigned integers
 

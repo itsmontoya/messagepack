@@ -14,3 +14,15 @@ var (
 	// ErrOverflow indicates an unrepresentable numeric value or an oversized append payload.
 	ErrOverflow = errors.New("messagepack: overflow")
 )
+
+// readTypeError classifies a leading tag that the requested reader cannot accept.
+func readTypeError(tag byte) (err error) {
+	switch tag {
+	case 0xc1:
+		return ErrInvalidFormat
+	case 0xc7, 0xc8, 0xc9, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8:
+		return ErrUnsupportedType
+	default:
+		return ErrTypeMismatch
+	}
+}
