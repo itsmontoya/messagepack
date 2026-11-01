@@ -175,7 +175,7 @@ pass with `GOCACHE=/private/tmp/messagepack-go-cache`. No unresolved issues.
 
 ### 3. Encode signed and unsigned integers
 
-- [ ] Complete task 3.
+- [x] Complete task 3.
 
 **Deliverables:** integer append functions in `integer.go` and table-driven tests.
 
@@ -189,6 +189,15 @@ pass with `GOCACHE=/private/tmp/messagepack-go-cache`. No unresolved issues.
 **Acceptance:** expected bytes are specified independently of the implementation;
 positive signed/unsigned inputs agree; destination prefixes survive; fresh and reused
 destinations both work. Do not implement decoding in this task.
+
+**Progress:** added `AppendInt64` and `AppendUint64` in `integer.go`, selecting
+compact integer widths with explicit value ranges and standard-library big-endian
+helpers. Literal fixtures cover both sides of every width transition, zero,
+negative one, and signed/unsigned extrema. Tests verify matching nonnegative
+signed/unsigned encodings, preserved prefixes, buffer growth, available-capacity
+reuse, and reset destinations. No integer readers were added. Applied `gofmt`;
+`go test ./...`, `go vet ./...`, and `git diff --check` pass with
+`GOCACHE=/private/tmp/messagepack-go-cache`. No unresolved issues.
 
 ### 4. Decode signed and unsigned integers
 
