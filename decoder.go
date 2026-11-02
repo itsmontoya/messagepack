@@ -1,6 +1,7 @@
 package messagepack
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -23,6 +24,7 @@ type Decoder struct {
 	eof     bool
 	limits  DecoderLimits
 	scratch [9]byte
+	buffer  []byte
 }
 
 // Reset attaches r and clears failure and EOF state while preserving limits.
@@ -139,6 +141,150 @@ func (d *Decoder) DecodeFloat64() (value float64, err error) {
 	}
 	value, _, err = ReadFloat64(d.scratch[:size])
 	return value, d.fail(err)
+}
+
+// DecodeString returns owned, byte-preserving contents within MaxPayloadBytes.
+// Failures return an empty string and may consume input; no UTF-8 validation occurs.
+func (d *Decoder) DecodeString() (value string, err error) {
+	var payload []byte
+	payload, err = d.readOwnedPayload("decode string", true)
+	if err != nil {
+		return "", err
+	}
+	return string(payload), nil
+}
+
+// DecodeBytes returns owned binary contents within MaxPayloadBytes.
+// Empty binary succeeds with a non-nil slice; failures return nil.
+func (d *Decoder) DecodeBytes() (value []byte, err error) {
+	return d.readOwnedPayload("decode bytes", false)
+}
+
+// DecodeStringTo copies a string's original bytes to dst using bounded memory.
+// The returned n counts accepted payload bytes, including partial failed writes.
+// A nil destination fails before I/O; transfer failures remain terminal until Reset.
+func (d *Decoder) DecodeStringTo(dst io.Writer) (n uint64, err error) {
+	return d.decodeTo("decode string to", dst, true)
+}
+
+// DecodeBytesTo copies binary to dst independently of MaxPayloadBytes.
+// The returned n excludes the header; a failed transfer does not drain its input.
+// A nil destination is invalid even when the wire payload is empty.
+func (d *Decoder) DecodeBytesTo(dst io.Writer) (n uint64, err error) {
+	return d.decodeTo("decode bytes to", dst, false)
+}
+
+func (d *Decoder) readPayloadHeader(operation string, isString bool) (length uint64, err error) {
+	var (
+		tag  byte
+		size int
+	)
+	tag, err = d.readTag(operation)
+	if err != nil {
+		return 0, err
+	}
+	switch {
+	case isString && tag >= 0xa0 && tag <= 0xbf:
+		return uint64(tag & 0x1f), nil
+	case isString && tag == 0xd9 || !isString && tag == 0xc4:
+		size = 2
+	case isString && tag == 0xda || !isString && tag == 0xc5:
+		size = 3
+	case isString && tag == 0xdb || !isString && tag == 0xc6:
+		size = 5
+	default:
+		return 0, d.fail(readTypeError(tag))
+	}
+	if err = d.readScalarBody(operation, size); err != nil {
+		return 0, err
+	}
+	switch size {
+	case 2:
+		return uint64(d.scratch[1]), nil
+	case 3:
+		return uint64(binary.BigEndian.Uint16(d.scratch[1:3])), nil
+	default:
+		return uint64(binary.BigEndian.Uint32(d.scratch[1:5])), nil
+	}
+}
+
+func (d *Decoder) readOwnedPayload(operation string, isString bool) (value []byte, err error) {
+	var length uint64
+	length, err = d.readPayloadHeader(operation, isString)
+	if err != nil {
+		return nil, err
+	}
+	if length > d.limits.MaxPayloadBytes {
+		return nil, d.fail(ErrLimitExceeded)
+	}
+	if length > uint64(^uint(0)>>1) {
+		return nil, d.fail(ErrOverflow)
+	}
+	value = make([]byte, int(length))
+	for offset := 0; offset < len(value); {
+		size := len(value) - offset
+		if size > payloadBufferSize {
+			size = payloadBufferSize
+		}
+		if _, err = d.readFull(operation, value[offset:offset+size], true); err != nil {
+			return nil, d.fail(err)
+		}
+		offset += size
+	}
+	return value, nil
+}
+
+func (d *Decoder) decodeTo(operation string, dst io.Writer, isString bool) (n uint64, err error) {
+	if err = d.ready(); err != nil {
+		return 0, err
+	}
+	if dst == nil {
+		return 0, ErrInvalidArgument
+	}
+	var length uint64
+	length, err = d.readPayloadHeader(operation, isString)
+	if err != nil {
+		return 0, err
+	}
+	return d.copyPayloadTo(operation, dst, length)
+}
+
+func (d *Decoder) copyPayloadTo(operation string, dst io.Writer, remaining uint64) (n uint64, err error) {
+	var (
+		chunk   []byte
+		read    int
+		written int
+		readErr error
+	)
+	for remaining > 0 {
+		chunk = d.payloadBuffer()
+		if remaining < uint64(len(chunk)) {
+			chunk = chunk[:int(remaining)]
+		}
+		read, readErr = d.readFull(operation, chunk, true)
+		if read > 0 {
+			written, err = dst.Write(chunk[:read])
+			n += uint64(written)
+			if err == nil && written != read {
+				err = io.ErrShortWrite
+			}
+			if err != nil {
+				return n, d.fail(fmt.Errorf("messagepack: %s destination: %w", operation, err))
+			}
+			remaining -= uint64(read)
+		}
+		if readErr != nil {
+			return n, d.fail(readErr)
+		}
+	}
+	return n, nil
+}
+
+func (d *Decoder) payloadBuffer() (buffer []byte) {
+	if d.buffer == nil {
+		d.buffer = make([]byte, payloadBufferSize)
+	}
+	return d.buffer
 }
 
 func (d *Decoder) ready() (err error) {

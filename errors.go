@@ -17,6 +17,8 @@ var (
 	ErrUninitialized = errors.New("messagepack: uninitialized stream")
 	// ErrInvalidArgument indicates invalid limits or a required nil transfer interface.
 	ErrInvalidArgument = errors.New("messagepack: invalid argument")
+	// ErrLimitExceeded indicates a consumed value exceeds a configured decoder limit.
+	ErrLimitExceeded = errors.New("messagepack: limit exceeded")
 )
 
 // readTypeError classifies a leading tag that the requested reader cannot accept.

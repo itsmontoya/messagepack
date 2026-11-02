@@ -433,7 +433,7 @@ prove bounded read requests and output before the entire source is consumed.
 
 ## S05 — Decode owned payloads and stream payloads to writers
 
-- [ ] Complete S05.
+- [x] Complete S05.
 
 **Read:** S01 payload/limits/error contract, S03–S04 handoffs, `string.go`,
 `bytes.go`, and their tests. **Deliverables:** payload methods in `decoder.go`
@@ -451,6 +451,54 @@ an accepted payload leaves the next encoded value untouched; destination failure
 reports correct progress and terminal state without draining the remaining input.
 Exercise source and destination faults, zero-length transfers, and small fragments.
 Demonstrate a large transfer without allocating a payload-sized result or fixture.
+
+**Handoff (2026-11-01):**
+
+- Extended `decoder.go` and `errors.go`; added `decoder_payload_test.go`,
+  `decoder_payload_io_test.go`, and `decoder_counting_writer_test.go`; updated
+  this task. Production work uses the authority recorded in the S01 contract.
+- Public API added: `(*Decoder).DecodeString() (value string, err error)`,
+  `DecodeBytes() (value []byte, err error)`, and `DecodeStringTo(dst io.Writer)`
+  and `DecodeBytesTo(dst io.Writer)`, both returning `(n uint64, err error)`.
+  Added documented direct sentinel `ErrLimitExceeded` without changing existing
+  sentinels, slice APIs, or the approved contract.
+- Payload headers are parsed incrementally without consuming following values.
+  Owned results check `MaxPayloadBytes` before platform `int` representability
+  and allocation, return zero values on failure, and remain stable across source
+  mutation, later decodes, scratch reuse, and reset. Empty binary returns a non-nil
+  empty slice. Owned reads use requests of at most 32768 bytes; owned strings use
+  safe conversion and intentionally may allocate proportionally to payload size.
+- Writer transfers ignore materialization/Skip limits and lazily reuse at most
+  32768 bytes of payload scratch. A required nil destination is rejected before
+  reading any header, even for empty values, after existing failure/attachment
+  checks. Empty transfers do not write or allocate payload scratch. Counts exclude
+  headers and include bytes accepted with destination errors. Source-error bytes
+  are forwarded first; simultaneous destination errors take precedence. Failures
+  are contextual and sticky, without retries, extra value reads, or draining.
+- Literal tests cover all payload header forms, thresholds, wider encodings,
+  empty values, invalid UTF-8/NULs, and every truncation offset of small fixtures.
+  Tests cover ownership, cap boundaries, huge advertised lengths with tiny input,
+  reserved/extensions/mismatches, nil/typed-nil destinations, pending EOF,
+  source/destination faults, partial/full/short writes, simultaneous errors,
+  first/later chunk progress, and the 99/100 empty-read boundary. Generated
+  8 MiB + 7-byte transfers validate every byte incrementally with a one-byte
+  materialization cap, bounded requests, output before full source consumption,
+  and an intact following value. Failed generated transfers stop after the
+  failed chunk without draining the remaining source.
+- Validation passed: `gofmt -w decoder.go errors.go decoder_counting_writer_test.go
+  decoder_payload_test.go decoder_payload_io_test.go`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -run
+  'TestDecoderOwnedPayloadIntOverflow|TestDecoderGeneratedPayloadTransfer|TestDecoderPayload'
+  -v ./...`; `git diff --check`; and `git diff --cached --check`.
+  The explicit owned-length/int-overflow test skips on this 64-bit platform,
+  where all uint32 lengths fit `int`; 32-bit execution remains S09 work.
+- S06 can add container headers and streaming-schema tests using these typed
+  payload operations. Buffer/allocation measurements remain S10 work; current
+  tests establish bounded requests and incremental behavior without a blanket
+  allocation claim. Policies, Go version, dependencies, and slice implementations
+  remain unchanged.
 
 ## S06 — Stream container contents and complete typed messages
 
