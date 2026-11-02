@@ -293,7 +293,7 @@ failure behavior and that the writer is never closed/flushed by the Encoder.
 
 ## S03 — Decoder foundation and scalar reads
 
-- [ ] Complete S03.
+- [x] Complete S03.
 
 **Read:** S01 contract, S02 handoff, scalar implementations/tests,
 `errors.go`, and `read_fuzz_test.go`. **Deliverables:** `decoder.go` and scalar,
@@ -309,6 +309,54 @@ and after values, data plus EOF/error, temporary and repeated `(0, nil)` results
 and injected errors with `errors.Is`. Decode concatenated mixed scalars without
 requesting bytes from the following value. Prove mismatch/overflow/error follow-up
 behavior, stable zero-valued results on failure, and reset isolation if supported.
+
+**Handoff (2026-11-01):**
+
+- Added `decoder.go`, `decoder_limits.go`, `decoder_test.go`,
+  `decoder_lifecycle_test.go`, and `decoder_test_reader_test.go`; extended
+  `errors.go` with documented `ErrInvalidArgument`; updated this task. Production
+  work uses the S01–S11 authority recorded in the approved contract.
+- Public API added: `NewDecoder(r io.Reader) (d *Decoder)`, `Decoder`,
+  `(*Decoder).Reset(r io.Reader)`, `SetLimits(limits DecoderLimits) (err error)`,
+  `DecodeNil() (err error)`, and `DecodeBool`, `DecodeInt64`, `DecodeUint64`,
+  `DecodeFloat32`, and `DecodeFloat64`, each returning its typed `(value, err)`.
+  `DecoderLimits` exposes `MaxPayloadBytes uint64`, `MaxSkipDepth uint32`,
+  `MaxSkipValues uint64`, and `MaxSkipBytes uint64` with the contract's finite
+  defaults, payload maximum, and depth ceiling. No payload/container/Skip methods
+  were added early; their limits are configured now for the reset lifecycle.
+- The decoder uses fixed nine-byte scratch, reads a tag before classifying its
+  accepted family, and requests only the remaining scalar body. Complete scalar
+  conversions reuse the slice readers. Classification and overflow sentinels are
+  direct and terminal. Source errors are contextual and terminal, and every
+  subsequent scalar call returns the identical error without I/O or nonzero
+  results. Unattached calls are direct, nonterminal `ErrUninitialized` failures.
+- Clean boundary EOF is wrapped `io.EOF`; incomplete scalars are wrapped
+  `io.ErrUnexpectedEOF` without matching `ErrTruncated` or `io.EOF`. Complete
+  bytes accompanied by EOF succeed with pending EOF; any non-EOF error fails the
+  current operation even with complete bytes. One hundred consecutive empty
+  reads become wrapped `io.ErrNoProgress`, resetting the counter on progress.
+  Reset clears failure/EOF, preserves limits, and never reads, closes, or drains.
+  Valid/invalid `SetLimits` is atomic and cannot clear a terminal failure.
+- Literal tests cover integer width boundaries/extremes, accepted wider signed
+  and unsigned encodings, conversion overflow, float bits and widening, every
+  accepted scalar form's truncation offsets, one-byte fragments, data/error/EOF
+  combinations, transport-versus-classification precedence, temporary and
+  terminal empty reads, precise mixed-scalar requests, sticky failures,
+  zero/nil/typed-nil initialization, reset isolation, and stream ownership.
+  Existing slice tests remain unchanged; no contract changes were required.
+- Validation passed: `gofmt -w decoder.go decoder_limits.go decoder_test.go
+  decoder_test_reader_test.go decoder_lifecycle_test.go errors.go`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `git diff --check`; and `git diff --cached --check`. Reviewed the staged changes.
+- S04 can proceed with encoder payloads. For S05, the private decoder helper
+  `readFull(operation, dst, started) (n int, err error)` preserves partial counts
+  and contextual errors without latching them; the current operation finalizes
+  through `fail(err)`. This permits forwarding source bytes before selecting a
+  simultaneous destination error. Header/body callers must use `started = true`
+  after the tag, while new root tags use false. Payload/Skip work and performance
+  evidence remain for later tasks. Policy, style, Go version, and dependencies
+  are unchanged.
 
 ## S04 — Encode strings and binary without payload staging
 

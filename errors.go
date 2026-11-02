@@ -15,6 +15,8 @@ var (
 	ErrOverflow = errors.New("messagepack: overflow")
 	// ErrUninitialized indicates a stream codec without an attached reader or writer.
 	ErrUninitialized = errors.New("messagepack: uninitialized stream")
+	// ErrInvalidArgument indicates invalid limits or a required nil transfer interface.
+	ErrInvalidArgument = errors.New("messagepack: invalid argument")
 )
 
 // readTypeError classifies a leading tag that the requested reader cannot accept.
