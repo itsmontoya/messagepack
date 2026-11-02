@@ -242,7 +242,7 @@ alone does not imply that approval or authorization has occurred.
 
 ## S02 — Encoder foundation and scalar writes
 
-- [ ] Complete S02.
+- [x] Complete S02.
 
 **Read:** S01 contract; `nil.go`, `bool.go`, `integer.go`, `float.go`, their tests,
 and `errors.go`. **Deliverables:** `encoder.go`, scalar/I/O tests, and required
@@ -259,6 +259,37 @@ extremes, float widths, signed zero, infinities, and NaNs. Consecutive operation
 produce consecutive values. Fault writers cover errors before output, partial
 writes with errors, short writes with nil error, and zero progress. Verify stored
 failure behavior and that the writer is never closed/flushed by the Encoder.
+
+**Handoff (2026-11-01):**
+
+- Added `encoder.go`, `encoder_test.go`, and `encoder_test_writer_test.go`;
+  extended `errors.go` with documented `ErrUninitialized`; updated this task.
+  Production work uses the S01–S11 authority recorded in the approved contract.
+- Public API added: `NewEncoder(w io.Writer) (e *Encoder)`, `Encoder`,
+  `(*Encoder).Reset(w io.Writer)`, and `EncodeNil`, `EncodeBool(bool)`,
+  `EncodeInt64(int64)`, `EncodeUint64(uint64)`, `EncodeFloat32(float32)`, and
+  `EncodeFloat64(float64)`, each returning `(err error)`.
+- Scalars reuse existing append primitives with fixed nine-byte scratch. There
+  is no accumulated output, hidden buffering, retry, flush, or close. The private
+  write helper retains destination-accepted counts even on failure for S04's
+  future transfer paths. Short nil-error writes become wrapped `io.ErrShortWrite`;
+  every writer error, including a full-count error, is contextual and terminal.
+  Later calls return the identical stored error without I/O. Unattached calls
+  return direct `ErrUninitialized`; reset clears errors and attaches its argument
+  without repairing the previous stream. No contract changes were required.
+- Literal fixtures cover every integer-width transition, extrema, float widths,
+  signed zero, subnormals, infinities, and NaN payload bits. Tests also check
+  immediate consecutive output, partial/full/error/zero writes, sticky errors
+  across all scalar methods, zero/nil/typed-nil initialization, reset isolation,
+  and caller-owned writer lifetimes. Existing slice tests remain unchanged.
+- Validation passed: `gofmt -w encoder.go errors.go encoder_test.go
+  encoder_test_writer_test.go`; `GOCACHE=/private/tmp/messagepack-go-cache go test
+  ./...`; `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `git diff --check`; and `git diff --cached --check`. Reviewed the staged changes.
+- S03 can add the Decoder foundation using this lifecycle and the approved
+  contract. Payload/container methods and their associated decoder-limit and
+  argument sentinels remain for the dependent tasks. `AGENTS.md`, `STYLEGUIDE.md`,
+  the Go version, and dependencies are unchanged.
 
 ## S03 — Decoder foundation and scalar reads
 

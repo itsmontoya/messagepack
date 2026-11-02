@@ -13,6 +13,8 @@ var (
 	ErrTypeMismatch = errors.New("messagepack: type mismatch")
 	// ErrOverflow indicates an unrepresentable numeric value or an oversized append payload.
 	ErrOverflow = errors.New("messagepack: overflow")
+	// ErrUninitialized indicates a stream codec without an attached reader or writer.
+	ErrUninitialized = errors.New("messagepack: uninitialized stream")
 )
 
 // readTypeError classifies a leading tag that the requested reader cannot accept.
