@@ -755,7 +755,7 @@ and continued use of supplied buffering. Run examples and `go test -race ./...`.
 
 ## S09 — Fuzz stream boundaries and verify portability
 
-- [ ] Complete S09.
+- [x] Complete S09.
 
 **Read:** S01 error/state rules, new stream tests, `read_fuzz_test.go`,
 `roundtrip_fuzz_test.go`, and `docs/poc-fuzzing.md`. **Deliverables:** stream fuzz
@@ -775,6 +775,69 @@ durations, toolchain, platform, and failures. Run tests on a supported 32-bit ta
 when available; otherwise record cross-compilation separately from execution.
 Preserve reproducing inputs and resolve discovered defects under the applicable
 authority before completion. Existing fuzz seed tests must still pass.
+
+**Handoff (2026-11-02):**
+
+- Added `stream_decode_fuzz_test.go`, `stream_transfer_fuzz_test.go`,
+  `stream_skip_fuzz_test.go`, `stream_roundtrip_fuzz_test.go`,
+  `stream_fuzz_test.go`, `stream_fuzz_reader_test.go`, and
+  `stream_fuzz_writer_test.go`; added [the reproducible fuzz/portability report](docs/streaming-fuzzing.md)
+  and [complete timed-run output](docs/streaming-fuzz-results.txt); updated this
+  task. Each primary I/O helper type and its methods share one file. No production
+  code, public API, contract, slice implementation, policy, toolchain, or dependency
+  changed. No codec defect or failing input was found; no failure corpus was needed.
+- Added four targets: `FuzzStreamTypedDecode` covers all ten typed decoders;
+  `FuzzStreamPayloadTransfer` covers both string/binary transfers in both
+  directions; `FuzzStreamSkip` covers bounded traversal; `FuzzStreamRoundTrip`
+  covers an explicit mixed typed schema with nested containers and a following
+  value. Literal seeds include numeric/header boundaries, hostile maximum lengths
+  and counts, malformed/extensions, nested values, every small-fixture truncation
+  prefix, and consecutive values. Successful values/wire/boundaries use slice
+  readers/appends as oracles. Skip also uses an independent bounded recursive
+  slice walk. Intentional stream/slice EOF, failure consumption, materialization
+  limit precedence, and header-only semantics are explicit in the report.
+- Arbitrary inputs are capped at 4096 bytes and control schedules at 32 bytes.
+  Owned results are capped at 4096; Skip varies finite depth (1–16), values
+  (1–4096), and wire-byte (1–4096) budgets. The slice oracle has its own finite
+  depth/work guard. Reader/writer helpers bound requests, output, calls, and
+  zero-progress schedules without retaining I/O logs. Fuzz invariants check exact
+  next-value boundaries, partial accepted counts, source/destination `errors.Is`
+  identity and precedence, zero failure results, identical terminal errors with
+  no further I/O, limits/reset isolation, pending EOF, input preservation, and
+  owned-result stability through later calls, mutation, scratch reuse, and reset.
+- Each target ran in its own command for at least 30 seconds, with at most two
+  commands concurrent and two workers each. The exact command for each was
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -run '^$' -fuzz '^TARGET$'
+  -fuzztime=30s -parallel=2 ./...`, with `TARGET` respectively
+  `FuzzStreamTypedDecode`, `FuzzStreamPayloadTransfer`, `FuzzStreamSkip`, and
+  `FuzzStreamRoundTrip`; the report records full commands including log capture.
+  November 1 results: typed decode PASS, 925477 executions, 30.422 s package
+  elapsed; payload transfer PASS, 919866 executions, 31.551 s. November 2 results:
+  Skip PASS, 793024 executions, 31.872 s; round trip PASS, 496034 executions,
+  31.665 s. Final Go-reported elapsed times were 30/31/31/31 s respectively.
+- Validation passed: `gofmt -w` on all seven new Go files;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -run '^Fuzz' -count=1 ./...`
+  (all old/new seeds, 0.452 s); `GOCACHE=/private/tmp/messagepack-go-cache go test
+  ./...` (0.656 s); `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  formatting, Markdown local-link, `git diff --check`, and
+  `git diff --cached --check` checks. The full suite's localhost HTTP listeners
+  required authorized sandbox escalation. A November 1 full-test attempt did not
+  execute because automatic approval review hit a usage limit; the authorized
+  November 2 rerun passed. No sandbox or review workaround was used.
+- Portability: `GOCACHE=/private/tmp/messagepack-go-cache GOOS=linux GOARCH=386
+  CGO_ENABLED=0 go test -c -o /private/tmp/messagepack-s09-linux-386.test` passed;
+  `file /private/tmp/messagepack-s09-linux-386.test` identifies a statically linked
+  32-bit Intel 80386 ELF. This is compilation, not execution. Read-only November 2
+  probes again found no userspace i386 emulator, a Docker daemon that could not be
+  reached, and a stopped Podman VM. System-mode QEMU cannot directly run the ELF.
+  No service/VM was started or tooling installed. The 32-bit runtime/int-overflow
+  check remains unexecuted; the report states this limitation explicitly.
+- The platform remains `go1.27.2 darwin/arm64`. No unresolved contract or codec
+  issue blocks S10. S10 should measure actual transfer allocation bytes and
+  retained working memory across at least three sizes, plus owned-result costs,
+  call counts, buffered/unbuffered I/O, reuse, and at least five benchmark samples.
+  The bounded harnesses and fuzz execution rates make no performance or blanket
+  zero-allocation claim. S11 documentation/final verification remains pending.
 
 ## S10 — Measure streaming memory and throughput
 
