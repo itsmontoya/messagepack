@@ -6,8 +6,9 @@ processing consecutive messages, and writing large objects to files without
 holding an entire encoded message or payload in memory. Keep the implementation
 small, typed, explicit, and standard-library-only.
 
-This is a fresh plan. All streaming tasks are initially incomplete. The completed
-PoC plan and its handoffs are preserved in [docs/poc-todo.md](docs/poc-todo.md).
+The S01 streaming contract is approved; implementation tasks remain pending.
+The completed PoC plan and its handoffs are preserved in
+[docs/poc-todo.md](docs/poc-todo.md).
 
 ## Instructions for each fresh agent
 
@@ -16,15 +17,14 @@ current source, and the preceding tasks' handoffs. Execute S01–S11 in order, o
 task per agent; each task depends on all earlier tasks being complete. The shared
 requirements below are part of every task. Do not rely on prior chat history.
 
-**Authorship boundary:** this request authorizes documentation planning.
-`AGENTS.md` reserves production code and architectural decisions for humans;
-this document proposes work and does not override that rule. The old authorization
-for PoC tasks 1–11 does not authorize S01–S11. Production work below requires a
-human contributor or explicit maintainer authorization covering that work. Record
-any such authorization and its scope in the streaming contract before an agent
-changes production code. Agents may perform permitted documentation and testing
-work under the standing policy. Do not mark an implementation task complete when
-only its proposal or tests exist.
+**Authorship boundary:** `AGENTS.md` reserves production code and architectural
+decisions for humans. On 2026-11-01 the maintainer approved the reviewed streaming
+contract and authorized agent production work for S01–S11, as recorded with the
+actual reply and its question in [the streaming contract](docs/streaming-contract.md).
+That session-specific authorization covers only these streaming tasks; the
+standing policy and style guide remain unchanged. The old authorization for PoC
+tasks 1–11 is separate. Do not broaden this authority or mark an implementation
+task complete when only its proposal or tests exist.
 
 For each task:
 
@@ -70,19 +70,19 @@ For each task:
   primary documented workflow. Do not implement streaming by accumulating a whole
   value into a buffer and calling the slice API.
 
-## Proposed shared streaming requirements
+## Shared streaming requirements
 
-S01 must turn these proposals into a concrete, maintainer-owned contract. Later
-agents use that contract rather than choosing their own method names or semantics.
+S01 resolved these requirements in the approved streaming contract. Later agents
+use that contract rather than choosing their own method names or semantics.
 
 ### API and supported values
 
 - Concrete `Encoder` and `Decoder`, constructed from `io.Writer` and `io.Reader`.
   Use typed operations for nil, bool, int64, uint64, float32, float64, strings,
-  binary, and array/map headers. Proposed names are `EncodeBool`, `DecodeBool`,
+  binary, and array/map headers. Names include `EncodeBool`, `DecodeBool`,
   and equivalent names for the other families. All encoding methods can fail.
 - Provide both convenient in-memory string/binary operations and bounded-memory
-  transfers. Proposed transfer names are `EncodeBytesFrom`, `EncodeStringFrom`,
+  transfers. Transfer names are `EncodeBytesFrom`, `EncodeStringFrom`,
   `DecodeBytesTo`, and `DecodeStringTo`. Encoders take a known byte length and a
   source reader; decoders parse the wire length and copy to a destination writer.
   Specify transferred-payload counts on partial failure, separately from headers.
@@ -155,15 +155,15 @@ agents use that contract rather than choosing their own method names or semantic
 
 ## S01 — Establish the streaming contract
 
-- [ ] Complete S01.
+- [x] Complete S01.
 
 **Read:** this file, `AGENTS.md`, `STYLEGUIDE.md`, `go.mod`,
 `docs/poc-contract.md`, `errors.go`, and all existing exported functions.
 
-**Deliverables:** `docs/streaming-contract.md` with exact proposed public
+**Deliverables:** `docs/streaming-contract.md` with exact public
 signatures, method placement, ownership rules, error/state transition tables,
 limits/defaults, and the compatibility strategy. Clearly label approval and
-implementation authorization status; do not describe proposals as approved.
+implementation authorization status; approval must be recorded when it occurs.
 
 **Work:**
 
@@ -188,7 +188,7 @@ agents; a maintainer has settled architectural decisions and the applicable
 production-work authority is recorded before S02 begins. Documentation preparation
 alone does not imply that approval or authorization has occurred.
 
-**Handoff (documentation proposal, 2026-11-01):**
+**Historical handoff (documentation proposal, 2026-11-01; superseded by approval below):**
 
 - Added [the proposed streaming contract](docs/streaming-contract.md); changed
   files are `docs/streaming-contract.md` and this handoff in `TODO.md`. No
@@ -215,11 +215,30 @@ alone does not imply that approval or authorization has occurred.
   python3 -c 'from pathlib import Path; import re; p=[Path("TODO.md"),Path("docs/streaming-contract.md")]; links=[f.parent/t for f in p for t in re.findall(r"\[[^\]]+\]\(([^)]+)\)",f.read_text()) if "://" not in t]; assert all(f.exists() for f in links); print(len(links),"local links: PASS")'
   ```
 
-- **S01 remains incomplete.** The contract is unapproved, and no explicit
-  production-work authorization for S01–S11 has been recorded. The maintainer
-  must settle the proposed architectural choices and record applicable authority
-  in the contract before S01 is checked or a fresh S02 agent begins. Do not infer
-  approval from the earlier PoC authorization or this documentation commit.
+- **At this draft handoff, S01 remained incomplete.** The contract was unapproved,
+  and no explicit production-work authorization for S01–S11 had been recorded.
+  The maintainer still needed to settle the proposed architectural choices and
+  record applicable authority before S01 could be checked or S02 could begin.
+  Approval did not follow from the earlier PoC authorization or the draft commit.
+
+**Handoff (approved S01 completion, 2026-11-01):**
+
+- Recorded the maintainer's “Please continue” reply to the explicit question
+  asking for contract approval and production-code authorization for S01–S11.
+  The streaming contract now records the actual exchange, scope, and date.
+  `AGENTS.md` and `STYLEGUIDE.md` remain unchanged; unrelated work is not authorized.
+- Recorded approval of the exact public API, ownership, limits, I/O/error
+  precedence, reset, and Skip accounting without behavioral revisions. Updated
+  current approval/authorship wording and checked S01. Changed files are
+  `docs/streaming-contract.md` and `TODO.md`; implementation is still pending.
+- Validation: the local-link `python3 -c` command above reports
+  `10 local links: PASS`;
+  `git diff --check` and `git diff --cached --check` pass. No Go files changed,
+  so Go tests/vet were not rerun for this documentation-only completion.
+- No unresolved API, lifecycle, limit, or authorization choice blocks S02. The
+  next fresh agent must implement only the S02 Encoder foundation/scalar surface,
+  with tests and GoDoc under the approved contract, then validate and commit its
+  own handoff before S03 begins. S02–S11 remain unchecked until their criteria pass.
 
 ## S02 — Encoder foundation and scalar writes
 

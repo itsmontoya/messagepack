@@ -1,27 +1,34 @@
-# Proposed streaming MessagePack contract
+# Streaming MessagePack contract
 
 ## Status and authority
 
-**Draft for maintainer review, prepared 2026-11-01. Not approved or implemented.**
-Every API, lifecycle, limit, and implementation constraint below is a proposal.
-The concrete choices make S01 reviewable; they do not record architectural
-decisions made by a maintainer.
+**Approved by the maintainer on 2026-11-01. Streaming implementation is pending.**
+The API, lifecycle, limits, and implementation constraints below are the approved
+S01 contract for [streaming tasks S01–S11](../TODO.md).
 
-The standing [agent policy](../AGENTS.md) reserves production code and
-architectural decisions for humans. The current request to work through
-[S01–S11](../TODO.md) authorizes permitted documentation preparation and commits;
-no explicit exception authorizing streaming production work has been recorded.
-The approval and implementation authority recorded in the [PoC contract](poc-contract.md)
-cover only its archived tasks 1–11. They do not cover S01–S11.
+The initial review draft was committed as `8044d3d` without production changes.
+The assistant then asked: “Do you approve this contract and explicitly authorize
+agents to modify production code for S01–S11?” The maintainer replied:
 
-Before S01 can be completed or S02 can begin, a maintainer must approve or revise
-this proposed contract and explicitly authorize any agent-authored production
-work. Record the actual approval, date, scope, and any exclusions here when it
-occurs. Until then, S01 remains incomplete and downstream work must not begin.
+> Please continue
+
+That reply approves the reviewed contract and grants the scoped production-work
+authorization requested in the question. Agents may make the production changes,
+tests, and documentation needed to complete S01–S11 under this contract, using
+one fresh agent per task and committing the changes as requested. This permission
+is limited to those streaming tasks; it does not authorize unrelated production
+changes or expand the deferred scope below.
+
+The standing [agent policy](../AGENTS.md) and [style guide](../STYLEGUIDE.md) remain
+unchanged. This session-specific authorization overrides the production-code
+restriction only for S01–S11. The earlier authority in the [PoC contract](poc-contract.md)
+still covers only its archived tasks 1–11 and is not the basis for streaming work.
+S01 is complete; S02 may begin under the authority recorded here. Approval does
+not claim any streaming API has already been implemented or verified.
 
 The module remains `github.com/itsmontoya/messagepack`, package `messagepack`,
-using the existing Go 1.27.2 baseline and standard library only. No toolchain,
-dependency, policy, or style-guide change is proposed.
+using the existing Go 1.27.2 baseline and standard library only. Toolchain,
+dependency, policy, and style-guide changes remain outside this authorization.
 
 ## Scope and compatibility
 
@@ -43,12 +50,12 @@ duplicates, ordering, or trailing data. A schema decoder must count and validate
 children explicitly. A complete container header can succeed with no children
 present, as it does in the slice API.
 
-## Proposed public surface and file placement
+## Public surface and file placement
 
 `Encoder` and `Decoder` are concrete exported types with unexported state.
 Constructors sit immediately above their type declarations. All methods belonging
 to `Encoder` live in `encoder.go`; all `Decoder` methods live in `decoder.go`,
-including private helpers. Exported symbols receive concise GoDoc. Proposed new
+including private helpers. Exported symbols receive concise GoDoc. New
 sentinels live with the existing sentinels in `errors.go`.
 
 ```go
@@ -87,7 +94,7 @@ func (d *Decoder) DecodeMapHeader() (count uint32, err error)
 func (d *Decoder) Skip() (err error)
 ```
 
-`DecoderLimits` has its own `decoder_limits.go` file. Its proposed entire public
+`DecoderLimits` has its own `decoder_limits.go` file. Its entire public
 shape is:
 
 ```go
@@ -100,7 +107,7 @@ type DecoderLimits struct {
 ```
 
 No configuration framework, exported option functions, error accessor, flush,
-close, or whole-object method is proposed. Each operation reports its own error.
+close, or whole-object method is included. Each operation reports its own error.
 `Reset` and `SetLimits` are the only lifecycle/configuration operations.
 
 ## Initialization, ownership, and reset
@@ -109,7 +116,7 @@ close, or whole-object method is proposed. Each operation reports its own error.
   with no terminal failure. `NewDecoder` uses the defaults below. Constructors
   return usable codec pointers even when given a nil interface; such instances
   remain unattached until reset with a non-nil stream.
-- Encoding/decoding/skipping on an unattached instance returns proposed
+- Encoding/decoding/skipping on an unattached instance returns
   `ErrUninitialized` directly, performs no I/O, and does not latch a failure.
   `SetLimits` is allowed on an unattached Decoder.
 - `Reset` clears the terminal error, pending EOF, per-operation progress, and
@@ -138,7 +145,7 @@ Each zero field in a `DecoderLimits` argument selects that field's default.
 Zero never means unlimited. `SetLimits` validates and replaces the complete
 configuration atomically, without I/O; it is allowed before initialization and
 after terminal failure. It cannot clear a terminal failure. Invalid configuration
-returns proposed `ErrInvalidArgument` directly and leaves all previous limits and
+returns `ErrInvalidArgument` directly and leaves all previous limits and
 stream state unchanged. There is no partial update.
 
 | Field | Default | Valid effective values | Applies to |
@@ -242,7 +249,7 @@ bytes than requested with nil error immediately becomes `io.ErrShortWrite`.
 Partial/full writes with non-nil errors always fail; accepted bytes still count.
 Reader/writer implementations must obey the standard `io.Reader`/`io.Writer`
 count contracts; behavior for invalid negative or oversized counts is outside
-this proposal.
+this contract.
 
 | Underlying read result | Observation by the current operation |
 | --- | --- |
@@ -267,7 +274,7 @@ remember its root's completeness, so missing children there are unexpected EOF.
 
 ## Error identity, precedence, and state transitions
 
-Keep the five existing slice sentinels unchanged. Propose three additional direct
+Keep the five existing slice sentinels unchanged. Add three additional direct
 sentinels, each with GoDoc: `ErrUninitialized` for no attached stream,
 `ErrInvalidArgument` for invalid limits or required nil transfer interfaces, and
 `ErrLimitExceeded` for consumed values exceeding configured decoder limits.
@@ -409,5 +416,5 @@ state; report 32-bit execution separately from cross-compilation. S10 must measu
 at least three substantially different transfer sizes and demonstrate bounded
 allocation bytes and retained working memory, alongside owned-result costs.
 S11 publishes streaming-first user documentation only after implemented examples,
-tests, reports, and prior handoffs substantiate it. This draft makes no performance
-or implementation-completion claim.
+tests, reports, and prior handoffs substantiate it. This contract makes no
+performance or implementation-completion claim.
