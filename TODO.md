@@ -659,7 +659,7 @@ required fields. Preserve the old strict-schema tests as examples of that policy
 
 ## S08 — Prove HTTP, file, and backpressure workflows
 
-- [ ] Complete S08.
+- [x] Complete S08.
 
 **Read:** streaming contract and S02–S07 handoffs, `example_test.go`,
 `integration_test.go`, and the application fixture. **Deliverables:** executable
@@ -685,6 +685,73 @@ local; large data is generated/checked incrementally without full-size buffers.
 No body-wide `ReadAll` or whole-object encode buffer is used in the stream examples.
 Test truncated responses, failing destinations, cancellation, caller ownership,
 and continued use of supplied buffering. Run examples and `go test -race ./...`.
+
+**Handoff (2026-11-01):**
+
+- Added `stream_example_test.go`, `stream_http_integration_test.go`,
+  `stream_boundary_workflow_test.go`, `stream_file_workflow_test.go`,
+  `stream_payload_schema_test.go`, `stream_checking_writer_test.go`,
+  `stream_gated_reader_test.go`, `stream_http_writer_test.go`,
+  `stream_owned_body_test.go`, and `stream_file_writer_test.go`; updated this
+  task. Every new primary helper type and all its methods share its own file.
+  No production code, public API, streaming contract, slice implementations,
+  policies, toolchain, or dependencies changed.
+- Added four executable examples with verified output: direct HTTP response-body
+  decoding of a generated 1 MiB + 7-byte payload to a checking sink, a generated
+  file dataset, a sequence of complete application messages, and exactly one
+  flexible-schema message on finite input. Examples reuse the strict/flexible
+  six-field application schema, preserving its original tests and the flexible
+  schema's separate 16-entry application limit. The payload variant explicitly
+  uses `EncodeBytesFrom`/`DecodeBytesTo`, retaining only small metadata fields;
+  failed transfers may already have delivered a sink prefix.
+- Local HTTP integration tests deliver an 8 MiB + 7-byte payload incrementally,
+  with only a 16-byte materialization cap for small fields. The producer withholds
+  everything after its first 32768 payload bytes until a channel gate is released.
+  A sink notification proves data arrived while the producer was incomplete.
+  Success validates every byte and the following schema fields. Other cases
+  validate a destination rejecting after three bytes, cancellation after the first
+  complete chunk, an already expired caller deadline, truncated schema responses,
+  and a generated payload ending at 32775 bytes despite a 1 MiB declaration.
+  Errors retain their identities/progress and transfer failures stay terminal.
+  The caller closes response bodies; the Decoder never closes them.
+- The temporary-file test writes `[generated integer array, known-length binary]`
+  with 100000 integers and an 8 MiB + 7-byte payload through caller-owned 4096-byte
+  buffering, then reopens and validates each integer/byte incrementally with a
+  one-byte materialization cap. Encode, caller flush, and close errors are checked
+  separately; injected encode/flush/close failures include simultaneous encode
+  and close failures without losing either error identity. Large data is generated
+  and checked incrementally without a whole-object encode buffer; there is no
+  `io.ReadAll` or payload-sized fixture allocation.
+- A gated `io.Pipe` proves a complete first schema message is received before
+  producer completion, then proves the second message respects pipe backpressure.
+  The consumer uses one supplied buffered reader and waits for EOF only when
+  requesting the next root after both messages. Separate finite-body/frame tests
+  check exactly one message using the same buffered reader, reject complete or
+  partial trailing values, explicitly discard a rejected finite frame remainder,
+  and preserve a following value outside the frame. Caller buffering tests prove
+  no codec flush/close and successful subsequent access through the wrappers.
+- HTTP request contexts, server write deadlines, cancelable producer gates, body
+  closure, and server shutdown release HTTP work on every exit. Pipe cleanup
+  closes both ends, cancels the gate wait, joins its producer, and joins an already
+  running deadline callback. Channel synchronization supplies progress evidence;
+  no timing-only sleep is used.
+- Validation passed: `gofmt -w` on all ten new Go files;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -run '^Example' -v ./...`
+  (all six examples pass, including the two existing slice examples);
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -race ./...`;
+  `git diff --check`; and `git diff --cached --check`. The sandbox's initial
+  test attempt failed because it denied a localhost listener (`bind: operation
+  not permitted`); the authorized local-network reruns, examples, and race check
+  passed with sandbox escalation. The local Markdown link check passes.
+- No discovered codec defect or contract conflict remains. S09 can now fuzz the
+  completed streaming surface and these workflows, retaining bounded inputs and
+  explicit terminal-state/ownership checks. The S06/S07 linux/386 result remains
+  cross-compilation only; no runtime was started or portability probe repeated.
+  Runtime portability remains S09 work, measured allocation/retained-memory and
+  throughput evidence remains S10 work, and streaming-first public documentation
+  remains S11 work. This task proves workflows without adding performance claims.
 
 ## S09 — Fuzz stream boundaries and verify portability
 
