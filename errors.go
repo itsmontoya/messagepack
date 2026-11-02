@@ -11,7 +11,7 @@ var (
 	ErrUnsupportedType = errors.New("messagepack: unsupported type")
 	// ErrTypeMismatch indicates a supported wire family rejected by the requested reader.
 	ErrTypeMismatch = errors.New("messagepack: type mismatch")
-	// ErrOverflow indicates an unrepresentable numeric value or an oversized append payload.
+	// ErrOverflow indicates an unrepresentable numeric value or an oversized payload.
 	ErrOverflow = errors.New("messagepack: overflow")
 	// ErrUninitialized indicates a stream codec without an attached reader or writer.
 	ErrUninitialized = errors.New("messagepack: uninitialized stream")

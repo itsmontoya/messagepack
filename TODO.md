@@ -360,7 +360,7 @@ behavior, stable zero-valued results on failure, and reset isolation if supporte
 
 ## S04 — Encode strings and binary without payload staging
 
-- [ ] Complete S04.
+- [x] Complete S04.
 
 **Read:** S01 payload contract, S02 handoff, `string.go`, `bytes.go`, and their
 boundary tests. **Deliverables:** payload methods in `encoder.go` plus tests.
@@ -377,6 +377,59 @@ huge object. Test empty, exact, short, and longer-than-declared sources; the ext
 byte must remain unread. Inject failures in headers and mid-payload at both ends,
 including partial progress counts. A generated large source and counting writer
 prove bounded read requests and output before the entire source is consumed.
+
+**Handoff (2026-11-01):**
+
+- Extended `encoder.go` with the four payload methods and private bounded-copy
+  helpers; broadened `ErrOverflow` GoDoc in `errors.go` to include streaming
+  payloads without changing the sentinel. Added `encoder_payload_test.go`,
+  `encoder_payload_writer_test.go`, `encoder_generated_reader_test.go`, and
+  `encoder_counting_writer_test.go`; updated this task. Production work uses
+  the S01–S11 authority recorded in the approved contract.
+- Public API added: `(*Encoder).EncodeString(value string) (err error)`,
+  `EncodeBytes(value []byte) (err error)`,
+  `EncodeStringFrom(length uint64, src io.Reader) (n uint64, err error)`, and
+  `EncodeBytesFrom(length uint64, src io.Reader) (n uint64, err error)`.
+  Methods and helpers remain in `encoder.go`; no container methods were added.
+- Headers reuse the existing slice header helpers and fixed nine-byte scratch.
+  Binary slices are written in chunks no larger than 32768 bytes. String and
+  reader transfers use a lazily allocated reusable 32768-byte copy buffer;
+  no complete string-to-byte conversion, whole-payload staging, hidden output
+  buffering, fast-path I/O delegation, flush, or close occurs. Reset may reuse
+  this bounded scratch and retains no input reference.
+- The stored terminal failure and attachment checks precede argument validation.
+  Lengths above uint32 return direct nonterminal `ErrOverflow` before I/O,
+  followed by a positive-length nil-source check. Zero length permits nil source
+  and never reads it. Transfers consume exactly the declared payload and leave
+  extra source bytes unread. Early EOF is wrapped `io.ErrUnexpectedEOF`; complete
+  bytes plus EOF succeed, and source EOF is not retained between transfer calls.
+- Progress counts only destination-accepted payload bytes, including partial or
+  full writes accompanied by errors. Source-error bytes are offered to the
+  destination first; a simultaneous destination error takes precedence. Source
+  and destination failures are contextual and terminal, with no further I/O or
+  drain. One hundred consecutive empty reads yield wrapped `io.ErrNoProgress`;
+  short nil-error writes remain wrapped `io.ErrShortWrite`. No contract changed.
+- Literal fixtures cover every string/binary header transition, raw invalid UTF-8
+  and NUL bytes, nil versus empty binary, and consecutive payload/scalar values.
+  Tests cover zero/exact/short/extra sources, huge declared lengths without huge
+  allocations, argument/sticky/reset/typed-nil behavior, header and first/later
+  payload-chunk faults at both ends, simultaneous error precedence, partial counts,
+  zero progress, bounded requests, and caller ownership. An 8 MiB + 7-byte
+  generated payload is validated incrementally without a payload-sized fixture;
+  the first payload output occurs before the source is fully consumed.
+- Validation passed: `gofmt -w encoder.go errors.go encoder_payload_test.go
+  encoder_payload_writer_test.go encoder_generated_reader_test.go
+  encoder_counting_writer_test.go`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `git diff --check`; and `git diff --cached --check`. Reviewed the staged changes.
+- S05 can add owned and writer-transfer decoding under the approved limits and
+  use S03's count-preserving `readFull` helper before selecting the terminal
+  source/destination error. `payloadBufferSize` is the shared private 32768-byte
+  bound. Allocation/retained-memory measurements remain S10 work; these tests
+  establish bounded requests and incremental output without a throughput or
+  blanket zero-allocation claim. Policies, Go version, dependencies, and all
+  slice implementations remain unchanged.
 
 ## S05 — Decode owned payloads and stream payloads to writers
 

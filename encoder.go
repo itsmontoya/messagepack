@@ -1,9 +1,12 @@
 package messagepack
 
 import (
+	"errors"
 	"fmt"
 	"io"
 )
+
+const payloadBufferSize = 32768
 
 // NewEncoder attaches an Encoder to w without taking ownership or buffering output.
 // A nil interface leaves the Encoder unattached until Reset supplies a writer.
@@ -12,12 +15,13 @@ func NewEncoder(w io.Writer) (e *Encoder) {
 }
 
 // Encoder writes typed MessagePack values to a caller-owned writer.
-// Its zero value is unattached. Write failures remain terminal until Reset;
+// Its zero value is unattached. I/O failures remain terminal until Reset;
 // instances must not be copied after first use or used concurrently.
 type Encoder struct {
 	writer  io.Writer
 	err     error
 	scratch [9]byte
+	buffer  []byte
 }
 
 // Reset attaches w and clears the stored failure without flushing or closing.
@@ -62,6 +66,144 @@ func (e *Encoder) EncodeFloat32(value float32) (err error) {
 func (e *Encoder) EncodeFloat64(value float64) (err error) {
 	_, err = e.write("encode float64", AppendFloat64(e.scratch[:0], value))
 	return err
+}
+
+// EncodeString preserves value's bytes without UTF-8 validation or normalization.
+// It writes bounded chunks and retains no reference to value after returning.
+func (e *Encoder) EncodeString(value string) (err error) {
+	if err = e.writePayloadHeader("encode string", uint64(len(value)), true); err != nil {
+		return err
+	}
+	for len(value) > 0 {
+		n := copy(e.payloadBuffer(), value)
+		if _, err = e.write("encode string", e.buffer[:n]); err != nil {
+			return err
+		}
+		value = value[n:]
+	}
+	return nil
+}
+
+// EncodeBytes writes value as binary in bounded chunks; nil means empty binary.
+// Use EncodeNil for nil. No input storage is retained after returning.
+func (e *Encoder) EncodeBytes(value []byte) (err error) {
+	if err = e.writePayloadHeader("encode bytes", uint64(len(value)), false); err != nil {
+		return err
+	}
+	for len(value) > 0 {
+		size := len(value)
+		if size > payloadBufferSize {
+			size = payloadBufferSize
+		}
+		if _, err = e.write("encode bytes", value[:size]); err != nil {
+			return err
+		}
+		value = value[size:]
+	}
+	return nil
+}
+
+// EncodeStringFrom writes exactly length source bytes as a byte-preserving string.
+// The returned n counts destination-accepted payload bytes, excluding the header.
+// Zero length permits nil src; early EOF fails and extra source bytes remain unread.
+// Failures after output remain terminal until Reset.
+func (e *Encoder) EncodeStringFrom(length uint64, src io.Reader) (n uint64, err error) {
+	return e.encodeFrom("encode string from", length, src, true)
+}
+
+// EncodeBytesFrom writes exactly length source bytes as binary using bounded memory.
+// The returned n counts destination-accepted payload bytes, excluding the header.
+// Zero length permits nil src; early EOF fails and extra source bytes remain unread.
+// Failures after output remain terminal until Reset.
+func (e *Encoder) EncodeBytesFrom(length uint64, src io.Reader) (n uint64, err error) {
+	return e.encodeFrom("encode bytes from", length, src, false)
+}
+
+func (e *Encoder) writePayloadHeader(operation string, length uint64, isString bool) (err error) {
+	if err = e.ready(); err != nil {
+		return err
+	}
+	var header []byte
+	if isString {
+		header, err = appendStringHeader(e.scratch[:0], length)
+	} else {
+		header, err = appendBytesHeader(e.scratch[:0], length)
+	}
+	if err != nil {
+		return err
+	}
+	_, err = e.write(operation, header)
+	return err
+}
+
+func (e *Encoder) encodeFrom(operation string, length uint64, src io.Reader, isString bool) (n uint64, err error) {
+	if err = e.ready(); err != nil {
+		return 0, err
+	}
+	if length > 4294967295 {
+		return 0, ErrOverflow
+	}
+	if length > 0 && src == nil {
+		return 0, ErrInvalidArgument
+	}
+	if err = e.writePayloadHeader(operation, length, isString); err != nil {
+		return 0, err
+	}
+	return e.copyPayloadFrom(operation, length, src)
+}
+
+func (e *Encoder) copyPayloadFrom(operation string, remaining uint64, src io.Reader) (n uint64, err error) {
+	var (
+		read    int
+		written int
+		empty   int
+		readErr error
+		chunk   []byte
+	)
+	for remaining > 0 {
+		chunk = e.payloadBuffer()
+		if remaining < uint64(len(chunk)) {
+			chunk = chunk[:int(remaining)]
+		}
+		read, readErr = src.Read(chunk)
+		if read > 0 {
+			written, err = e.write(operation, chunk[:read])
+			n += uint64(written)
+			if err != nil {
+				return n, err
+			}
+			remaining -= uint64(read)
+			empty = 0
+		}
+		if errors.Is(readErr, io.EOF) {
+			if remaining == 0 {
+				return n, nil
+			}
+			readErr = io.ErrUnexpectedEOF
+		}
+		if readErr != nil {
+			return n, e.sourceError(operation, readErr)
+		}
+		if read == 0 {
+			empty++
+			if empty == 100 {
+				return n, e.sourceError(operation, io.ErrNoProgress)
+			}
+		}
+	}
+	return n, nil
+}
+
+func (e *Encoder) payloadBuffer() (buffer []byte) {
+	if e.buffer == nil {
+		e.buffer = make([]byte, payloadBufferSize)
+	}
+	return e.buffer
+}
+
+func (e *Encoder) sourceError(operation string, err error) (out error) {
+	e.err = fmt.Errorf("messagepack: %s source: %w", operation, err)
+	return e.err
 }
 
 func (e *Encoder) ready() (err error) {
