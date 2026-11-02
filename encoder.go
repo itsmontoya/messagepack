@@ -68,6 +68,20 @@ func (e *Encoder) EncodeFloat64(value float64) (err error) {
 	return err
 }
 
+// EncodeArrayHeader writes only the header for count elements.
+// Callers encode the children explicitly; this method does not validate them.
+func (e *Encoder) EncodeArrayHeader(count uint32) (err error) {
+	_, err = e.write("encode array header", AppendArrayHeader(e.scratch[:0], count))
+	return err
+}
+
+// EncodeMapHeader writes only the header for count key/value pairs.
+// Callers encode both the keys and values explicitly.
+func (e *Encoder) EncodeMapHeader(count uint32) (err error) {
+	_, err = e.write("encode map header", AppendMapHeader(e.scratch[:0], count))
+	return err
+}
+
 // EncodeString preserves value's bytes without UTF-8 validation or normalization.
 // It writes bounded chunks and retains no reference to value after returning.
 func (e *Encoder) EncodeString(value string) (err error) {

@@ -502,7 +502,7 @@ Demonstrate a large transfer without allocating a payload-sized result or fixtur
 
 ## S06 — Stream container contents and complete typed messages
 
-- [ ] Complete S06.
+- [x] Complete S06.
 
 **Read:** S01 contract, S02–S05 handoffs, `array.go`, `map.go`,
 `application_message_test.go`, and `integration_test.go`. **Deliverables:** header
@@ -520,6 +520,60 @@ and multiple complete messages on one stream. Missing children must fail the
 schema decoder even if the header succeeds. Show missing map values, wrong counts,
 and truncation between fields. Demonstrate processing before the entire container
 is available, without collecting all elements. Check map arithmetic on 32-bit.
+
+**Handoff (2026-11-01):**
+
+- Extended `encoder.go` and `decoder.go`; added `stream_container_test.go`,
+  `stream_application_message_test.go`, `stream_integration_test.go`,
+  `stream_array_reader_test.go`, and `stream_array_writer_test.go`; updated
+  this task under the production authority recorded in the S01 contract.
+- Public API added: `(*Encoder).EncodeArrayHeader(count uint32) (err error)`,
+  `EncodeMapHeader(count uint32) (err error)`, and
+  `(*Decoder).DecodeArrayHeader() (count uint32, err error)` and
+  `DecodeMapHeader() (count uint32, err error)`. All methods remain in their
+  type's prescribed file. Existing slice helpers select/interpret wire headers
+  with fixed scalar scratch and exact reads; no child values are allocated,
+  inspected, or required, and Skip limits do not apply to these methods.
+- Added explicit strict-schema streaming helpers for the existing six-field
+  application message. Exact stream output equals the existing literal fixture;
+  stream and slice codecs interoperate in both directions. The schema retains
+  its ordered-field policy and rejects unknown, duplicate, reordered, or missing
+  fields, wrong counts, and wrong value families. EOF before a root can end a
+  sequence; EOF between required child calls becomes an incomplete application
+  message matching `io.ErrUnexpectedEOF`. Owned payloads survive following
+  messages, source mutation, and reset. Original slice examples/tests are intact.
+- Tests cover empty/15/16/65535/65536/uint32-maximum headers, wider valid forms,
+  header-only success, exact next-value boundaries, every header truncation,
+  classification/I/O failures, sticky follow-ups, initialization/reset, nested
+  maps/arrays, consecutive messages, missing map values, and every truncation
+  offset of the application fixture. A generated 100000-element array is written
+  and checked one scalar at a time without collecting values. Its reader creates
+  elements only on demand; the first element is processed while the remaining
+  99999 have not been generated. Reader/writer state stays fixed-size and neither
+  codec creates a payload buffer for this workload.
+- Validation passed: `gofmt -w encoder.go decoder.go
+  stream_application_message_test.go stream_array_reader_test.go
+  stream_array_writer_test.go stream_container_test.go stream_integration_test.go`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -run
+  'TestStreamContainer|TestStreamNested|TestStreamGenerated|TestStreamingApplication'
+  -v ./...`; `git diff --check`; and `git diff --cached --check`.
+- Portability: `GOCACHE=/private/tmp/messagepack-go-cache GOOS=linux GOARCH=386
+  go test -c -o /private/tmp/messagepack-s06-linux-386.test` passed. Headers retain
+  uint32 counts without multiplying them; the maximum map's caller-side child
+  arithmetic is checked as `uint64(count) * 2 == 8589934590`. This is a
+  cross-compilation result, not 32-bit execution. Runtime discovery found no
+  `qemu-i386`, no running Docker daemon (`docker version --format
+  '{{.Server.Version}}'` could not connect), and a stopped Podman VM (`podman
+  machine list --format '{{.Name}} {{.Running}}'` reported false). These read-only
+  probes needed sandbox escalation; no runtime/service was started or installed.
+  S09 retains the full portability verification/reporting task.
+- No contract changes or unresolved behavioral issues. S07 can build bounded
+  `Skip` and a separate forward-compatible schema example on these typed
+  operations while preserving the strict schema and its tests. Allocation and
+  throughput measurements remain S10 work. Policies, toolchain, dependencies,
+  and all slice implementations remain unchanged.
 
 ## S07 — Skip unknown supported values with bounded work
 

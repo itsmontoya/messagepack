@@ -143,6 +143,47 @@ func (d *Decoder) DecodeFloat64() (value float64, err error) {
 	return value, d.fail(err)
 }
 
+// DecodeArrayHeader consumes only a header and returns its element count.
+// Success does not require or validate children; callers traverse them explicitly.
+func (d *Decoder) DecodeArrayHeader() (count uint32, err error) {
+	return d.readContainerHeader("decode array header", false)
+}
+
+// DecodeMapHeader consumes only a header and returns its key/value pair count.
+// It does not validate children or apply Skip limits. Failures return zero.
+func (d *Decoder) DecodeMapHeader() (count uint32, err error) {
+	return d.readContainerHeader("decode map header", true)
+}
+
+func (d *Decoder) readContainerHeader(operation string, isMap bool) (count uint32, err error) {
+	var (
+		tag  byte
+		size = 1
+	)
+	tag, err = d.readTag(operation)
+	if err != nil {
+		return 0, err
+	}
+	switch {
+	case !isMap && tag >= 0x90 && tag <= 0x9f || isMap && tag >= 0x80 && tag <= 0x8f:
+	case !isMap && tag == 0xdc || isMap && tag == 0xde:
+		size = 3
+	case !isMap && tag == 0xdd || isMap && tag == 0xdf:
+		size = 5
+	default:
+		return 0, d.fail(readTypeError(tag))
+	}
+	if err = d.readScalarBody(operation, size); err != nil {
+		return 0, err
+	}
+	if isMap {
+		count, _, err = ReadMapHeader(d.scratch[:size])
+	} else {
+		count, _, err = ReadArrayHeader(d.scratch[:size])
+	}
+	return count, d.fail(err)
+}
+
 // DecodeString returns owned, byte-preserving contents within MaxPayloadBytes.
 // Failures return an empty string and may consume input; no UTF-8 validation occurs.
 func (d *Decoder) DecodeString() (value string, err error) {
