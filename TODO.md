@@ -577,7 +577,7 @@ is available, without collecting all elements. Check map arithmetic on 32-bit.
 
 ## S07 — Skip unknown supported values with bounded work
 
-- [ ] Complete S07.
+- [x] Complete S07.
 
 **Read:** S01 skip limits, S03/S05/S06 parsing and handoffs, `errors.go`, and
 current application-schema tests. **Deliverables:** `Decoder.Skip` per the
@@ -595,6 +595,67 @@ above boundaries, reserved/extension tags, and I/O errors. A sentinel value afte
 the skipped value must decode intact. The new schema example accepts reordered
 fields and skips unknown fields while explicitly rejecting duplicates and missing
 required fields. Preserve the old strict-schema tests as examples of that policy.
+
+**Handoff (2026-11-01):**
+
+- Extended `decoder.go`; added `skip_state.go`, `skip_test.go`,
+  `skip_payload_io_test.go`, `skip_repeating_reader_test.go`,
+  `stream_flexible_schema_test.go`, and `stream_flexible_integration_test.go`;
+  updated this task under the S01–S11 authority recorded in the contract.
+- Public API added: `(*Decoder).Skip() (err error)`. All Decoder methods remain
+  in `decoder.go`. Skip consumes exactly one complete supported value, including
+  every array element and both map keys and values, leaving the next value intact.
+  Integer/float bodies are skipped without conversion; extensions and reserved
+  tags retain direct `ErrUnsupportedType`/`ErrInvalidFormat` classification.
+- Traversal uses one local fixed 256-frame stack, checked uint64 budgets, and
+  the existing lazily allocated 32768-byte payload scratch. No advertised count
+  allocates a container or count-sized stack; payloads are not materialized and
+  owned-result caps do not apply. Each call starts fresh depth/value/wire-byte
+  budgets. Empty containers count toward depth; scalars under the deepest allowed
+  container do not add a level. Frames retain ancestor depth while a last child
+  is itself a container, then unwind before visiting ancestor siblings.
+- Every read segment is checked against remaining bytes before I/O. Known
+  payload lengths are rejected before scratch allocation/read if over budget.
+  Declared children use uint64 map multiplication and subtraction-based checks
+  against remaining values/bytes, including all outstanding ancestor siblings,
+  before descent. Root EOF is wrapped `io.EOF`; missing bodies/children are
+  wrapped `io.ErrUnexpectedEOF`. Non-EOF source failures, repeated empty reads,
+  classification failures, and limits are terminal with no further I/O; Reset
+  preserves configured limits and clears the terminal state. No contract changed.
+- Tests cover every supported family and payload/container header width, wider
+  and empty forms, literal boundaries, every small-form truncation, nested
+  last-child containers and container map keys, untouched following sentinels,
+  exact/over value/byte/depth limits through the hard depth ceiling, ancestor
+  sibling accounting, byte-budget precedence, max uint32 map counts and maximal
+  uint64 budgets, all extension tags, source/error/EOF combinations, 99/100 empty
+  reads, sticky failures and reset. Generated 8 MiB + 7-byte payloads,
+  65536-element arrays, and 65536-pair maps verify bounded reads without full-size
+  fixtures; late-chunk faults stop without additional reads. Portability-sensitive count
+  tests use wide arithmetic and compile for linux/386.
+- Added a separate explicit forward-compatible six-field schema example. It
+  accepts reordered fields, skips nested unknown supported values, rejects
+  duplicate known and unknown names, requires every known field, and owns its
+  decoded results. This application example limits maps to **16 entries** and
+  tracks names in a fixed array; that policy is separate from the codec's uint32
+  header support. Exact-six/exact-sixteen, excess-count, missing/duplicate,
+  unknown-value error, and every fixture truncation tests pass. Original strict
+  schema helpers and tests remain unchanged.
+- Validation passed: `gofmt -w decoder.go skip_state.go skip_test.go
+  skip_payload_io_test.go skip_repeating_reader_test.go
+  stream_flexible_schema_test.go stream_flexible_integration_test.go`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache GOOS=linux GOARCH=386 go test -c
+  -o /private/tmp/messagepack-s07-linux-386.test`;
+  `git diff --check`; and `git diff --cached --check`. The local Markdown link
+  check reports `10 local links: PASS`. Reviewed the staged changes.
+- The installed toolchain remains `go1.27.2 darwin/arm64`. The linux/386 result
+  is cross-compilation, not execution; the unavailable runtimes recorded in S06
+  were not restarted or reprobed. S09 retains portability execution/reporting.
+  S08 can now prove HTTP/file/backpressure and sequence/framing workflows using
+  the completed typed API and Skip. Actual allocation/retained-memory and
+  throughput evidence remains S10 work. Policies, toolchain, dependencies, and
+  slice implementations remain unchanged.
 
 ## S08 — Prove HTTP, file, and backpressure workflows
 

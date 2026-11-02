@@ -215,6 +215,168 @@ func (d *Decoder) DecodeBytesTo(dst io.Writer) (n uint64, err error) {
 	return d.decodeTo("decode bytes to", dst, false)
 }
 
+// Skip consumes one complete supported value without materializing its contents.
+// It applies per-call depth, value, and wire-byte limits and leaves the next value.
+// A failure is terminal until Reset; extensions remain unsupported.
+func (d *Decoder) Skip() (err error) {
+	if err = d.ready(); err != nil {
+		return err
+	}
+	var (
+		state = skipState{
+			remainingBytes:  d.limits.MaxSkipBytes,
+			remainingValues: d.limits.MaxSkipValues,
+			outstanding:     1,
+		}
+		children  uint64
+		container bool
+	)
+	for state.outstanding > 0 {
+		for state.depth > 0 && state.children[state.depth-1] == 0 {
+			state.depth--
+		}
+		state.outstanding--
+		state.remainingValues--
+		if state.depth > 0 {
+			state.children[state.depth-1]--
+		}
+		children, container, err = d.skipValue(&state)
+		if err != nil {
+			return d.fail(err)
+		}
+		if err = d.skipChildren(&state, children, container); err != nil {
+			return d.fail(err)
+		}
+	}
+	return nil
+}
+
+func (d *Decoder) skipValue(state *skipState) (children uint64, container bool, err error) {
+	if err = d.readSkip(state, d.scratch[:1]); err != nil {
+		return 0, false, err
+	}
+	tag := d.scratch[0]
+	switch {
+	case tag <= 0x7f || tag >= 0xe0 || tag == 0xc0 || tag == 0xc2 || tag == 0xc3:
+		return 0, false, nil
+	case tag >= 0x80 && tag <= 0x8f:
+		return uint64(tag&0x0f) * 2, true, nil
+	case tag >= 0x90 && tag <= 0x9f:
+		return uint64(tag & 0x0f), true, nil
+	case tag >= 0xa0 && tag <= 0xbf:
+		return 0, false, d.skipPayload(state, uint64(tag&0x1f))
+	default:
+		return d.skipTaggedValue(state, tag)
+	}
+}
+
+func (d *Decoder) skipTaggedValue(state *skipState, tag byte) (children uint64, container bool, err error) {
+	switch tag {
+	case 0xcc, 0xd0:
+		return 0, false, d.readSkip(state, d.scratch[1:2])
+	case 0xcd, 0xd1:
+		return 0, false, d.readSkip(state, d.scratch[1:3])
+	case 0xce, 0xd2, 0xca:
+		return 0, false, d.readSkip(state, d.scratch[1:5])
+	case 0xcf, 0xd3, 0xcb:
+		return 0, false, d.readSkip(state, d.scratch[1:9])
+	case 0xc4, 0xd9:
+		return 0, false, d.skipPayloadValue(state, 1)
+	case 0xc5, 0xda:
+		return 0, false, d.skipPayloadValue(state, 2)
+	case 0xc6, 0xdb:
+		return 0, false, d.skipPayloadValue(state, 4)
+	case 0xdc, 0xde:
+		return d.skipContainerValue(state, 2, tag == 0xde)
+	case 0xdd, 0xdf:
+		return d.skipContainerValue(state, 4, tag == 0xdf)
+	default:
+		return 0, false, readTypeError(tag)
+	}
+}
+
+func (d *Decoder) skipPayloadValue(state *skipState, width int) (err error) {
+	var length uint64
+	length, err = d.readSkipLength(state, width)
+	if err != nil {
+		return err
+	}
+	return d.skipPayload(state, length)
+}
+
+func (d *Decoder) skipContainerValue(state *skipState, width int, isMap bool) (children uint64, container bool, err error) {
+	children, err = d.readSkipLength(state, width)
+	if err != nil {
+		return 0, false, err
+	}
+	if isMap {
+		children *= 2
+	}
+	return children, true, nil
+}
+
+func (d *Decoder) readSkipLength(state *skipState, width int) (length uint64, err error) {
+	if err = d.readSkip(state, d.scratch[1:1+width]); err != nil {
+		return 0, err
+	}
+	switch width {
+	case 1:
+		return uint64(d.scratch[1]), nil
+	case 2:
+		return uint64(binary.BigEndian.Uint16(d.scratch[1:3])), nil
+	default:
+		return uint64(binary.BigEndian.Uint32(d.scratch[1:5])), nil
+	}
+}
+
+func (d *Decoder) skipChildren(state *skipState, children uint64, container bool) (err error) {
+	if container && state.depth == d.limits.MaxSkipDepth {
+		return ErrLimitExceeded
+	}
+	if state.outstanding > state.remainingValues || children > state.remainingValues-state.outstanding {
+		return ErrLimitExceeded
+	}
+	if state.outstanding > state.remainingBytes || children > state.remainingBytes-state.outstanding {
+		return ErrLimitExceeded
+	}
+	state.outstanding += children
+	if children > 0 {
+		state.children[state.depth] = children
+		state.depth++
+	}
+	return nil
+}
+
+func (d *Decoder) skipPayload(state *skipState, length uint64) (err error) {
+	if length > state.remainingBytes {
+		return ErrLimitExceeded
+	}
+	for length > 0 {
+		chunk := d.payloadBuffer()
+		if length < uint64(len(chunk)) {
+			chunk = chunk[:int(length)]
+		}
+		if err = d.readSkip(state, chunk); err != nil {
+			return err
+		}
+		length -= uint64(len(chunk))
+	}
+	return nil
+}
+
+func (d *Decoder) readSkip(state *skipState, dst []byte) (err error) {
+	if uint64(len(dst)) > state.remainingBytes {
+		return ErrLimitExceeded
+	}
+	var n int
+	n, err = d.readFull("skip", dst, state.started)
+	state.remainingBytes -= uint64(n)
+	if n > 0 {
+		state.started = true
+	}
+	return err
+}
+
 func (d *Decoder) readPayloadHeader(operation string, isString bool) (length uint64, err error) {
 	var (
 		tag  byte
