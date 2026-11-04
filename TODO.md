@@ -841,7 +841,7 @@ authority before completion. Existing fuzz seed tests must still pass.
 
 ## S10 — Measure streaming memory and throughput
 
-- [ ] Complete S10.
+- [x] Complete S10.
 
 **Read:** streaming implementation, `benchmark_test.go`, `allocation_test.go`,
 `docs/poc-benchmarks.md`, and S08/S09 handoffs. **Deliverables:** stream benchmarks,
@@ -860,6 +860,81 @@ length; allocation count alone is insufficient evidence. Explain any profiles or
 measurement limits, and keep owned-result allocation proportionality explicit.
 Retain the existing slice allocation guarantees. Do not claim blanket zero
 allocations or add speculative pooling/unsafe optimizations to meet a target.
+
+**Handoff (2026-11-02):**
+
+- Added `stream_benchmark_test.go`, `stream_payload_benchmark_test.go`,
+  `stream_memory_test.go`, `stream_benchmark_source_test.go`, and the four
+  single-type helpers `stream_benchmark_array_reader_test.go`,
+  `stream_benchmark_fixture_reader_test.go`,
+  `stream_benchmark_payload_reader_test.go`, and
+  `stream_benchmark_writer_test.go`. Added [the measurement report](docs/streaming-benchmarks.md)
+  and [complete raw benchmark/memory output](docs/streaming-benchmark-results.txt);
+  updated this task. Every new primary type and its methods share one file.
+  **Public API changes: none.** Production code, the approved streaming contract,
+  existing slice tests/implementations, policies, Go version, and dependencies
+  remain unchanged. No production optimization or discovered defect was involved.
+- Added 91 benchmark cases covering six consecutive primitive values, the literal
+  57-byte application message, generated 1024/65536-element integer arrays,
+  owned string/binary reads, and all four payload transfer methods at **1 KiB,
+  64 KiB, and 8 MiB**. Large input/wire data is generated on demand; sinks count
+  calls/bytes without retaining output. Small source fixtures have literal tests.
+  Separate payload/array generator baselines expose generation overhead. Timings
+  include schema/element checks, generator work, counters, and harness calls;
+  no baseline is subtracted or described as isolated codec throughput.
+- Record and transfer cases compare unbuffered with caller-owned 4096-byte
+  buffering and fresh escaping codec construction with prewarmed reuse/Reset.
+  Caller wrappers are prepared outside timing; transfer buffering wraps **both**
+  ends. Timed caller Flush completes each finite record/transfer. Results report
+  wire MB/s, ns/op, B/op, allocs/op, and underlying read/write calls per operation.
+  Fresh transfer Encoder/Decoder cases measured **32848/32880 B/op and 2 allocs/op**
+  respectively at every size/family/buffering mode. Warm Reset transfers measured
+  **0 B/op, 0 allocs/op** for these successful workloads. Owned binary allocates
+  approximately its payload size; safe owned-string conversion allocates about
+  twice its payload size. The report preserves ranges and limits these claims.
+- Independent TotalAlloc experiments measured 16 transfers per batch for every
+  size/family/direction/lifecycle, repeated five times: 120 batches total.
+  Fresh Encoder batches measured 32848–32849 B/transfer; fresh Decoder batches
+  measured 32880 B/transfer; warmed batches measured zero. Regression tests use
+  generous 128 KiB per-transfer and 64 KiB cross-size-spread bounds instead of
+  freezing exact counts or zero allocations. Repeated Reset tests bound retained
+  scratch capacities without asserting private buffer identity.
+- Retained-memory experiments cover both string/binary families at every size,
+  keeping 32 Encoder/Decoder pairs live through GC using KeepAlive, after
+  detaching streams with Reset(nil). All 30 measured cohorts retained **2097152 B**
+  of observed scratch capacity; post-GC process heap deltas ranged
+  **2062640–2063584 B**, without payload-length scaling. Those noisy deltas are
+  observations, not exact object sizes. The independent retained-heap regression
+  allows 5 MiB per cohort (twice bounded scratch plus 1 MiB noise), detecting
+  payload-sized retention without brittle exact heap assertions. No heap profile
+  was needed for these scoped byte/capacity measurements.
+- Exact benchmark command: `GOCACHE=/private/tmp/messagepack-go-cache go test
+  -run '^$' -bench '^BenchmarkStream' -benchmem -benchtime=100ms -count=5 ./...`.
+  All **455 samples** (five per case) passed in **61.525 s**. The deliberate
+  100 ms target lets Go calibrate iteration counts; it is not a fixed operation
+  count or an exact elapsed-time limit. The audited memory command was
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -run
+  '^Test(StreamTransferAllocationBytes|StreamRetainedWorkingMemory|StreamTransferScratchBounds|StreamBenchmark|ZeroAllocations|OwnedStringAllocations)'
+  -v -count=5 ./...`; all repetitions passed in **3.284 s**, preserving the
+  existing slice allocation checks unchanged. Raw output includes commands,
+  environment, samples, and verbose memory evidence.
+- Validation passed: `gofmt -w` on the eight new Go files;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...` (**1.119 s**);
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`; formatting and local
+  Markdown link checks; `git diff --check`; and `git diff --cached --check`.
+  Full tests required authorized sandbox escalation for existing local httptest
+  listeners; benchmarks and memory-only checks required no network access.
+  Reviewed the staged changes and verified all 91 cases have exactly five samples.
+- Environment remains **go1.27.2 darwin/arm64**, Darwin 25.5.0, Apple M3,
+  eight default logical CPUs. Synthetic generation/counting sinks do not measure
+  real sockets/files/durability. Buffering reduced large-array calls from 65537
+  writes/130946 reads to 48 each, but was slower with these cheap endpoints.
+  Transfer throughput near the generator baseline reflects generation cost.
+  Short sample duration, GC/process noise, and local scheduling limit inference;
+  no blanket zero-allocation or cross-platform performance claim is made. S09's
+  32-bit result remains compilation only. S11 should publish streaming-first
+  documentation and perform its final build/test/example/race/link checks using
+  these scoped measurements, preserving those limitations. S11 remains unchecked.
 
 ## S11 — Publish streaming-first documentation and final review
 

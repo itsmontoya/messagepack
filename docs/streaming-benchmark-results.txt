@@ -1,0 +1,969 @@
+S10 streaming benchmark audit
+Started UTC: 2026-11-02T15:15:51.281339+00:00
+Command: GOCACHE=/private/tmp/messagepack-go-cache go test -run '^$' -bench '^BenchmarkStream' -benchmem -benchtime=100ms -count=5 ./...
+go version go1.27.2 darwin/arm64
+Darwin 25.5.0
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/New-8         	 3461026	        38.50 ns/op	 779.12 MB/s	         0 readcalls/op	         6.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Encode/Unbuffered/New-8         	 4260580	        27.87 ns/op	1076.57 MB/s	         0 readcalls/op	         6.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Encode/Unbuffered/New-8         	 4235947	        28.10 ns/op	1067.66 MB/s	         0 readcalls/op	         6.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Encode/Unbuffered/New-8         	 4275124	        43.32 ns/op	 692.56 MB/s	         0 readcalls/op	         6.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Encode/Unbuffered/New-8         	 4157583	        27.85 ns/op	1077.35 MB/s	         0 readcalls/op	         6.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8       	 5943842	        20.14 ns/op	1489.54 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8       	 5953746	        19.86 ns/op	1510.75 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8       	 6087841	        19.88 ns/op	1509.16 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8       	 6067807	        19.80 ns/op	1514.91 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8       	 5993232	        19.95 ns/op	1504.02 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Encode/Buffered4KiB/New-8       	 2718006	        42.61 ns/op	 704.06 MB/s	         0 readcalls/op	         1.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Encode/Buffered4KiB/New-8       	 2795043	        42.24 ns/op	 710.30 MB/s	         0 readcalls/op	         1.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Encode/Buffered4KiB/New-8       	 2847154	        42.39 ns/op	 707.70 MB/s	         0 readcalls/op	         1.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Encode/Buffered4KiB/New-8       	 2847918	        43.29 ns/op	 692.98 MB/s	         0 readcalls/op	         1.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Encode/Buffered4KiB/New-8       	 2843300	        42.09 ns/op	 712.69 MB/s	         0 readcalls/op	         1.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Encode/Buffered4KiB/Reset-8     	 3472398	        34.67 ns/op	 865.23 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Encode/Buffered4KiB/Reset-8     	 3464210	        34.43 ns/op	 871.39 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Encode/Buffered4KiB/Reset-8     	 3519069	        35.86 ns/op	 836.61 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Encode/Buffered4KiB/Reset-8     	 3476719	        35.28 ns/op	 850.44 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Encode/Buffered4KiB/Reset-8     	 3407094	        34.82 ns/op	 861.60 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/New-8         	 1260506	        94.80 ns/op	 316.45 MB/s	        10.00 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/New-8         	 1274961	        94.23 ns/op	 318.37 MB/s	        10.00 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/New-8         	 1277569	        94.11 ns/op	 318.79 MB/s	        10.00 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/New-8         	 1277703	        93.98 ns/op	 319.21 MB/s	        10.00 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/New-8         	 1269542	        93.96 ns/op	 319.30 MB/s	        10.00 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8       	 1531069	        80.18 ns/op	 374.16 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8       	 1517638	        79.55 ns/op	 377.11 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8       	 1486503	        80.65 ns/op	 371.97 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8       	 1428998	        79.31 ns/op	 378.26 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8       	 1494260	        79.13 ns/op	 379.11 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Buffered4KiB/New-8       	 1000000	       110.4 ns/op	 271.86 MB/s	         1.000 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Decode/Buffered4KiB/New-8       	 1000000	       109.4 ns/op	 274.28 MB/s	         1.000 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Decode/Buffered4KiB/New-8       	 1000000	       109.3 ns/op	 274.55 MB/s	         1.000 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Decode/Buffered4KiB/New-8       	 1000000	       109.1 ns/op	 274.97 MB/s	         1.000 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Decode/Buffered4KiB/New-8       	 1000000	       108.4 ns/op	 276.75 MB/s	         1.000 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamPrimitives/Decode/Buffered4KiB/Reset-8     	 1297930	        93.37 ns/op	 321.29 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Buffered4KiB/Reset-8     	 1297004	        92.94 ns/op	 322.79 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Buffered4KiB/Reset-8     	 1290183	        92.33 ns/op	 324.91 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Buffered4KiB/Reset-8     	 1276773	        92.72 ns/op	 323.55 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Buffered4KiB/Reset-8     	 1299835	        92.08 ns/op	 325.82 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/New-8            	   69898	      1754 ns/op	  32.50 MB/s	         0 readcalls/op	        23.00 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/New-8            	   74048	      1603 ns/op	  35.56 MB/s	         0 readcalls/op	        23.00 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/New-8            	   81888	      1637 ns/op	  34.82 MB/s	         0 readcalls/op	        23.00 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/New-8            	   75236	      1670 ns/op	  34.14 MB/s	         0 readcalls/op	        23.00 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/New-8            	   67681	      1652 ns/op	  34.51 MB/s	         0 readcalls/op	        23.00 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8          	 1000000	       106.7 ns/op	 534.33 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8          	 1000000	       105.5 ns/op	 540.21 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8          	 1000000	       127.2 ns/op	 448.13 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8          	 1000000	       104.4 ns/op	 546.17 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8          	 1000000	       105.5 ns/op	 540.09 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8          	   68643	      1664 ns/op	  34.26 MB/s	         0 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8          	   66925	      1672 ns/op	  34.09 MB/s	         0 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8          	   68054	      1685 ns/op	  33.82 MB/s	         0 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8          	   72124	      1674 ns/op	  34.04 MB/s	         0 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8          	   73110	      1635 ns/op	  34.87 MB/s	         0 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8        	  778251	       158.4 ns/op	 359.94 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8        	  808897	       156.0 ns/op	 365.35 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8        	  793934	       165.1 ns/op	 345.20 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8        	  767324	       160.5 ns/op	 355.05 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8        	  779684	       158.5 ns/op	 359.57 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/New-8            	  328051	       365.3 ns/op	 156.03 MB/s	        25.00 readcalls/op	         0 writecalls/op	     184 B/op	      16 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/New-8            	  336236	       366.3 ns/op	 155.59 MB/s	        25.00 readcalls/op	         0 writecalls/op	     184 B/op	      16 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/New-8            	  341527	       362.1 ns/op	 157.40 MB/s	        25.00 readcalls/op	         0 writecalls/op	     184 B/op	      16 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/New-8            	  330104	       365.9 ns/op	 155.79 MB/s	        25.00 readcalls/op	         0 writecalls/op	     184 B/op	      16 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/New-8            	  330441	       365.2 ns/op	 156.09 MB/s	        25.00 readcalls/op	         0 writecalls/op	     184 B/op	      16 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8          	  345709	       347.8 ns/op	 163.89 MB/s	        25.00 readcalls/op	         0 writecalls/op	      72 B/op	      15 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8          	  350697	       343.7 ns/op	 165.86 MB/s	        25.00 readcalls/op	         0 writecalls/op	      72 B/op	      15 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8          	  341798	       349.3 ns/op	 163.18 MB/s	        25.00 readcalls/op	         0 writecalls/op	      72 B/op	      15 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8          	  353390	       343.9 ns/op	 165.73 MB/s	        25.00 readcalls/op	         0 writecalls/op	      72 B/op	      15 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8          	  356258	       345.6 ns/op	 164.91 MB/s	        25.00 readcalls/op	         0 writecalls/op	      72 B/op	      15 allocs/op
+BenchmarkStreamMessage/Decode/Buffered4KiB/New-8          	  303714	       393.9 ns/op	 144.71 MB/s	         1.000 readcalls/op	         0 writecalls/op	     184 B/op	      16 allocs/op
+BenchmarkStreamMessage/Decode/Buffered4KiB/New-8          	  312330	       395.9 ns/op	 143.96 MB/s	         1.000 readcalls/op	         0 writecalls/op	     184 B/op	      16 allocs/op
+BenchmarkStreamMessage/Decode/Buffered4KiB/New-8          	  309148	       392.5 ns/op	 145.21 MB/s	         1.000 readcalls/op	         0 writecalls/op	     184 B/op	      16 allocs/op
+BenchmarkStreamMessage/Decode/Buffered4KiB/New-8          	  312682	       395.4 ns/op	 144.15 MB/s	         1.000 readcalls/op	         0 writecalls/op	     184 B/op	      16 allocs/op
+BenchmarkStreamMessage/Decode/Buffered4KiB/New-8          	  296974	       397.5 ns/op	 143.41 MB/s	         1.000 readcalls/op	         0 writecalls/op	     184 B/op	      16 allocs/op
+BenchmarkStreamMessage/Decode/Buffered4KiB/Reset-8        	  305365	       376.0 ns/op	 151.58 MB/s	         1.000 readcalls/op	         0 writecalls/op	      72 B/op	      15 allocs/op
+BenchmarkStreamMessage/Decode/Buffered4KiB/Reset-8        	  327939	       377.6 ns/op	 150.94 MB/s	         1.000 readcalls/op	         0 writecalls/op	      72 B/op	      15 allocs/op
+BenchmarkStreamMessage/Decode/Buffered4KiB/Reset-8        	  326430	       382.1 ns/op	 149.19 MB/s	         1.000 readcalls/op	         0 writecalls/op	      72 B/op	      15 allocs/op
+BenchmarkStreamMessage/Decode/Buffered4KiB/Reset-8        	  323187	       374.2 ns/op	 152.34 MB/s	         1.000 readcalls/op	         0 writecalls/op	      72 B/op	      15 allocs/op
+BenchmarkStreamMessage/Decode/Buffered4KiB/Reset-8        	  317830	       381.9 ns/op	 149.25 MB/s	         1.000 readcalls/op	         0 writecalls/op	      72 B/op	      15 allocs/op
+BenchmarkStreamContainer/Elements1024/Generator-8         	   33272	      3761 ns/op	 715.55 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Generator-8         	   32704	      3921 ns/op	 686.34 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Generator-8         	   31732	      3859 ns/op	 697.25 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Generator-8         	   31916	      3906 ns/op	 688.95 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Generator-8         	   31474	      3842 ns/op	 700.38 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Unbuffered/New-8         	   35215	      3481 ns/op	 772.99 MB/s	         0 readcalls/op	      1025 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Unbuffered/New-8         	   33271	      3624 ns/op	 742.54 MB/s	         0 readcalls/op	      1025 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Unbuffered/New-8         	   32048	      3722 ns/op	 722.98 MB/s	         0 readcalls/op	      1025 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Unbuffered/New-8         	   32199	      3960 ns/op	 679.46 MB/s	         0 readcalls/op	      1025 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Unbuffered/New-8         	   35041	      3770 ns/op	 713.74 MB/s	         0 readcalls/op	      1025 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Unbuffered/Reset-8       	   34532	      3556 ns/op	 756.76 MB/s	         0 readcalls/op	      1025 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Unbuffered/Reset-8       	   32128	      3695 ns/op	 728.34 MB/s	         0 readcalls/op	      1025 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Unbuffered/Reset-8       	   31102	      3683 ns/op	 730.67 MB/s	         0 readcalls/op	      1025 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Unbuffered/Reset-8       	   30124	      3592 ns/op	 749.12 MB/s	         0 readcalls/op	      1025 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Unbuffered/Reset-8       	   33284	      3731 ns/op	 721.18 MB/s	         0 readcalls/op	      1025 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Buffered4KiB/New-8       	   22053	      5495 ns/op	 489.70 MB/s	         0 readcalls/op	         1.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Buffered4KiB/New-8       	   22112	      5346 ns/op	 503.35 MB/s	         0 readcalls/op	         1.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Buffered4KiB/New-8       	   22336	      5378 ns/op	 500.33 MB/s	         0 readcalls/op	         1.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Buffered4KiB/New-8       	   22454	      5368 ns/op	 501.34 MB/s	         0 readcalls/op	         1.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Buffered4KiB/New-8       	   22660	      5429 ns/op	 495.67 MB/s	         0 readcalls/op	         1.000 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Buffered4KiB/Reset-8     	   22275	      5522 ns/op	 487.34 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Buffered4KiB/Reset-8     	   21236	      5430 ns/op	 495.57 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Buffered4KiB/Reset-8     	   22348	      5384 ns/op	 499.79 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Buffered4KiB/Reset-8     	   22216	      5388 ns/op	 499.45 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Encode/Buffered4KiB/Reset-8     	   22374	      5359 ns/op	 502.19 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Unbuffered/New-8         	    5786	     21830 ns/op	 123.27 MB/s	      1922 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Unbuffered/New-8         	    5775	     22100 ns/op	 121.77 MB/s	      1922 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Unbuffered/New-8         	    5470	     21730 ns/op	 123.84 MB/s	      1922 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Unbuffered/New-8         	    5625	     21771 ns/op	 123.60 MB/s	      1922 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Unbuffered/New-8         	    5824	     22140 ns/op	 121.55 MB/s	      1922 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Unbuffered/Reset-8       	    5437	     22029 ns/op	 122.16 MB/s	      1922 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Unbuffered/Reset-8       	    5796	     21877 ns/op	 123.01 MB/s	      1922 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Unbuffered/Reset-8       	    5704	     21776 ns/op	 123.58 MB/s	      1922 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Unbuffered/Reset-8       	    5791	     21892 ns/op	 122.92 MB/s	      1922 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Unbuffered/Reset-8       	    5797	     22864 ns/op	 117.69 MB/s	      1922 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Buffered4KiB/New-8       	    5059	     24701 ns/op	 108.94 MB/s	         1.000 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Buffered4KiB/New-8       	    5163	     23670 ns/op	 113.69 MB/s	         1.000 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Buffered4KiB/New-8       	    5409	     23488 ns/op	 114.57 MB/s	         1.000 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Buffered4KiB/New-8       	    5325	     23182 ns/op	 116.08 MB/s	         1.000 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Buffered4KiB/New-8       	    5288	     23360 ns/op	 115.20 MB/s	         1.000 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Buffered4KiB/Reset-8     	    5400	     23535 ns/op	 114.34 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Buffered4KiB/Reset-8     	    5325	     23513 ns/op	 114.45 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Buffered4KiB/Reset-8     	    5394	     23382 ns/op	 115.09 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Buffered4KiB/Reset-8     	    5410	     23543 ns/op	 114.30 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements1024/Decode/Buffered4KiB/Reset-8     	    5455	     23278 ns/op	 115.60 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Generator-8                    	     516	    254914 ns/op	 769.78 MB/s	         6.000 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Generator-8                    	     516	    241269 ns/op	 813.32 MB/s	         6.000 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Generator-8                    	     502	    246479 ns/op	 796.13 MB/s	         6.000 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Generator-8                    	     492	    245964 ns/op	 797.80 MB/s	         6.000 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Generator-8                    	     492	    246266 ns/op	 796.82 MB/s	         6.000 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Unbuffered/New-8        	     543	    222351 ns/op	 882.52 MB/s	         0 readcalls/op	     65537 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Unbuffered/New-8        	     505	    230099 ns/op	 852.80 MB/s	         0 readcalls/op	     65537 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Unbuffered/New-8        	     549	    222074 ns/op	 883.62 MB/s	         0 readcalls/op	     65537 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Unbuffered/New-8        	     550	    220775 ns/op	 888.82 MB/s	         0 readcalls/op	     65537 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Unbuffered/New-8        	     547	    221300 ns/op	 886.71 MB/s	         0 readcalls/op	     65537 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Unbuffered/Reset-8      	     531	    224347 ns/op	 874.67 MB/s	         0 readcalls/op	     65537 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Unbuffered/Reset-8      	     543	    222637 ns/op	 881.39 MB/s	         0 readcalls/op	     65537 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Unbuffered/Reset-8      	     538	    222333 ns/op	 882.59 MB/s	         0 readcalls/op	     65537 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Unbuffered/Reset-8      	     530	    222862 ns/op	 880.49 MB/s	         0 readcalls/op	     65537 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Unbuffered/Reset-8      	     546	    225106 ns/op	 871.72 MB/s	         0 readcalls/op	     65537 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Buffered4KiB/New-8      	     346	    342011 ns/op	 573.75 MB/s	         0 readcalls/op	        48.00 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Buffered4KiB/New-8      	     351	    342585 ns/op	 572.79 MB/s	         0 readcalls/op	        48.00 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Buffered4KiB/New-8      	     354	    344561 ns/op	 569.50 MB/s	         0 readcalls/op	        48.00 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Buffered4KiB/New-8      	     352	    341581 ns/op	 574.47 MB/s	         0 readcalls/op	        48.00 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Buffered4KiB/New-8      	     351	    340389 ns/op	 576.48 MB/s	         0 readcalls/op	        48.00 writecalls/op	      80 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Buffered4KiB/Reset-8    	     343	    358694 ns/op	 547.06 MB/s	         0 readcalls/op	        48.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Buffered4KiB/Reset-8    	     345	    341586 ns/op	 574.47 MB/s	         0 readcalls/op	        48.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Buffered4KiB/Reset-8    	     348	    345039 ns/op	 568.71 MB/s	         0 readcalls/op	        48.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Buffered4KiB/Reset-8    	     350	    348145 ns/op	 563.64 MB/s	         0 readcalls/op	        48.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Encode/Buffered4KiB/Reset-8    	     345	    344964 ns/op	 568.84 MB/s	         0 readcalls/op	        48.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Unbuffered/New-8        	      84	   1457090 ns/op	 134.67 MB/s	    130946 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Unbuffered/New-8        	      79	   1447801 ns/op	 135.54 MB/s	    130946 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Unbuffered/New-8        	      81	   1456629 ns/op	 134.71 MB/s	    130946 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Unbuffered/New-8        	      79	   1840701 ns/op	 106.61 MB/s	    130946 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Unbuffered/New-8        	      79	   1464604 ns/op	 133.98 MB/s	    130946 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Unbuffered/Reset-8      	      84	   1466990 ns/op	 133.76 MB/s	    130946 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Unbuffered/Reset-8      	      84	   1465462 ns/op	 133.90 MB/s	    130946 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Unbuffered/Reset-8      	      78	   1472953 ns/op	 133.22 MB/s	    130946 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Unbuffered/Reset-8      	      84	   1444602 ns/op	 135.84 MB/s	    130946 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Unbuffered/Reset-8      	      82	   1458927 ns/op	 134.50 MB/s	    130946 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Buffered4KiB/New-8      	      78	   1552600 ns/op	 126.39 MB/s	        48.00 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Buffered4KiB/New-8      	      80	   1605835 ns/op	 122.20 MB/s	        48.00 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Buffered4KiB/New-8      	      80	   1576198 ns/op	 124.50 MB/s	        48.00 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Buffered4KiB/New-8      	      78	   1549558 ns/op	 126.64 MB/s	        48.00 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Buffered4KiB/New-8      	      76	   1541900 ns/op	 127.26 MB/s	        48.00 readcalls/op	         0 writecalls/op	     112 B/op	       1 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Buffered4KiB/Reset-8    	      76	   1546219 ns/op	 126.91 MB/s	        48.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Buffered4KiB/Reset-8    	      80	   1522872 ns/op	 128.85 MB/s	        48.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Buffered4KiB/Reset-8    	      81	   1541874 ns/op	 127.27 MB/s	        48.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Buffered4KiB/Reset-8    	      81	   1518797 ns/op	 129.20 MB/s	        48.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamContainer/Elements65536/Decode/Buffered4KiB/Reset-8    	      82	   1530523 ns/op	 128.21 MB/s	        48.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Unbuffered/New-8             	   60901	      1793 ns/op	 572.70 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Unbuffered/New-8             	   66994	      1766 ns/op	 581.67 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Unbuffered/New-8             	   68491	      1760 ns/op	 583.67 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Unbuffered/New-8             	   68702	      1758 ns/op	 584.28 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Unbuffered/New-8             	   68107	      1778 ns/op	 577.74 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Unbuffered/Reset-8           	  419604	       279.5 ns/op	3674.99 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Unbuffered/Reset-8           	  431635	       279.9 ns/op	3669.80 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Unbuffered/Reset-8           	  431440	       286.6 ns/op	3583.19 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Unbuffered/Reset-8           	  379856	       280.8 ns/op	3658.05 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Unbuffered/Reset-8           	  424077	       279.5 ns/op	3673.92 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Buffered4KiB/New-8           	   63046	      1857 ns/op	 553.07 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Buffered4KiB/New-8           	   66318	      1826 ns/op	 562.30 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Buffered4KiB/New-8           	   63603	      1880 ns/op	 546.39 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Buffered4KiB/New-8           	   65593	      1833 ns/op	 560.15 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Buffered4KiB/New-8           	   63760	      1849 ns/op	 555.45 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Buffered4KiB/Reset-8         	  377907	       312.3 ns/op	3288.06 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Buffered4KiB/Reset-8         	  380851	       313.6 ns/op	3274.93 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Buffered4KiB/Reset-8         	  384409	       311.6 ns/op	3295.37 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Buffered4KiB/Reset-8         	  387262	       312.4 ns/op	3287.45 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeBytes/Buffered4KiB/Reset-8         	  385809	       313.5 ns/op	3275.63 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Unbuffered/New-8            	   57805	      1772 ns/op	 579.55 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Unbuffered/New-8            	   69134	      1776 ns/op	 578.16 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Unbuffered/New-8            	   69436	      1732 ns/op	 592.96 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Unbuffered/New-8            	   69841	      1752 ns/op	 586.16 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Unbuffered/New-8            	   57014	      1896 ns/op	 541.73 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Unbuffered/Reset-8          	  405176	       280.9 ns/op	3656.09 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Unbuffered/Reset-8          	  429196	       279.9 ns/op	3669.26 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Unbuffered/Reset-8          	  428935	       285.7 ns/op	3594.95 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Unbuffered/Reset-8          	  430165	       279.8 ns/op	3669.95 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Unbuffered/Reset-8          	  429375	       280.5 ns/op	3661.54 MB/s	         1.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Buffered4KiB/New-8          	   60692	      1874 ns/op	 547.89 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Buffered4KiB/New-8          	   63686	      1883 ns/op	 545.48 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Buffered4KiB/New-8          	   63530	      1842 ns/op	 557.46 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Buffered4KiB/New-8          	   66416	      1875 ns/op	 547.79 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Buffered4KiB/New-8          	   65526	      1863 ns/op	 551.12 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Buffered4KiB/Reset-8        	  367018	       313.4 ns/op	3277.40 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Buffered4KiB/Reset-8        	  385005	       313.5 ns/op	3275.40 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Buffered4KiB/Reset-8        	  363912	       349.5 ns/op	2938.49 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Buffered4KiB/Reset-8        	  342152	       322.5 ns/op	3184.54 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/EncodeString/Buffered4KiB/Reset-8        	  383324	       313.1 ns/op	3279.70 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Unbuffered/New-8             	   62996	      1988 ns/op	 516.51 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Unbuffered/New-8             	   64452	      1865 ns/op	 550.71 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Unbuffered/New-8             	   65694	      1856 ns/op	 553.28 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Unbuffered/New-8             	   65066	      1852 ns/op	 554.61 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Unbuffered/New-8             	   64566	      1843 ns/op	 557.32 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Unbuffered/Reset-8           	  401287	       296.0 ns/op	3469.21 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Unbuffered/Reset-8           	  409334	       294.8 ns/op	3483.27 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Unbuffered/Reset-8           	  408133	       294.8 ns/op	3483.98 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Unbuffered/Reset-8           	  406177	       294.6 ns/op	3486.15 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Unbuffered/Reset-8           	  410168	       295.2 ns/op	3479.07 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Buffered4KiB/New-8           	   59182	      1889 ns/op	 543.80 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Buffered4KiB/New-8           	   63198	      1896 ns/op	 541.58 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Buffered4KiB/New-8           	   64566	      1872 ns/op	 548.73 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Buffered4KiB/New-8           	   63661	      1912 ns/op	 537.14 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Buffered4KiB/New-8           	   64434	      1876 ns/op	 547.47 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Buffered4KiB/Reset-8         	  359774	       324.3 ns/op	3167.17 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Buffered4KiB/Reset-8         	  371583	       336.8 ns/op	3048.96 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Buffered4KiB/Reset-8         	  359460	       326.3 ns/op	3147.72 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Buffered4KiB/Reset-8         	  370150	       324.5 ns/op	3164.52 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeBytes/Buffered4KiB/Reset-8         	  372063	       324.3 ns/op	3166.35 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Unbuffered/New-8            	   60920	      1859 ns/op	 552.34 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Unbuffered/New-8            	   59215	      1845 ns/op	 556.66 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Unbuffered/New-8            	   66597	      1842 ns/op	 557.58 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Unbuffered/New-8            	   65828	      1843 ns/op	 557.14 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Unbuffered/New-8            	   64581	      1862 ns/op	 551.50 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Unbuffered/Reset-8          	  399372	       294.7 ns/op	3485.10 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Unbuffered/Reset-8          	  410238	       294.6 ns/op	3486.14 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Unbuffered/Reset-8          	  408196	       294.2 ns/op	3490.90 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Unbuffered/Reset-8          	  406755	       294.8 ns/op	3483.41 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Unbuffered/Reset-8          	  401472	       295.9 ns/op	3470.32 MB/s	         3.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Buffered4KiB/New-8          	   60151	      1890 ns/op	 543.28 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Buffered4KiB/New-8          	   63760	      1901 ns/op	 540.34 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Buffered4KiB/New-8          	   63015	      2073 ns/op	 495.48 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Buffered4KiB/New-8          	   63566	      1954 ns/op	 525.59 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Buffered4KiB/New-8          	   62792	      1904 ns/op	 539.38 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Buffered4KiB/Reset-8        	  363493	       325.1 ns/op	3158.95 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Buffered4KiB/Reset-8        	  371220	       324.8 ns/op	3162.34 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Buffered4KiB/Reset-8        	  371698	       325.2 ns/op	3158.39 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Buffered4KiB/Reset-8        	  372039	       324.4 ns/op	3166.24 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/1KiB/DecodeString/Buffered4KiB/Reset-8        	  372482	       325.1 ns/op	3158.78 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Unbuffered/New-8            	    6585	     17794 ns/op	3683.28 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Unbuffered/New-8            	    7047	     17736 ns/op	3695.36 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Unbuffered/New-8            	    6750	     17760 ns/op	3690.42 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Unbuffered/New-8            	    7000	     17750 ns/op	3692.48 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Unbuffered/New-8            	    7065	     17685 ns/op	3706.09 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Unbuffered/Reset-8          	    7383	     16305 ns/op	4019.79 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Unbuffered/Reset-8          	    7322	     16342 ns/op	4010.63 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Unbuffered/Reset-8          	    7370	     16340 ns/op	4011.00 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Unbuffered/Reset-8          	    7256	     16330 ns/op	4013.59 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Unbuffered/Reset-8          	    7370	     16854 ns/op	3888.64 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Buffered4KiB/New-8          	    6937	     17802 ns/op	3681.69 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Buffered4KiB/New-8          	    7094	     17736 ns/op	3695.26 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Buffered4KiB/New-8          	    7071	     17799 ns/op	3682.28 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Buffered4KiB/New-8          	    7052	     17837 ns/op	3674.35 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Buffered4KiB/New-8          	    6753	     17733 ns/op	3696.08 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Buffered4KiB/Reset-8        	    7292	     16419 ns/op	3991.80 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Buffered4KiB/Reset-8        	    7359	     16424 ns/op	3990.53 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Buffered4KiB/Reset-8        	    7345	     16427 ns/op	3989.93 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Buffered4KiB/Reset-8        	    7256	     16399 ns/op	3996.61 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeBytes/Buffered4KiB/Reset-8        	    7200	     16414 ns/op	3993.08 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Unbuffered/New-8           	    6897	     17718 ns/op	3699.17 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Unbuffered/New-8           	    7022	     17695 ns/op	3703.91 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Unbuffered/New-8           	    7080	     17750 ns/op	3692.42 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Unbuffered/New-8           	    6848	     17762 ns/op	3689.98 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Unbuffered/New-8           	    6979	     17695 ns/op	3703.95 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Unbuffered/Reset-8         	    7382	     16344 ns/op	4010.03 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Unbuffered/Reset-8         	    7290	     16824 ns/op	3895.75 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Unbuffered/Reset-8         	    7256	     16412 ns/op	3993.49 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Unbuffered/Reset-8         	    7327	     16342 ns/op	4010.66 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Unbuffered/Reset-8         	    7383	     16320 ns/op	4016.07 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Buffered4KiB/New-8         	    6758	     17794 ns/op	3683.35 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Buffered4KiB/New-8         	    7023	     17936 ns/op	3654.13 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Buffered4KiB/New-8         	    6992	     17792 ns/op	3683.74 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Buffered4KiB/New-8         	    7062	     21126 ns/op	3102.42 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Buffered4KiB/New-8         	    7012	     17745 ns/op	3693.53 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Buffered4KiB/Reset-8       	    7344	     16473 ns/op	3978.81 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Buffered4KiB/Reset-8       	    7345	     16584 ns/op	3952.13 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Buffered4KiB/Reset-8       	    7332	     16477 ns/op	3977.77 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Buffered4KiB/Reset-8       	    7287	     16494 ns/op	3973.55 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/EncodeString/Buffered4KiB/Reset-8       	    7268	     16444 ns/op	3985.80 MB/s	         2.000 readcalls/op	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Unbuffered/New-8            	    7040	     17741 ns/op	3694.38 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Unbuffered/New-8            	    7059	     17664 ns/op	3710.38 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Unbuffered/New-8            	    6982	     17803 ns/op	3681.45 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Unbuffered/New-8            	    7160	     18408 ns/op	3560.55 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Unbuffered/New-8            	    6972	     17697 ns/op	3703.47 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Unbuffered/Reset-8          	    7362	     16325 ns/op	4014.69 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Unbuffered/Reset-8          	    7243	     16342 ns/op	4010.48 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Unbuffered/Reset-8          	    7363	     16392 ns/op	3998.42 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Unbuffered/Reset-8          	    7310	     16354 ns/op	4007.73 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Unbuffered/Reset-8          	    7304	     16328 ns/op	4014.04 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Buffered4KiB/New-8          	    6903	     17816 ns/op	3678.71 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Buffered4KiB/New-8          	    7066	     17834 ns/op	3675.14 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Buffered4KiB/New-8          	    7000	     17770 ns/op	3688.28 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Buffered4KiB/New-8          	    6939	     17734 ns/op	3695.72 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Buffered4KiB/New-8          	    6972	     17749 ns/op	3692.73 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Buffered4KiB/Reset-8        	    7317	     16458 ns/op	3982.23 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Buffered4KiB/Reset-8        	    7272	     16434 ns/op	3988.12 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Buffered4KiB/Reset-8        	    7347	     16517 ns/op	3968.21 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Buffered4KiB/Reset-8        	    7320	     16435 ns/op	3987.78 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeBytes/Buffered4KiB/Reset-8        	    7321	     16465 ns/op	3980.59 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Unbuffered/New-8           	    6837	     18296 ns/op	3582.22 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Unbuffered/New-8           	    7084	     17691 ns/op	3704.78 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Unbuffered/New-8           	    7125	     17637 ns/op	3716.06 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Unbuffered/New-8           	    7095	     17606 ns/op	3722.68 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Unbuffered/New-8           	    6992	     17618 ns/op	3720.09 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Unbuffered/Reset-8         	    7376	     16343 ns/op	4010.45 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Unbuffered/Reset-8         	    7196	     16321 ns/op	4015.81 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Unbuffered/Reset-8         	    7359	     16361 ns/op	4005.95 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Unbuffered/Reset-8         	    7237	     16378 ns/op	4001.88 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Unbuffered/Reset-8         	    7389	     16332 ns/op	4012.93 MB/s	         4.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Buffered4KiB/New-8         	    6883	     17770 ns/op	3688.31 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Buffered4KiB/New-8         	    7040	     17765 ns/op	3689.31 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Buffered4KiB/New-8         	    7053	     17661 ns/op	3711.13 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Buffered4KiB/New-8         	    7094	     17657 ns/op	3711.82 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Buffered4KiB/New-8         	    7071	     17659 ns/op	3711.49 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Buffered4KiB/Reset-8       	    7280	     16468 ns/op	3979.81 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Buffered4KiB/Reset-8       	    7239	     16437 ns/op	3987.35 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Buffered4KiB/Reset-8       	    7327	     16898 ns/op	3878.70 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Buffered4KiB/Reset-8       	    7330	     16498 ns/op	3972.76 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/64KiB/DecodeString/Buffered4KiB/Reset-8       	    7332	     16463 ns/op	3981.20 MB/s	         3.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Unbuffered/New-8             	      57	   2091495 ns/op	4010.82 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Unbuffered/New-8             	      56	   2087937 ns/op	4017.66 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Unbuffered/New-8             	      56	   2089649 ns/op	4014.36 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Unbuffered/New-8             	      57	   2094037 ns/op	4005.95 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Unbuffered/New-8             	      57	   2090282 ns/op	4013.15 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Unbuffered/Reset-8           	      56	   2087865 ns/op	4017.79 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Unbuffered/Reset-8           	      57	   2088052 ns/op	4017.44 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Unbuffered/Reset-8           	      57	   2092394 ns/op	4009.10 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Unbuffered/Reset-8           	      56	   2087785 ns/op	4017.95 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Unbuffered/Reset-8           	      57	   2089202 ns/op	4015.22 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Buffered4KiB/New-8           	      56	   2092073 ns/op	4009.71 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Buffered4KiB/New-8           	      57	   2092973 ns/op	4007.99 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Buffered4KiB/New-8           	      56	   2089405 ns/op	4014.83 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Buffered4KiB/New-8           	      57	   2092893 ns/op	4008.14 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Buffered4KiB/New-8           	      57	   2156792 ns/op	3889.39 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Buffered4KiB/Reset-8         	      56	   2099856 ns/op	3994.85 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Buffered4KiB/Reset-8         	      57	   2087397 ns/op	4018.70 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Buffered4KiB/Reset-8         	      56	   2090773 ns/op	4012.21 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Buffered4KiB/Reset-8         	      56	   2380460 ns/op	3523.95 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeBytes/Buffered4KiB/Reset-8         	      56	   2092397 ns/op	4009.09 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Unbuffered/New-8            	      57	   2091700 ns/op	4010.43 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Unbuffered/New-8            	      57	   2089664 ns/op	4014.33 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Unbuffered/New-8            	      52	   2098206 ns/op	3997.99 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Unbuffered/New-8            	      55	   2391758 ns/op	3507.30 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Unbuffered/New-8            	      57	   2092429 ns/op	4009.03 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Unbuffered/Reset-8          	      57	   2090287 ns/op	4013.14 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Unbuffered/Reset-8          	      56	   2088476 ns/op	4016.62 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Unbuffered/Reset-8          	      57	   2092902 ns/op	4008.12 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Unbuffered/Reset-8          	      57	   2123132 ns/op	3951.06 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Unbuffered/Reset-8          	      55	   2284101 ns/op	3672.61 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Buffered4KiB/New-8          	      55	   2178195 ns/op	3851.18 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Buffered4KiB/New-8          	      56	   2105688 ns/op	3983.79 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Buffered4KiB/New-8          	      56	   2121151 ns/op	3954.75 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Buffered4KiB/New-8          	      56	   2094496 ns/op	4005.08 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Buffered4KiB/New-8          	      56	   2091719 ns/op	4010.39 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	   32848 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Buffered4KiB/Reset-8        	      57	   2094357 ns/op	4005.34 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Buffered4KiB/Reset-8        	      56	   2235111 ns/op	3753.11 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Buffered4KiB/Reset-8        	      57	   2087658 ns/op	4018.19 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Buffered4KiB/Reset-8        	      56	   2152740 ns/op	3896.72 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/EncodeString/Buffered4KiB/Reset-8        	      56	   2093030 ns/op	4007.88 MB/s	       256.0 readcalls/op	       257.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Unbuffered/New-8             	      56	   2092553 ns/op	4008.79 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Unbuffered/New-8             	      52	   2092748 ns/op	4008.42 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Unbuffered/New-8             	      56	   2091547 ns/op	4010.72 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Unbuffered/New-8             	      56	   2094911 ns/op	4004.28 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Unbuffered/New-8             	      56	   2088999 ns/op	4015.61 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Unbuffered/Reset-8           	      56	   2088171 ns/op	4017.21 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Unbuffered/Reset-8           	      57	   2088208 ns/op	4017.13 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Unbuffered/Reset-8           	      57	   2107137 ns/op	3981.05 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Unbuffered/Reset-8           	      56	   2096069 ns/op	4002.07 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Unbuffered/Reset-8           	      57	   2114428 ns/op	3967.32 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Buffered4KiB/New-8           	      57	   2094912 ns/op	4004.28 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Buffered4KiB/New-8           	      56	   2097737 ns/op	3998.89 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Buffered4KiB/New-8           	      56	   2094191 ns/op	4005.66 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Buffered4KiB/New-8           	      57	   2091645 ns/op	4010.53 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Buffered4KiB/New-8           	      56	   2095251 ns/op	4003.63 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Buffered4KiB/Reset-8         	      57	   2094675 ns/op	4004.73 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Buffered4KiB/Reset-8         	      57	   2091189 ns/op	4011.41 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Buffered4KiB/Reset-8         	      56	   2091307 ns/op	4011.18 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Buffered4KiB/Reset-8         	      57	   2092263 ns/op	4009.35 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeBytes/Buffered4KiB/Reset-8         	      56	   2090509 ns/op	4012.71 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Unbuffered/New-8            	      56	   2089158 ns/op	4015.31 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Unbuffered/New-8            	      57	   2090012 ns/op	4013.67 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Unbuffered/New-8            	      56	   2091082 ns/op	4011.61 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Unbuffered/New-8            	      57	   2090652 ns/op	4012.44 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Unbuffered/New-8            	      56	   2148397 ns/op	3904.59 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Unbuffered/Reset-8          	      55	   2098771 ns/op	3996.92 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Unbuffered/Reset-8          	      57	   2087006 ns/op	4019.45 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Unbuffered/Reset-8          	      56	   2093653 ns/op	4006.69 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Unbuffered/Reset-8          	      57	   2088059 ns/op	4017.42 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Unbuffered/Reset-8          	      57	   2087675 ns/op	4018.16 MB/s	       258.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Buffered4KiB/New-8          	      57	   2094534 ns/op	4005.00 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Buffered4KiB/New-8          	      56	   2096068 ns/op	4002.07 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Buffered4KiB/New-8          	      56	   2095405 ns/op	4003.34 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Buffered4KiB/New-8          	      56	   2093940 ns/op	4006.14 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Buffered4KiB/New-8          	      56	   2091745 ns/op	4010.34 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	   32880 B/op	       2 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Buffered4KiB/Reset-8        	      56	   2092368 ns/op	4009.15 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Buffered4KiB/Reset-8        	      56	   2090679 ns/op	4012.39 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Buffered4KiB/Reset-8        	      57	   2088070 ns/op	4017.40 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Buffered4KiB/Reset-8        	      57	   2101639 ns/op	3991.46 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamTransfer/8MiB/DecodeString/Buffered4KiB/Reset-8        	      55	   2093753 ns/op	4006.50 MB/s	       257.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamOwned/1KiB/Bytes-8                                     	  339450	       352.8 ns/op	2911.05 MB/s	         3.000 readcalls/op	         0 writecalls/op	    1024 B/op	       1 allocs/op
+BenchmarkStreamOwned/1KiB/Bytes-8                                     	  344918	       366.8 ns/op	2800.13 MB/s	         3.000 readcalls/op	         0 writecalls/op	    1024 B/op	       1 allocs/op
+BenchmarkStreamOwned/1KiB/Bytes-8                                     	  345613	       355.2 ns/op	2890.98 MB/s	         3.000 readcalls/op	         0 writecalls/op	    1024 B/op	       1 allocs/op
+BenchmarkStreamOwned/1KiB/Bytes-8                                     	  342640	       353.0 ns/op	2909.02 MB/s	         3.000 readcalls/op	         0 writecalls/op	    1024 B/op	       1 allocs/op
+BenchmarkStreamOwned/1KiB/Bytes-8                                     	  337880	       351.7 ns/op	2920.08 MB/s	         3.000 readcalls/op	         0 writecalls/op	    1024 B/op	       1 allocs/op
+BenchmarkStreamOwned/1KiB/String-8                                    	  288230	       418.7 ns/op	2452.57 MB/s	         3.000 readcalls/op	         0 writecalls/op	    2048 B/op	       2 allocs/op
+BenchmarkStreamOwned/1KiB/String-8                                    	  293377	       417.7 ns/op	2458.49 MB/s	         3.000 readcalls/op	         0 writecalls/op	    2048 B/op	       2 allocs/op
+BenchmarkStreamOwned/1KiB/String-8                                    	  292762	       418.1 ns/op	2456.43 MB/s	         3.000 readcalls/op	         0 writecalls/op	    2048 B/op	       2 allocs/op
+BenchmarkStreamOwned/1KiB/String-8                                    	  289796	       418.9 ns/op	2451.92 MB/s	         3.000 readcalls/op	         0 writecalls/op	    2048 B/op	       2 allocs/op
+BenchmarkStreamOwned/1KiB/String-8                                    	  291512	       447.4 ns/op	2295.38 MB/s	         3.000 readcalls/op	         0 writecalls/op	    2048 B/op	       2 allocs/op
+BenchmarkStreamOwned/64KiB/Bytes-8                                    	    6042	     19356 ns/op	3386.17 MB/s	         4.000 readcalls/op	         0 writecalls/op	   65536 B/op	       1 allocs/op
+BenchmarkStreamOwned/64KiB/Bytes-8                                    	    6460	     19023 ns/op	3445.43 MB/s	         4.000 readcalls/op	         0 writecalls/op	   65536 B/op	       1 allocs/op
+BenchmarkStreamOwned/64KiB/Bytes-8                                    	    6699	     18941 ns/op	3460.20 MB/s	         4.000 readcalls/op	         0 writecalls/op	   65536 B/op	       1 allocs/op
+BenchmarkStreamOwned/64KiB/Bytes-8                                    	    6556	     18873 ns/op	3472.80 MB/s	         4.000 readcalls/op	         0 writecalls/op	   65536 B/op	       1 allocs/op
+BenchmarkStreamOwned/64KiB/Bytes-8                                    	    6610	     18793 ns/op	3487.44 MB/s	         4.000 readcalls/op	         0 writecalls/op	   65536 B/op	       1 allocs/op
+BenchmarkStreamOwned/64KiB/String-8                                   	    5620	     22014 ns/op	2977.29 MB/s	         4.000 readcalls/op	         0 writecalls/op	  131072 B/op	       2 allocs/op
+BenchmarkStreamOwned/64KiB/String-8                                   	    5602	     22104 ns/op	2965.17 MB/s	         4.000 readcalls/op	         0 writecalls/op	  131073 B/op	       2 allocs/op
+BenchmarkStreamOwned/64KiB/String-8                                   	    5739	     21948 ns/op	2986.18 MB/s	         4.000 readcalls/op	         0 writecalls/op	  131072 B/op	       2 allocs/op
+BenchmarkStreamOwned/64KiB/String-8                                   	    5572	     24543 ns/op	2670.48 MB/s	         4.000 readcalls/op	         0 writecalls/op	  131072 B/op	       2 allocs/op
+BenchmarkStreamOwned/64KiB/String-8                                   	    5216	     22557 ns/op	2905.55 MB/s	         4.000 readcalls/op	         0 writecalls/op	  131072 B/op	       2 allocs/op
+BenchmarkStreamOwned/8MiB/Bytes-8                                     	      50	   2802113 ns/op	2993.67 MB/s	       258.0 readcalls/op	         0 writecalls/op	 8388625 B/op	       1 allocs/op
+BenchmarkStreamOwned/8MiB/Bytes-8                                     	      48	   2235886 ns/op	3751.81 MB/s	       258.0 readcalls/op	         0 writecalls/op	 8388615 B/op	       1 allocs/op
+BenchmarkStreamOwned/8MiB/Bytes-8                                     	      54	   2272643 ns/op	3691.13 MB/s	       258.0 readcalls/op	         0 writecalls/op	 8388618 B/op	       1 allocs/op
+BenchmarkStreamOwned/8MiB/Bytes-8                                     	      54	   2237506 ns/op	3749.09 MB/s	       258.0 readcalls/op	         0 writecalls/op	 8388616 B/op	       1 allocs/op
+BenchmarkStreamOwned/8MiB/Bytes-8                                     	      54	   2235315 ns/op	3752.77 MB/s	       258.0 readcalls/op	         0 writecalls/op	 8388620 B/op	       1 allocs/op
+BenchmarkStreamOwned/8MiB/String-8                                    	      45	   2433518 ns/op	3447.11 MB/s	       258.0 readcalls/op	         0 writecalls/op	16777228 B/op	       2 allocs/op
+BenchmarkStreamOwned/8MiB/String-8                                    	      49	   2424463 ns/op	3459.99 MB/s	       258.0 readcalls/op	         0 writecalls/op	16777236 B/op	       2 allocs/op
+BenchmarkStreamOwned/8MiB/String-8                                    	      49	   2434476 ns/op	3445.76 MB/s	       258.0 readcalls/op	         0 writecalls/op	16777234 B/op	       2 allocs/op
+BenchmarkStreamOwned/8MiB/String-8                                    	      45	   2420879 ns/op	3465.11 MB/s	       258.0 readcalls/op	         0 writecalls/op	16777230 B/op	       2 allocs/op
+BenchmarkStreamOwned/8MiB/String-8                                    	      50	   2416520 ns/op	3471.36 MB/s	       258.0 readcalls/op	         0 writecalls/op	16777231 B/op	       2 allocs/op
+BenchmarkStreamGenerator/1KiB-8                                       	  442654	       269.8 ns/op	3794.98 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/1KiB-8                                       	  448297	       269.7 ns/op	3796.61 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/1KiB-8                                       	  447385	       269.2 ns/op	3803.86 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/1KiB-8                                       	  448584	       269.2 ns/op	3804.12 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/1KiB-8                                       	  442246	       281.8 ns/op	3634.02 MB/s	         1.000 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/64KiB-8                                      	    7312	     16487 ns/op	3975.04 MB/s	         2.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/64KiB-8                                      	    7371	     16371 ns/op	4003.12 MB/s	         2.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/64KiB-8                                      	    7272	     16365 ns/op	4004.76 MB/s	         2.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/64KiB-8                                      	    7384	     16446 ns/op	3984.83 MB/s	         2.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/64KiB-8                                      	    7357	     16398 ns/op	3996.69 MB/s	         2.000 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/8MiB-8                                       	      56	   2088417 ns/op	4016.73 MB/s	       256.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/8MiB-8                                       	      56	   2086541 ns/op	4020.34 MB/s	       256.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/8MiB-8                                       	      57	   2091392 ns/op	4011.02 MB/s	       256.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/8MiB-8                                       	      56	   2087844 ns/op	4017.83 MB/s	       256.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamGenerator/8MiB-8                                       	      57	   2087844 ns/op	4017.83 MB/s	       256.0 readcalls/op	       256.0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/itsmontoya/messagepack	61.525s
+Finished UTC: 2026-11-02T15:16:53.626052+00:00
+Exit status: 0
+
+Memory regressions and retained working-memory experiment
+Command: GOCACHE=/private/tmp/messagepack-go-cache go test -run '^Test(StreamTransferAllocationBytes|StreamRetainedWorkingMemory|StreamTransferScratchBounds|StreamBenchmark|ZeroAllocations|OwnedStringAllocations)' -v -count=5 ./...
+=== RUN   TestZeroAllocations
+=== RUN   TestZeroAllocations/primitive_reads
+=== RUN   TestZeroAllocations/borrowed_payload_reads
+=== RUN   TestZeroAllocations/header_reads
+=== RUN   TestZeroAllocations/preallocated_appends
+--- PASS: TestZeroAllocations (0.00s)
+    --- PASS: TestZeroAllocations/primitive_reads (0.00s)
+    --- PASS: TestZeroAllocations/borrowed_payload_reads (0.00s)
+    --- PASS: TestZeroAllocations/header_reads (0.00s)
+    --- PASS: TestZeroAllocations/preallocated_appends (0.00s)
+=== RUN   TestOwnedStringAllocations
+    allocation_test.go:106: owned 8-byte string escaping to a test sink: 1 allocations per read
+--- PASS: TestOwnedStringAllocations (0.00s)
+=== RUN   TestStreamBenchmarkPayloadSource
+=== RUN   TestStreamBenchmarkPayloadSource/raw
+=== RUN   TestStreamBenchmarkPayloadSource/binary
+=== RUN   TestStreamBenchmarkPayloadSource/string
+--- PASS: TestStreamBenchmarkPayloadSource (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/raw (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/binary (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/string (0.00s)
+=== RUN   TestStreamBenchmarkArraySource
+--- PASS: TestStreamBenchmarkArraySource (0.00s)
+=== RUN   TestStreamTransferAllocationBytes
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes/New
+    stream_memory_test.go:32: 1KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32848 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeString
+=== RUN   TestStreamTransferAllocationBytes/EncodeString/New
+    stream_memory_test.go:32: 1KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32848 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeString/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes/New
+    stream_memory_test.go:32: 1KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32880 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeString
+=== RUN   TestStreamTransferAllocationBytes/DecodeString/New
+    stream_memory_test.go:32: 1KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32880 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeString/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+--- PASS: TestStreamTransferAllocationBytes (0.31s)
+    --- PASS: TestStreamTransferAllocationBytes/EncodeBytes (0.10s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeBytes/New (0.06s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeBytes/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/EncodeString (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeString/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeString/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/DecodeBytes (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeBytes/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeBytes/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/DecodeString (0.08s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeString/New (0.04s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeString/Reset (0.04s)
+=== RUN   TestStreamRetainedWorkingMemory
+=== RUN   TestStreamRetainedWorkingMemory/Bytes
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/1KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2062640 B (64457 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/64KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/8MiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String
+=== RUN   TestStreamRetainedWorkingMemory/String/1KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063312 B (64478 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String/64KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063488 B (64484 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String/8MiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+--- PASS: TestStreamRetainedWorkingMemory (0.27s)
+    --- PASS: TestStreamRetainedWorkingMemory/Bytes (0.14s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/1KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/64KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/8MiB (0.13s)
+    --- PASS: TestStreamRetainedWorkingMemory/String (0.14s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/1KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/64KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/8MiB (0.13s)
+=== RUN   TestStreamTransferScratchBounds
+--- PASS: TestStreamTransferScratchBounds (0.01s)
+=== RUN   TestZeroAllocations
+=== RUN   TestZeroAllocations/primitive_reads
+=== RUN   TestZeroAllocations/borrowed_payload_reads
+=== RUN   TestZeroAllocations/header_reads
+=== RUN   TestZeroAllocations/preallocated_appends
+--- PASS: TestZeroAllocations (0.00s)
+    --- PASS: TestZeroAllocations/primitive_reads (0.00s)
+    --- PASS: TestZeroAllocations/borrowed_payload_reads (0.00s)
+    --- PASS: TestZeroAllocations/header_reads (0.00s)
+    --- PASS: TestZeroAllocations/preallocated_appends (0.00s)
+=== RUN   TestOwnedStringAllocations
+    allocation_test.go:106: owned 8-byte string escaping to a test sink: 1 allocations per read
+--- PASS: TestOwnedStringAllocations (0.00s)
+=== RUN   TestStreamBenchmarkPayloadSource
+=== RUN   TestStreamBenchmarkPayloadSource/raw
+=== RUN   TestStreamBenchmarkPayloadSource/binary
+=== RUN   TestStreamBenchmarkPayloadSource/string
+--- PASS: TestStreamBenchmarkPayloadSource (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/raw (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/binary (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/string (0.00s)
+=== RUN   TestStreamBenchmarkArraySource
+--- PASS: TestStreamBenchmarkArraySource (0.00s)
+=== RUN   TestStreamTransferAllocationBytes
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes/New
+    stream_memory_test.go:32: 1KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32849 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32848 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeString
+=== RUN   TestStreamTransferAllocationBytes/EncodeString/New
+    stream_memory_test.go:32: 1KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32848 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeString/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes/New
+    stream_memory_test.go:32: 1KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32880 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeString
+=== RUN   TestStreamTransferAllocationBytes/DecodeString/New
+    stream_memory_test.go:32: 1KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32880 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeString/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+--- PASS: TestStreamTransferAllocationBytes (0.28s)
+    --- PASS: TestStreamTransferAllocationBytes/EncodeBytes (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeBytes/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeBytes/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/EncodeString (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeString/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeString/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/DecodeBytes (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeBytes/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeBytes/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/DecodeString (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeString/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeString/Reset (0.04s)
+=== RUN   TestStreamRetainedWorkingMemory
+=== RUN   TestStreamRetainedWorkingMemory/Bytes
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/1KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2062640 B (64457 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/64KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/8MiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String
+=== RUN   TestStreamRetainedWorkingMemory/String/1KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063280 B (64477 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String/64KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String/8MiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+--- PASS: TestStreamRetainedWorkingMemory (0.27s)
+    --- PASS: TestStreamRetainedWorkingMemory/Bytes (0.14s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/1KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/64KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/8MiB (0.13s)
+    --- PASS: TestStreamRetainedWorkingMemory/String (0.14s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/1KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/64KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/8MiB (0.13s)
+=== RUN   TestStreamTransferScratchBounds
+--- PASS: TestStreamTransferScratchBounds (0.01s)
+=== RUN   TestZeroAllocations
+=== RUN   TestZeroAllocations/primitive_reads
+=== RUN   TestZeroAllocations/borrowed_payload_reads
+=== RUN   TestZeroAllocations/header_reads
+=== RUN   TestZeroAllocations/preallocated_appends
+--- PASS: TestZeroAllocations (0.00s)
+    --- PASS: TestZeroAllocations/primitive_reads (0.00s)
+    --- PASS: TestZeroAllocations/borrowed_payload_reads (0.00s)
+    --- PASS: TestZeroAllocations/header_reads (0.00s)
+    --- PASS: TestZeroAllocations/preallocated_appends (0.00s)
+=== RUN   TestOwnedStringAllocations
+    allocation_test.go:106: owned 8-byte string escaping to a test sink: 1 allocations per read
+--- PASS: TestOwnedStringAllocations (0.00s)
+=== RUN   TestStreamBenchmarkPayloadSource
+=== RUN   TestStreamBenchmarkPayloadSource/raw
+=== RUN   TestStreamBenchmarkPayloadSource/binary
+=== RUN   TestStreamBenchmarkPayloadSource/string
+--- PASS: TestStreamBenchmarkPayloadSource (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/raw (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/binary (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/string (0.00s)
+=== RUN   TestStreamBenchmarkArraySource
+--- PASS: TestStreamBenchmarkArraySource (0.00s)
+=== RUN   TestStreamTransferAllocationBytes
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes/New
+    stream_memory_test.go:32: 1KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32848 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeString
+=== RUN   TestStreamTransferAllocationBytes/EncodeString/New
+    stream_memory_test.go:32: 1KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32848 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeString/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes/New
+    stream_memory_test.go:32: 1KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32880 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeString
+=== RUN   TestStreamTransferAllocationBytes/DecodeString/New
+    stream_memory_test.go:32: 1KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32880 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeString/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+--- PASS: TestStreamTransferAllocationBytes (0.28s)
+    --- PASS: TestStreamTransferAllocationBytes/EncodeBytes (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeBytes/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeBytes/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/EncodeString (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeString/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeString/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/DecodeBytes (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeBytes/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeBytes/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/DecodeString (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeString/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeString/Reset (0.04s)
+=== RUN   TestStreamRetainedWorkingMemory
+=== RUN   TestStreamRetainedWorkingMemory/Bytes
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/1KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2062640 B (64457 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/64KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/8MiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String
+=== RUN   TestStreamRetainedWorkingMemory/String/1KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063392 B (64481 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String/64KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String/8MiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+--- PASS: TestStreamRetainedWorkingMemory (0.27s)
+    --- PASS: TestStreamRetainedWorkingMemory/Bytes (0.14s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/1KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/64KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/8MiB (0.13s)
+    --- PASS: TestStreamRetainedWorkingMemory/String (0.14s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/1KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/64KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/8MiB (0.13s)
+=== RUN   TestStreamTransferScratchBounds
+--- PASS: TestStreamTransferScratchBounds (0.01s)
+=== RUN   TestZeroAllocations
+=== RUN   TestZeroAllocations/primitive_reads
+=== RUN   TestZeroAllocations/borrowed_payload_reads
+=== RUN   TestZeroAllocations/header_reads
+=== RUN   TestZeroAllocations/preallocated_appends
+--- PASS: TestZeroAllocations (0.00s)
+    --- PASS: TestZeroAllocations/primitive_reads (0.00s)
+    --- PASS: TestZeroAllocations/borrowed_payload_reads (0.00s)
+    --- PASS: TestZeroAllocations/header_reads (0.00s)
+    --- PASS: TestZeroAllocations/preallocated_appends (0.00s)
+=== RUN   TestOwnedStringAllocations
+    allocation_test.go:106: owned 8-byte string escaping to a test sink: 1 allocations per read
+--- PASS: TestOwnedStringAllocations (0.00s)
+=== RUN   TestStreamBenchmarkPayloadSource
+=== RUN   TestStreamBenchmarkPayloadSource/raw
+=== RUN   TestStreamBenchmarkPayloadSource/binary
+=== RUN   TestStreamBenchmarkPayloadSource/string
+--- PASS: TestStreamBenchmarkPayloadSource (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/raw (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/binary (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/string (0.00s)
+=== RUN   TestStreamBenchmarkArraySource
+--- PASS: TestStreamBenchmarkArraySource (0.00s)
+=== RUN   TestStreamTransferAllocationBytes
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes/New
+    stream_memory_test.go:32: 1KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32848 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeString
+=== RUN   TestStreamTransferAllocationBytes/EncodeString/New
+    stream_memory_test.go:32: 1KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32848 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeString/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes/New
+    stream_memory_test.go:32: 1KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32880 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeString
+=== RUN   TestStreamTransferAllocationBytes/DecodeString/New
+    stream_memory_test.go:32: 1KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32880 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeString/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+--- PASS: TestStreamTransferAllocationBytes (0.32s)
+    --- PASS: TestStreamTransferAllocationBytes/EncodeBytes (0.09s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeBytes/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeBytes/Reset (0.05s)
+    --- PASS: TestStreamTransferAllocationBytes/EncodeString (0.09s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeString/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeString/Reset (0.06s)
+    --- PASS: TestStreamTransferAllocationBytes/DecodeBytes (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeBytes/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeBytes/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/DecodeString (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeString/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeString/Reset (0.04s)
+=== RUN   TestStreamRetainedWorkingMemory
+=== RUN   TestStreamRetainedWorkingMemory/Bytes
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/1KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2062640 B (64457 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/64KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/8MiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String
+=== RUN   TestStreamRetainedWorkingMemory/String/1KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063280 B (64477 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String/64KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String/8MiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063584 B (64487 B/pair)
+--- PASS: TestStreamRetainedWorkingMemory (0.28s)
+    --- PASS: TestStreamRetainedWorkingMemory/Bytes (0.14s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/1KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/64KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/8MiB (0.13s)
+    --- PASS: TestStreamRetainedWorkingMemory/String (0.14s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/1KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/64KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/8MiB (0.14s)
+=== RUN   TestStreamTransferScratchBounds
+--- PASS: TestStreamTransferScratchBounds (0.01s)
+=== RUN   TestZeroAllocations
+=== RUN   TestZeroAllocations/primitive_reads
+=== RUN   TestZeroAllocations/borrowed_payload_reads
+=== RUN   TestZeroAllocations/header_reads
+=== RUN   TestZeroAllocations/preallocated_appends
+--- PASS: TestZeroAllocations (0.00s)
+    --- PASS: TestZeroAllocations/primitive_reads (0.00s)
+    --- PASS: TestZeroAllocations/borrowed_payload_reads (0.00s)
+    --- PASS: TestZeroAllocations/header_reads (0.00s)
+    --- PASS: TestZeroAllocations/preallocated_appends (0.00s)
+=== RUN   TestOwnedStringAllocations
+    allocation_test.go:106: owned 8-byte string escaping to a test sink: 1 allocations per read
+--- PASS: TestOwnedStringAllocations (0.00s)
+=== RUN   TestStreamBenchmarkPayloadSource
+=== RUN   TestStreamBenchmarkPayloadSource/raw
+=== RUN   TestStreamBenchmarkPayloadSource/binary
+=== RUN   TestStreamBenchmarkPayloadSource/string
+--- PASS: TestStreamBenchmarkPayloadSource (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/raw (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/binary (0.00s)
+    --- PASS: TestStreamBenchmarkPayloadSource/string (0.00s)
+=== RUN   TestStreamBenchmarkArraySource
+--- PASS: TestStreamBenchmarkArraySource (0.00s)
+=== RUN   TestStreamTransferAllocationBytes
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes/New
+    stream_memory_test.go:32: 1KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32848 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeBytes/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeString
+=== RUN   TestStreamTransferAllocationBytes/EncodeString/New
+    stream_memory_test.go:32: 1KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32848 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32848 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/EncodeString/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes/New
+    stream_memory_test.go:32: 1KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32880 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeBytes/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeString
+=== RUN   TestStreamTransferAllocationBytes/DecodeString/New
+    stream_memory_test.go:32: 1KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 32880 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 32880 B/transfer over 16 transfers
+=== RUN   TestStreamTransferAllocationBytes/DecodeString/Reset
+    stream_memory_test.go:32: 1KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 64KiB: 0 B/transfer over 16 transfers
+    stream_memory_test.go:32: 8MiB: 0 B/transfer over 16 transfers
+--- PASS: TestStreamTransferAllocationBytes (0.29s)
+    --- PASS: TestStreamTransferAllocationBytes/EncodeBytes (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeBytes/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeBytes/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/EncodeString (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeString/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/EncodeString/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/DecodeBytes (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeBytes/New (0.04s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeBytes/Reset (0.04s)
+    --- PASS: TestStreamTransferAllocationBytes/DecodeString (0.07s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeString/New (0.03s)
+        --- PASS: TestStreamTransferAllocationBytes/DecodeString/Reset (0.04s)
+=== RUN   TestStreamRetainedWorkingMemory
+=== RUN   TestStreamRetainedWorkingMemory/Bytes
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/1KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2062640 B (64457 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/64KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/Bytes/8MiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String
+=== RUN   TestStreamRetainedWorkingMemory/String/1KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063280 B (64477 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String/64KiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063488 B (64484 B/pair)
+=== RUN   TestStreamRetainedWorkingMemory/String/8MiB
+    stream_memory_test.go:171: 32 live Encoder/Decoder pairs: scratch=2097152 B, post-GC heap delta=2063472 B (64483 B/pair)
+--- PASS: TestStreamRetainedWorkingMemory (0.28s)
+    --- PASS: TestStreamRetainedWorkingMemory/Bytes (0.14s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/1KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/64KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/Bytes/8MiB (0.14s)
+    --- PASS: TestStreamRetainedWorkingMemory/String (0.14s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/1KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/64KiB (0.00s)
+        --- PASS: TestStreamRetainedWorkingMemory/String/8MiB (0.14s)
+=== RUN   TestStreamTransferScratchBounds
+--- PASS: TestStreamTransferScratchBounds (0.01s)
+PASS
+ok  	github.com/itsmontoya/messagepack	3.284s
+Exit status: 0
