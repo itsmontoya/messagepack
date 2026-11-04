@@ -31,6 +31,11 @@ All methods belonging to a type must live in the same file as the type definitio
 
 Place constructor/initializer functions directly above the type they construct.
 
+Use constructors to allocate private implementation state stored by another type.
+Keep allocation in the state type's own file; owners call
+`newReaderState()` or `newWriterState()` instead of allocating those structs directly.
+Plain data values and test fixtures may still use struct literals when appropriate.
+
 ### Why
 
 * Keeps navigation predictable.
@@ -39,7 +44,7 @@ Place constructor/initializer functions directly above the type they construct.
 ### Preferred
 
 ```go
-func NewService(store Store) (s *Service) { ... }
+func NewService(store Store) (out *Service) { ... }
 
 type Service struct { ... }
 ```
@@ -49,7 +54,7 @@ type Service struct { ... }
 ```go
 type Service struct { ... }
 
-func NewService(store Store) (s *Service) { ... }
+func NewService(store Store) (out *Service) { ... }
 ```
 
 ### Why
@@ -72,11 +77,10 @@ store.go
 // service.go
 
 // NewService constructs a Service with the provided Store.
-func NewService(store Store) (s *Service) {
-    s = &Service{
-        store: store,
-    }
-    return s
+func NewService(store Store) (out *Service) {
+    var s Service
+    s.store = store
+    return &s
 }
 
 // Service coordinates request handling and persistence.
@@ -100,6 +104,30 @@ func (s *Service) validate(...) error {
 * Creating service_helpers.go, service_utils.go, etc. for methods of the same type.
 
 If behavior grows too large, extract a new type instead of splitting methods across files.
+
+## Constructor Implementation
+
+For pointer-returning constructors:
+
+* Name the result `out`.
+* Declare a local concrete value with `var`, such as `var r Reader`.
+* Initialize the local value in place. Reuse an existing `Reset` or initializer
+  method when available, including for embedded fields.
+* Return the local value's address explicitly, such as `return &r`.
+* Keep the declaration, initialization, and return together as one construction step.
+
+Apply this pattern to public and private constructors, including test helper
+constructors. Plain test fixture literals remain appropriate for fixture setup.
+
+```go
+// NewReader attaches a Reader to src without read-ahead or taking ownership.
+// A nil interface leaves it unattached; finite default limits apply.
+func NewReader(src io.Reader) (out *Reader) {
+    var r Reader
+    r.Reset(src)
+    return &r
+}
+```
 
 # Formatting
 
@@ -242,6 +270,8 @@ if err = doOtherThing(); err != nil {
 ## Named Returns Are Encouraged
 
 Named return values improve readability and self-documentation.
+They describe the outputs; an explicit return expression can supply the result
+without assigning the named variable, as in `return &r` from a constructor.
 
 Use them especially for:
 
@@ -413,11 +443,10 @@ if closed {
 
 ```go
 // NewService constructs a Service with the provided Store.
-func NewService(store Store) (s *Service) {
-    s = &Service{
-        store: store,
-    }
-    return s
+func NewService(store Store) (out *Service) {
+    var s Service
+    s.store = store
+    return &s
 }
 
 // Service coordinates request handling and persistence.
@@ -469,6 +498,7 @@ Before opening a PR:
 * [ ] gofmt applied
 * [ ] One file per primary type
 * [ ] All methods for a type live in the same file
+* [ ] Pointer constructors initialize local concrete values and explicitly return their addresses
 * [ ] Functions are small and focused
 * [ ] Named returns used appropriately
 * [ ] No naked returns

@@ -8,6 +8,16 @@ const (
 	defaultMaxSkipBytes    = 67108864
 )
 
+// makeReaderLimitsWithDefault returns the finite limits used by new readers.
+func makeReaderLimitsWithDefault() (limits ReaderLimits) {
+	return ReaderLimits{
+		MaxPayloadBytes: defaultMaxPayloadBytes,
+		MaxSkipDepth:    defaultMaxSkipDepth,
+		MaxSkipValues:   defaultMaxSkipValues,
+		MaxSkipBytes:    defaultMaxSkipBytes,
+	}
+}
+
 // ReaderLimits bounds owned payload results and the work of each Skip call.
 // A zero field selects its finite default; no field can disable its limit.
 type ReaderLimits struct {

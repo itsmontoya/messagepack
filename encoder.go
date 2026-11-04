@@ -7,8 +7,10 @@ import (
 
 // NewEncoder attaches an Encoder to w without taking ownership or buffering output.
 // A nil interface leaves the Encoder unattached.
-func NewEncoder(w io.Writer) (e *Encoder) {
-	return &Encoder{writer: *NewWriter(w)}
+func NewEncoder(w io.Writer) (out *Encoder) {
+	var e Encoder
+	e.writer.Reset(w)
+	return &e
 }
 
 // Encoder writes values implementing Encodee to a caller-owned writer.

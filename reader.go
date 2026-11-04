@@ -10,10 +10,10 @@ import (
 
 // NewReader attaches a Reader to src without read-ahead or taking ownership.
 // A nil interface leaves it unattached; finite default limits apply.
-func NewReader(src io.Reader) (r *Reader) {
-	r = &Reader{}
+func NewReader(src io.Reader) (out *Reader) {
+	var r Reader
 	r.Reset(src)
-	return r
+	return &r
 }
 
 // Reader reads typed MessagePack values from a caller-owned reader.
@@ -28,18 +28,15 @@ type Reader struct {
 // It never rewinds, drains, or closes a reader; callers supply a known boundary.
 func (r *Reader) Reset(src io.Reader) {
 	if r.state == nil {
-		r.state = &readerState{}
+		r.state = newReaderState()
 	}
+
 	r.state.reader = src
 	r.state.err = nil
 	r.state.eof = false
+
 	if r.state.limits.MaxPayloadBytes == 0 {
-		r.state.limits = ReaderLimits{
-			MaxPayloadBytes: defaultMaxPayloadBytes,
-			MaxSkipDepth:    defaultMaxSkipDepth,
-			MaxSkipValues:   defaultMaxSkipValues,
-			MaxSkipBytes:    defaultMaxSkipBytes,
-		}
+		r.state.limits = makeReaderLimitsWithDefault()
 	}
 }
 
@@ -47,13 +44,14 @@ func (r *Reader) Reset(src io.Reader) {
 // Zero fields select defaults; invalid fields return ErrInvalidArgument unchanged.
 func (r *Reader) SetLimits(limits ReaderLimits) (err error) {
 	var normalized ReaderLimits
-	normalized, err = limits.normalized()
-	if err != nil {
+	if normalized, err = limits.normalized(); err != nil {
 		return err
 	}
+
 	if r.state == nil {
-		r.state = &readerState{}
+		r.state = newReaderState()
 	}
+
 	r.state.limits = normalized
 	return nil
 }

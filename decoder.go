@@ -7,8 +7,10 @@ import (
 
 // NewDecoder attaches a Decoder to r without read-ahead or taking ownership.
 // A nil interface leaves the Decoder unattached.
-func NewDecoder(r io.Reader) (d *Decoder) {
-	return &Decoder{reader: *NewReader(r)}
+func NewDecoder(r io.Reader) (out *Decoder) {
+	var d Decoder
+	d.reader.Reset(r)
+	return &d
 }
 
 // Decoder reads values implementing Decodee from a caller-owned reader.

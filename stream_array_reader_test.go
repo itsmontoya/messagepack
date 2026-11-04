@@ -5,15 +5,17 @@ import (
 	"io"
 )
 
-func newStreamArrayReader(count uint32) (r *streamArrayReader) {
-	r = &streamArrayReader{count: count}
+func newStreamArrayReader(count uint32) (out *streamArrayReader) {
+	var r streamArrayReader
+	r.count = count
 	r.buffer = *bytes.NewBuffer(r.scratch[:0])
 	r.writer = NewWriter(&r.buffer)
 	if err := r.writer.EncodeArrayHeader(count); err != nil {
 		panic(err)
 	}
+
 	r.pending = r.buffer.Bytes()
-	return r
+	return &r
 }
 
 // streamArrayReader generates each integer only when the decoder requests it.

@@ -53,7 +53,7 @@ Exported symbols receive concise GoDoc. New sentinels live with the existing
 sentinels in `errors.go`.
 
 ```go
-func NewEncoder(w io.Writer) (e *Encoder)
+func NewEncoder(w io.Writer) (out *Encoder)
 func (e *Encoder) Encode(value any) (err error)
 func (e *Encoder) Close() (err error)
 
@@ -61,7 +61,7 @@ type Encodee interface {
     EncodeMessagePack(Writer) error
 }
 
-func NewWriter(dst io.Writer) (w *Writer)
+func NewWriter(dst io.Writer) (out *Writer)
 func (w *Writer) Reset(dst io.Writer)
 
 func (w *Writer) EncodeNil() (err error)
@@ -77,7 +77,7 @@ func (w *Writer) EncodeBytesFrom(length uint64, src io.Reader) (n uint64, err er
 func (w *Writer) EncodeArrayHeader(count uint32) (err error)
 func (w *Writer) EncodeMapHeader(count uint32) (err error)
 
-func NewDecoder(src io.Reader) (d *Decoder)
+func NewDecoder(src io.Reader) (out *Decoder)
 func (d *Decoder) Decode(value any) (err error)
 func (d *Decoder) Close() (err error)
 
@@ -85,7 +85,7 @@ type Decodee interface {
     DecodeMessagePack(Reader) error
 }
 
-func NewReader(src io.Reader) (r *Reader)
+func NewReader(src io.Reader) (out *Reader)
 func (r *Reader) Reset(src io.Reader)
 func (r *Reader) SetLimits(limits ReaderLimits) (err error)
 

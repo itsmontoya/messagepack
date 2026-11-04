@@ -12,8 +12,10 @@ const payloadBufferSize = 32768
 
 // NewWriter attaches a Writer to dst without taking ownership or buffering output.
 // A nil interface leaves the Writer unattached until Reset supplies a destination.
-func NewWriter(dst io.Writer) (w *Writer) {
-	return &Writer{state: &writerState{writer: dst}}
+func NewWriter(dst io.Writer) (out *Writer) {
+	var w Writer
+	w.Reset(dst)
+	return &w
 }
 
 // Writer writes typed MessagePack values to a caller-owned writer.
@@ -28,8 +30,9 @@ type Writer struct {
 // It cannot repair a partial message; callers must supply a known value boundary.
 func (w *Writer) Reset(dst io.Writer) {
 	if w.state == nil {
-		w.state = &writerState{}
+		w.state = newWriterState()
 	}
+
 	w.state.writer = dst
 	w.state.err = nil
 }
