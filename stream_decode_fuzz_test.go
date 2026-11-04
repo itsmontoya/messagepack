@@ -30,6 +30,7 @@ func FuzzStreamTypedDecode(f *testing.F) {
 			d     = NewReader(r)
 			limit = uint64(capSeed)%4096 + 1
 		)
+
 		if mode%3 != 0 {
 			r.endErr = errStreamFuzzSource
 			r.dataError = mode%3 == 1

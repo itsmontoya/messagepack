@@ -139,6 +139,7 @@ func requireStreamFuzzTerminal(t *testing.T, d *Reader, r *streamFuzzReader, fai
 		writer streamFuzzWriter
 		limits = d.state.limits
 	)
+
 	requireReaderPayloadFailure(t, d, failure)
 	requireStreamHeaderFailure(t, d, failure)
 	requireSkipFailure(t, d, failure)

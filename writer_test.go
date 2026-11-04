@@ -27,6 +27,7 @@ func TestWriterNilAndBoolWire(t *testing.T) {
 				e      = NewWriter(&writer)
 				err    = tt.run(e)
 			)
+
 			if err != nil || !bytes.Equal(writer.Bytes(), tt.wire) {
 				t.Fatalf("encoding = (%x, %v), want (%x, nil)", writer.Bytes(), err, tt.wire)
 			}
@@ -59,6 +60,7 @@ func TestWriterNonnegativeIntegerWire(t *testing.T) {
 				e      = NewWriter(&writer)
 				err    = e.EncodeUint64(tt.value)
 			)
+
 			if err != nil || !bytes.Equal(writer.Bytes(), tt.wire) {
 				t.Fatalf("EncodeUint64(%d) = (%x, %v), want (%x, nil)", tt.value, writer.Bytes(), err, tt.wire)
 			}
@@ -100,6 +102,7 @@ func TestWriterNegativeIntegerWire(t *testing.T) {
 				e      = NewWriter(&writer)
 				err    = e.EncodeInt64(tt.value)
 			)
+
 			if err != nil || !bytes.Equal(writer.Bytes(), tt.wire) {
 				t.Fatalf("EncodeInt64(%d) = (%x, %v), want (%x, nil)", tt.value, writer.Bytes(), err, tt.wire)
 			}
@@ -130,6 +133,7 @@ func TestWriterFloat32Wire(t *testing.T) {
 				e      = NewWriter(&writer)
 				err    = e.EncodeFloat32(math.Float32frombits(tt.bits))
 			)
+
 			if err != nil || !bytes.Equal(writer.Bytes(), tt.wire) {
 				t.Fatalf("EncodeFloat32(bits %08x) = (%x, %v), want (%x, nil)", tt.bits, writer.Bytes(), err, tt.wire)
 			}
@@ -160,6 +164,7 @@ func TestWriterFloat64Wire(t *testing.T) {
 				e      = NewWriter(&writer)
 				err    = e.EncodeFloat64(math.Float64frombits(tt.bits))
 			)
+
 			if err != nil || !bytes.Equal(writer.Bytes(), tt.wire) {
 				t.Fatalf("EncodeFloat64(bits %016x) = (%x, %v), want (%x, nil)", tt.bits, writer.Bytes(), err, tt.wire)
 			}
@@ -185,6 +190,7 @@ func TestWriterConsecutiveScalars(t *testing.T) {
 		}
 		want []byte
 	)
+
 	for index, step := range steps {
 		if err := step.run(); err != nil {
 			t.Fatalf("operation %d: %v", index, err)
@@ -219,6 +225,7 @@ func TestWriterWriterFailures(t *testing.T) {
 			{name: "zero progress without error", limited: true, wantErr: io.ErrShortWrite},
 		}
 	)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
@@ -237,6 +244,7 @@ func TestWriterWriterFailures(t *testing.T) {
 					{name: "float64", run: func() (err error) { return e.EncodeFloat64(1.5) }},
 				}
 			)
+
 			if !errors.Is(first, tt.wantErr) || first == tt.wantErr {
 				t.Fatalf("first error = %v, want context wrapping %v", first, tt.wantErr)
 			}
@@ -292,6 +300,7 @@ func TestWriterUninitialized(t *testing.T) {
 				}
 				writer encoderTestWriter
 			)
+
 			for index, operation := range operations {
 				if err := operation(); err != ErrUninitialized {
 					t.Fatalf("unattached operation %d returned %v, want direct ErrUninitialized", index, err)
@@ -313,6 +322,7 @@ func TestWriterReset(t *testing.T) {
 		e         = NewWriter(oldWriter)
 		first     = e.EncodeUint64(128)
 	)
+
 	if !errors.Is(first, failure) {
 		t.Fatalf("initial encode error = %v, want %v", first, failure)
 	}
@@ -351,6 +361,7 @@ func TestWriterTypedNilWriter(t *testing.T) {
 		e      = NewWriter(writer)
 		err    = e.EncodeNil()
 	)
+
 	if err != nil {
 		t.Fatalf("typed nil writer with a valid Write method returned %v", err)
 	}
@@ -366,6 +377,7 @@ func TestWriterCopiesShareFailureAndReset(t *testing.T) {
 		next    bytes.Buffer
 		err     error
 	)
+
 	if !errors.Is(first, failure) {
 		t.Fatalf("copied Writer error = %v, want %v", first, failure)
 	}
@@ -429,6 +441,7 @@ func TestWriterInt64WireFixtures(t *testing.T) {
 				w      = NewWriter(&output)
 				err    = w.EncodeInt64(tt.value)
 			)
+
 			if err != nil || !bytes.Equal(output.Bytes(), tt.want) {
 				t.Fatalf("EncodeInt64(%d) = (%x, %v), want %x", tt.value, output.Bytes(), err, tt.want)
 			}
@@ -464,6 +477,7 @@ func TestWriterUint64WireFixtures(t *testing.T) {
 				w      = NewWriter(&output)
 				err    = w.EncodeUint64(tt.value)
 			)
+
 			if err != nil || !bytes.Equal(output.Bytes(), tt.want) {
 				t.Fatalf("EncodeUint64(%d) = (%x, %v), want %x", tt.value, output.Bytes(), err, tt.want)
 			}
@@ -490,6 +504,7 @@ func TestWriterStringHeaderLimits(t *testing.T) {
 				w      = NewWriter(output)
 				err    = w.writePayloadHeader("encode string header", tt.length, true)
 			)
+
 			if !bytes.Equal(output.Bytes(), tt.want) || !errors.Is(err, tt.err) {
 				t.Fatalf("string header = (%x, %v), want (%x, %v)", output.Bytes(), err, tt.want, tt.err)
 			}
@@ -522,6 +537,7 @@ func TestWriterBytesHeaderLimits(t *testing.T) {
 				w      = NewWriter(output)
 				err    = w.writePayloadHeader("encode bytes header", tt.length, false)
 			)
+
 			if !bytes.Equal(output.Bytes(), tt.want) || !errors.Is(err, tt.err) {
 				t.Fatalf("bytes header = (%x, %v), want (%x, %v)", output.Bytes(), err, tt.want, tt.err)
 			}
@@ -540,6 +556,7 @@ func TestWriterZeroAllocations(t *testing.T) {
 		w          = NewWriter(io.Discard)
 		binaryWire = []byte{0xc4, 8, 'm', 's', 'g', 'p', 'a', 'c', 'k', '!'}
 	)
+
 	if err := w.EncodeString("warm"); err != nil {
 		t.Fatal(err)
 	}
@@ -645,6 +662,7 @@ func TestWriterPayloadWire(t *testing.T) {
 					want   = append(append([]byte(nil), method.header...), value...)
 					err    = method.run(e)
 				)
+
 				if err != nil || !bytes.Equal(writer.data, want) {
 					t.Fatalf("encoding length %d = %d bytes, %v; want %d exact bytes", tt.length, len(writer.data), err, len(want))
 				}
@@ -668,6 +686,7 @@ func TestWriterPayloadRawBytesAndConsecutiveValues(t *testing.T) {
 			0xc4, 0, 0xc0, 0xc3,
 		}
 	)
+
 	if err := e.EncodeString(string(value)); err != nil {
 		t.Fatal(err)
 	}
@@ -734,6 +753,7 @@ func TestWriterFromSourceBoundaries(t *testing.T) {
 					e      = NewWriter(writer)
 					n, err = method.run(e, tt.length, source)
 				)
+
 				if n != tt.wantN || !errors.Is(err, tt.want) || uint64(source.position) != tt.wantN {
 					t.Fatalf("transfer = (%d, %v), consumed %d; want (%d, %v)", n, err, source.position, tt.wantN, tt.want)
 				}
@@ -772,6 +792,7 @@ func TestWriterFromValidationAndReset(t *testing.T) {
 				source = &decoderTestReader{data: []byte{1}}
 				e      = NewWriter(writer)
 			)
+
 			for _, length := range []uint64{4294967296, math.MaxUint64} {
 				for _, input := range []io.Reader{nil, source} {
 					n, err := method.run(e, length, input)
@@ -856,6 +877,7 @@ func TestWriterFromReadFailures(t *testing.T) {
 					n      uint64
 					err    error
 				)
+
 				if isString {
 					n, err = e.EncodeStringFrom(3, source)
 				} else {
@@ -901,6 +923,7 @@ func TestWriterFromWriteFailures(t *testing.T) {
 			{name: "both ends fail", call: 2, accept: 2, writeErr: writeFailure, sourceErr: sourceFailure, wantN: 2, want: writeFailure, wantReads: 1},
 		}
 	)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
@@ -909,6 +932,7 @@ func TestWriterFromWriteFailures(t *testing.T) {
 				e      = NewWriter(writer)
 				n, err = e.EncodeBytesFrom(3, source)
 			)
+
 			if n != tt.wantN || !errors.Is(err, tt.want) || source.reads != tt.wantReads {
 				t.Fatalf("write fault = (%d, %v), reads %d; want (%d, %v), reads %d", n, err, source.reads, tt.wantN, tt.want, tt.wantReads)
 			}
@@ -937,6 +961,7 @@ func TestWriterInMemoryPayloadFailures(t *testing.T) {
 					value   = bytes.Repeat([]byte{0xff}, 65536)
 					err     error
 				)
+
 				if isString {
 					err = e.EncodeString(string(value))
 				} else {
@@ -971,6 +996,7 @@ func TestWriterFromLaterChunkFailures(t *testing.T) {
 			{name: "simultaneous later failures", sourceLength: 32775, sourceErr: sourceFailure, failCall: 3, accept: 3, writeErr: writeFailure, wantN: 32771, want: writeFailure},
 		}
 	)
+
 	for _, isString := range []bool{false, true} {
 		for _, tt := range tests {
 			t.Run(fmt.Sprintf("string_%t/%s", isString, tt.name), func(t *testing.T) {
@@ -981,6 +1007,7 @@ func TestWriterFromLaterChunkFailures(t *testing.T) {
 					n      uint64
 					err    error
 				)
+
 				if isString {
 					n, err = e.EncodeStringFrom(70000, source)
 				} else {
@@ -1013,6 +1040,7 @@ func TestWriterGeneratedPayloadIsIncremental(t *testing.T) {
 				n      uint64
 				err    error
 			)
+
 			if isString {
 				header[0] = 0xdb
 			}

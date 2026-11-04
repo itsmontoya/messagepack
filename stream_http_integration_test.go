@@ -27,6 +27,7 @@ func TestStreamingHTTPIncrementalPayload(t *testing.T) {
 				n           uint64
 				decodeErr   error
 			)
+
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				var (
 					source = &streamGatedReader{
@@ -34,6 +35,7 @@ func TestStreamingHTTPIncrementalPayload(t *testing.T) {
 					}
 					err error
 				)
+
 				// A blocked socket write must also have a caller-controlled deadline.
 				err = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(10 * time.Second))
 				if err == nil {
@@ -57,6 +59,7 @@ func TestStreamingHTTPIncrementalPayload(t *testing.T) {
 				request    *http.Request
 				requestErr error
 			)
+
 			if request, requestErr = http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil); requestErr != nil {
 				t.Fatal(requestErr)
 			}
@@ -65,6 +68,7 @@ func TestStreamingHTTPIncrementalPayload(t *testing.T) {
 				response    *http.Response
 				responseErr error
 			)
+
 			if response, responseErr = server.Client().Do(request); responseErr != nil {
 				t.Fatal(responseErr)
 			}
@@ -165,6 +169,7 @@ func TestStreamingHTTPTruncatedResponse(t *testing.T) {
 			ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 			produced    = make(chan error, 1)
 		)
+
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, err := w.Write(fixture[:length])
 			produced <- err
@@ -174,6 +179,7 @@ func TestStreamingHTTPTruncatedResponse(t *testing.T) {
 			request *http.Request
 			err     error
 		)
+
 		if request, err = http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil); err != nil {
 			cancel()
 			t.Fatal(err)
@@ -183,6 +189,7 @@ func TestStreamingHTTPTruncatedResponse(t *testing.T) {
 			response    *http.Response
 			responseErr error
 		)
+
 		if response, responseErr = server.Client().Do(request); responseErr != nil {
 			cancel()
 			t.Fatal(responseErr)
@@ -211,6 +218,7 @@ func TestStreamingHTTPTruncatedPayload(t *testing.T) {
 		produced    = make(chan error, 1)
 		sink        streamCheckingWriter
 	)
+
 	defer cancel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, err := NewWriter(w).EncodeBytesFrom(declared, &encoderGeneratedReader{length: actual})
@@ -221,6 +229,7 @@ func TestStreamingHTTPTruncatedPayload(t *testing.T) {
 		request *http.Request
 		err     error
 	)
+
 	if request, err = http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -229,6 +238,7 @@ func TestStreamingHTTPTruncatedPayload(t *testing.T) {
 		response    *http.Response
 		responseErr error
 	)
+
 	if response, responseErr = server.Client().Do(request); responseErr != nil {
 		t.Fatal(responseErr)
 	}
@@ -256,6 +266,7 @@ func TestStreamingHTTPCallerDeadline(t *testing.T) {
 		request *http.Request
 		err     error
 	)
+
 	if request, err = http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil); err != nil {
 		t.Fatal(err)
 	}

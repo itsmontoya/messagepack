@@ -49,6 +49,7 @@ func checkStreamFuzzDecodeTransfer(t *testing.T, src, fragments []byte, settings
 		n        uint64
 		err      error
 	)
+
 	if settings[4]%3 == 1 {
 		r.endErr = io.EOF
 	}
@@ -140,6 +141,7 @@ func checkStreamFuzzEncodeTransfer(t *testing.T, src, fragments []byte, settings
 		err    error
 		want   error
 	)
+
 	switch settings[9] % 6 {
 	case 1:
 		length++
@@ -223,6 +225,7 @@ func checkStreamFuzzEncodeTransfer(t *testing.T, src, fragments []byte, settings
 		available = append(append([]byte(nil), header...), src[:r.position]...)
 		accepted  = len(w.data) - len(header)
 	)
+
 	if accepted < 0 {
 		accepted = 0
 	}

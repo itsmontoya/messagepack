@@ -83,6 +83,7 @@ func TestStreamBenchmarkPayloadSource(t *testing.T) {
 					n      int
 					err    error
 				)
+
 				source.Reset(3, testcase.isString, testcase.encoded)
 				for {
 					n, err = source.Read(buffer[:chunkSize])

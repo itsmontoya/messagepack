@@ -39,6 +39,7 @@ func TestFloat32Wire(t *testing.T) {
 				output    bytes.Buffer
 				encodeErr = NewWriter(&output).EncodeFloat32(input)
 			)
+
 			if encodeErr != nil || !bytes.Equal(output.Bytes(), tt.wire) {
 				t.Fatalf("EncodeFloat32(bits %x) = (%x, %v), want %x", tt.bits, output.Bytes(), encodeErr, tt.wire)
 			}
@@ -52,6 +53,7 @@ func TestFloat32Wire(t *testing.T) {
 					n      int
 					err    error
 				)
+
 				sourceFloat32 := bytes.NewReader(src)
 				value, err = NewReader(sourceFloat32).DecodeFloat32()
 				n = len(src) - sourceFloat32.Len()
@@ -114,6 +116,7 @@ func TestFloat64Wire(t *testing.T) {
 				output    bytes.Buffer
 				encodeErr = NewWriter(&output).EncodeFloat64(input)
 			)
+
 			if encodeErr != nil || !bytes.Equal(output.Bytes(), tt.wire) {
 				t.Fatalf("EncodeFloat64(bits %x) = (%x, %v), want %x", tt.bits, output.Bytes(), encodeErr, tt.wire)
 			}
@@ -127,6 +130,7 @@ func TestFloat64Wire(t *testing.T) {
 					n      int
 					err    error
 				)
+
 				sourceFloat64 := bytes.NewReader(src)
 				value, err = NewReader(sourceFloat64).DecodeFloat64()
 				n = len(src) - sourceFloat64.Len()
@@ -174,6 +178,7 @@ func TestArrayHeaderWire(t *testing.T) {
 				output    bytes.Buffer
 				encodeErr = NewWriter(&output).EncodeArrayHeader(tt.count)
 			)
+
 			if encodeErr != nil || !bytes.Equal(output.Bytes(), tt.wire) {
 				t.Fatalf("EncodeArrayHeader(%d) = (%x, %v), want %x", tt.count, output.Bytes(), encodeErr, tt.wire)
 			}
@@ -186,6 +191,7 @@ func TestArrayHeaderWire(t *testing.T) {
 					n      int
 					err    error
 				)
+
 				sourceArrayHeader := bytes.NewReader(src)
 				count, err = NewReader(sourceArrayHeader).DecodeArrayHeader()
 				n = len(src) - sourceArrayHeader.Len()
@@ -222,6 +228,7 @@ func TestMapHeaderWire(t *testing.T) {
 				output    bytes.Buffer
 				encodeErr = NewWriter(&output).EncodeMapHeader(tt.count)
 			)
+
 			if encodeErr != nil || !bytes.Equal(output.Bytes(), tt.wire) {
 				t.Fatalf("EncodeMapHeader(%d) = (%x, %v), want %x", tt.count, output.Bytes(), encodeErr, tt.wire)
 			}
@@ -234,6 +241,7 @@ func TestMapHeaderWire(t *testing.T) {
 					n      int
 					err    error
 				)
+
 				sourceMapHeader := bytes.NewReader(src)
 				count, err = NewReader(sourceMapHeader).DecodeMapHeader()
 				n = len(src) - sourceMapHeader.Len()
@@ -273,6 +281,7 @@ func TestStringWireFixtures(t *testing.T) {
 				output bytes.Buffer
 				err    = NewWriter(&output).EncodeString(tt.value)
 			)
+
 			if err != nil || !bytes.Equal(output.Bytes(), wire) {
 				t.Fatalf("EncodeString() = (%x, %v), want %x", output.Bytes(), err, wire)
 			}
@@ -283,6 +292,7 @@ func TestStringWireFixtures(t *testing.T) {
 				owned  string
 				n      int
 			)
+
 			sourceString := bytes.NewReader(src)
 			owned, err = NewReader(sourceString).DecodeString()
 			n = len(src) - sourceString.Len()
@@ -322,6 +332,7 @@ func TestBytesWireFixtures(t *testing.T) {
 				output bytes.Buffer
 				err    = NewWriter(&output).EncodeBytes(tt.value)
 			)
+
 			if err != nil || !bytes.Equal(output.Bytes(), wire) {
 				t.Fatalf("EncodeBytes() = (%x, %v), want %x", output.Bytes(), err, wire)
 			}
@@ -332,6 +343,7 @@ func TestBytesWireFixtures(t *testing.T) {
 				view   []byte
 				n      int
 			)
+
 			sourceBytes := bytes.NewReader(src)
 			view, err = NewReader(sourceBytes).DecodeBytes()
 			n = len(src) - sourceBytes.Len()
@@ -369,6 +381,7 @@ func TestStreamContainerHeaders(t *testing.T) {
 					count  uint32
 					err    error
 				)
+
 				if isMap {
 					wire = tt.pairs
 					err = e.EncodeMapHeader(tt.count)
@@ -424,6 +437,7 @@ func TestStreamContainerHeaderIOFailures(t *testing.T) {
 				count uint32
 				err   error
 			)
+
 			if isMap {
 				count, err = d.DecodeMapHeader()
 			} else {
@@ -456,6 +470,7 @@ func TestStreamContainerHeaderIOFailures(t *testing.T) {
 				e   = NewWriter(w)
 				err error
 			)
+
 			if isMap {
 				err = e.EncodeMapHeader(math.MaxUint32)
 			} else {
@@ -479,6 +494,7 @@ func TestStreamContainerHeaderInitializationAndReset(t *testing.T) {
 		d Reader
 		w bytes.Buffer
 	)
+
 	if e.EncodeArrayHeader(0) != ErrUninitialized || e.EncodeMapHeader(0) != ErrUninitialized {
 		t.Fatal("unattached Writer headers did not return ErrUninitialized")
 	}
@@ -529,6 +545,7 @@ func TestStreamTransferAllocationBytes(t *testing.T) {
 						minimum = ^uint64(0)
 						maximum uint64
 					)
+
 					for _, size := range streamBenchmarkSizes {
 						allocated := measureStreamTransferAllocation(t, size.length, operation.encode, operation.isString, reuse)
 						t.Logf("%s: %d B/transfer over 16 transfers", size.name, allocated)
@@ -569,6 +586,7 @@ func measureStreamTransferAllocation(t *testing.T, length uint64, encode bool, i
 		n       uint64
 		err     error
 	)
+
 	if encode {
 		run = func() (accepted uint64, transferErr error) { return encoder.EncodeBytesFrom(length, &source) }
 		if isString {
@@ -640,6 +658,7 @@ func TestStreamRetainedWorkingMemory(t *testing.T) {
 						n        uint64
 						err      error
 					)
+
 					runtime.GC()
 					runtime.ReadMemStats(&before)
 					for index := 0; index < cohort; index++ {
@@ -703,6 +722,7 @@ func TestStreamTransferScratchBounds(t *testing.T) {
 		n       uint64
 		err     error
 	)
+
 	for _, size := range streamBenchmarkSizes {
 		for _, isString := range []bool{false, true} {
 			source.Reset(size.length, isString, false)
@@ -752,6 +772,7 @@ func TestStreamNestedContainers(t *testing.T) {
 		}
 		wire = []byte{0x92, 0x81, 0xa1, 'k', 0x92, 0xc0, 0x80, 0x90, 0xc3}
 	)
+
 	for _, step := range steps {
 		if err := step(); err != nil {
 			t.Fatal(err)
@@ -804,6 +825,7 @@ func TestStreamGeneratedArrayIsIncremental(t *testing.T) {
 		d      = NewReader(r)
 		total  uint64
 	)
+
 	if err := e.EncodeArrayHeader(count); err != nil {
 		t.Fatal(err)
 	}

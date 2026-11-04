@@ -13,6 +13,7 @@ func ExampleEncoder() {
 		e      = messagepack.NewEncoder(&output)
 		err    error
 	)
+
 	if err = e.Encode(exampleMessage{ID: 42}); err != nil {
 		panic(err)
 	}

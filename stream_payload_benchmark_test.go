@@ -58,6 +58,7 @@ func benchmarkStreamTransfer(b *testing.B, length uint64, encode bool, isString 
 		headerSize   int
 		transfer     func() (accepted uint64, transferErr error)
 	)
+
 	source.Reset(length, isString, true)
 	headerSize = len(source.pending)
 	if buffered {
@@ -160,6 +161,7 @@ func BenchmarkStreamOwned(b *testing.B) {
 						err        error
 						headerSize int
 					)
+
 					source.Reset(size.length, isString, true)
 					headerSize = len(source.pending)
 					b.ReportAllocs()
@@ -201,6 +203,7 @@ func BenchmarkStreamGenerator(b *testing.B) {
 				n      int
 				err    error
 			)
+
 			b.ReportAllocs()
 			b.SetBytes(int64(size.length))
 			b.ResetTimer()

@@ -31,6 +31,7 @@ func FuzzStreamRoundTrip(f *testing.F) {
 			w      streamFuzzWriter
 			e      = NewWriter(&w)
 		)
+
 		encodeStreamFuzzScalars(t, e, signed, unsigned, bits32, bits64)
 		encodeStreamFuzzPayloads(t, e, payload, fragments)
 		if !bytes.Equal(payload, before) || len(e.state.buffer) > 32768 {
@@ -114,6 +115,7 @@ func encodeStreamFuzzPayloads(t *testing.T, e *Writer, payload, fragments []byte
 		source = append(append([]byte(nil), payload...), 0x7e)
 		reader = &streamFuzzReader{data: source, fragments: fragments, emptyBetween: 1}
 	)
+
 	if n, err := e.EncodeStringFrom(uint64(len(payload)), reader); err != nil || n != uint64(len(payload)) || reader.position != len(payload) {
 		t.Fatalf("string transfer boundary = (%d, %v), position %d", n, err, reader.position)
 	}

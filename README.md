@@ -116,6 +116,7 @@ func FetchBinary(ctx context.Context, client *http.Client, url string, dst io.Wr
 		request  *http.Request
 		response *http.Response
 	)
+
 	request, err = http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return 0, fmt.Errorf("create request: %w", err)
@@ -185,6 +186,7 @@ func WriteDataset(path string, count uint32, length uint64, src io.Reader) (err 
 		buffered = bufio.NewWriter(file)
 		e        = messagepack.NewWriter(buffered)
 	)
+
 	if err = e.EncodeArrayHeader(2); err != nil {
 		return err
 	}

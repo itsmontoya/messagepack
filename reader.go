@@ -183,6 +183,7 @@ func (r *Reader) DecodeFloat64() (value float64, err error) {
 		tag  byte
 		size int
 	)
+
 	if tag, err = r.readTag("decode float64"); err != nil {
 		return 0, err
 	}
@@ -223,6 +224,7 @@ func (r *Reader) readContainerHeader(operation string, isMap bool) (count uint32
 		tag  byte
 		size = 1
 	)
+
 	if tag, err = r.readTag(operation); err != nil {
 		return 0, err
 	}
@@ -298,6 +300,7 @@ func (r *Reader) Skip() (err error) {
 		children  uint64
 		container bool
 	)
+
 	for state.outstanding > 0 {
 		for state.depth > 0 && state.children[state.depth-1] == 0 {
 			state.depth--
@@ -462,6 +465,7 @@ func (r *Reader) readPayloadHeader(operation string, isString bool) (length uint
 		tag  byte
 		size int
 	)
+
 	if tag, err = r.readTag(operation); err != nil {
 		return 0, err
 	}
@@ -546,6 +550,7 @@ func (r *Reader) copyPayloadTo(operation string, dst io.Writer, remaining uint64
 		written int
 		readErr error
 	)
+
 	for remaining > 0 {
 		chunk = r.payloadBuffer()
 		if remaining < uint64(len(chunk)) {
@@ -623,6 +628,7 @@ func (r *Reader) readInteger(operation string) (wire []byte, err error) {
 		tag  byte
 		size = 1
 	)
+
 	if tag, err = r.readTag(operation); err != nil {
 		return nil, err
 	}
@@ -658,6 +664,7 @@ func (r *Reader) readFull(operation string, dst []byte, started bool) (n int, er
 		read  int
 		empty int
 	)
+
 	for n < len(dst) {
 		if r.state.eof {
 			err = io.EOF

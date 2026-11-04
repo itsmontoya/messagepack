@@ -22,6 +22,7 @@ func ExampleReader_httpResponse() {
 		n           uint64
 		sink        streamCheckingWriter
 	)
+
 	defer cancel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		produced <- encodeStreamingPayloadMessage(NewWriter(w), length, &encoderGeneratedReader{length: length})
@@ -31,6 +32,7 @@ func ExampleReader_httpResponse() {
 		request *http.Request
 		err     error
 	)
+
 	if request, err = http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil); err != nil {
 		fmt.Println("request:", err)
 		return
@@ -40,6 +42,7 @@ func ExampleReader_httpResponse() {
 		response    *http.Response
 		responseErr error
 	)
+
 	if response, responseErr = server.Client().Do(request); responseErr != nil {
 		fmt.Println("response:", responseErr)
 		return
@@ -74,6 +77,7 @@ func ExampleWriter_file() {
 		file *os.File
 		err  error
 	)
+
 	if file, err = os.CreateTemp("", "messagepack-example-*"); err != nil {
 		fmt.Println("create:", err)
 		return
@@ -101,6 +105,7 @@ func ExampleWriter_file() {
 		buffered = bufio.NewReader(file)
 		d        = NewReader(buffered)
 	)
+
 	err = d.SetLimits(ReaderLimits{MaxPayloadBytes: 1})
 	if err == nil {
 		err = checkStreamingDataset(d, count, length)
@@ -134,6 +139,7 @@ func ExampleReader_messageSequence() {
 		d      = NewReader(bufio.NewReader(reader))
 		count  int
 	)
+
 	for {
 		message, err := decodeStreamingApplicationMessage(d)
 		if errors.Is(err, io.EOF) {
@@ -163,6 +169,7 @@ func ExampleReader_exactlyOneMessage() {
 		message applicationMessage
 		err     error
 	)
+
 	if message, err = decodeFlexibleStreamingApplicationMessage(NewReader(buffered)); err != nil {
 		fmt.Println("decode:", err)
 		return

@@ -10,6 +10,7 @@ func decodeFlexibleStreamingApplicationMessage(d *Reader) (message applicationMe
 		required uint8
 		key      string
 	)
+
 	if count, err = d.DecodeMapHeader(); err != nil {
 		return applicationMessage{}, err
 	}

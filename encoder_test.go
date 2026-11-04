@@ -31,6 +31,7 @@ func TestEncoderEncodee(t *testing.T) {
 		want = []byte{0x93, 0xa2, 'i', 'd', 0x2a, 0xc4, 0x02, 0x01, 0x02}
 		err  error
 	)
+
 	for count := 1; count <= 2; count++ {
 		if err = e.Encode(value); err != nil {
 			t.Fatal(err)
@@ -51,6 +52,7 @@ func TestEncoderTypedNilEncodee(t *testing.T) {
 		value  *encoderTestEncodee
 		err    = NewEncoder(&output).Encode(value)
 	)
+
 	if err != nil || !bytes.Equal(output.Bytes(), []byte{0xc0}) {
 		t.Fatalf("Encode(typed nil) = (%x, %v), want (c0, nil)", output.Bytes(), err)
 	}
@@ -79,6 +81,7 @@ func TestEncoderUnsupportedValues(t *testing.T) {
 				value  = &encoderTestEncodee{encode: func(w Writer) (err error) { return w.EncodeBool(true) }}
 				err    = e.Encode(tt.value)
 			)
+
 			if err != ErrUnsupportedType || output.writes != 0 {
 				t.Fatalf("Encode(%T) = %v, writes %d", tt.value, err, output.writes)
 			}
@@ -162,6 +165,7 @@ func TestEncoderFailuresAreTerminal(t *testing.T) {
 			},
 		}
 	)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
@@ -172,6 +176,7 @@ func TestEncoderFailuresAreTerminal(t *testing.T) {
 				first  = e.Encode(value)
 				err    error
 			)
+
 			if !errors.Is(first, tt.wantErr) || first == tt.wantErr {
 				t.Fatalf("Encode error = %v, want context wrapping %v", first, tt.wantErr)
 			}
@@ -204,6 +209,7 @@ func TestEncoderCloseLeavesOutputOpen(t *testing.T) {
 		err    = e.Encode(value)
 		n      int
 	)
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,6 +248,7 @@ func TestEncoderUninitialized(t *testing.T) {
 				value = &encoderTestEncodee{encode: func(w Writer) (err error) { return w.EncodeNil() }}
 				err   = e.Encode(value)
 			)
+
 			if err != ErrUninitialized || value.calls != 0 {
 				t.Fatalf("unattached Encode = %v, dispatches %d", err, value.calls)
 			}
@@ -262,6 +269,7 @@ func TestEncoderPublicMethods(t *testing.T) {
 		typ  = reflect.TypeOf(&Encoder{})
 		want = []string{"Close", "Encode"}
 	)
+
 	if typ.NumMethod() != len(want) {
 		t.Fatalf("Encoder exposes %d methods, want %v", typ.NumMethod(), want)
 	}

@@ -33,6 +33,7 @@ func BenchmarkStreamMessage(b *testing.B) {
 		message = applicationMessage{ID: 7, Name: "Ada", Active: true, Score: 1.5,
 			Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
 	)
+
 	b.Run("Encode", func(b *testing.B) {
 		benchmarkStreamRecordEncode(b, len(source.data), func(e *Writer) (err error) {
 			return encodeStreamingApplicationMessage(e, message)
@@ -54,6 +55,7 @@ func BenchmarkStreamContainer(b *testing.B) {
 				sizing streamBenchmarkWriter
 				w      = NewWriter(&sizing)
 			)
+
 			if err := w.EncodeArrayHeader(count); err != nil {
 				b.Fatal(err)
 			}
@@ -71,6 +73,7 @@ func BenchmarkStreamContainer(b *testing.B) {
 					n      int
 					err    error
 				)
+
 				source.reads = 0
 				b.ReportAllocs()
 				b.SetBytes(int64(size))
@@ -118,6 +121,7 @@ func BenchmarkStreamContainer(b *testing.B) {
 						actual uint32
 						value  uint64
 					)
+
 					if actual, err = d.DecodeArrayHeader(); err != nil {
 						return err
 					}
@@ -155,6 +159,7 @@ func benchmarkStreamRecordEncode(b *testing.B, size int, encode func(e *Writer) 
 					encoder *Writer
 					err     error
 				)
+
 				if buffered {
 					buffer = bufio.NewWriterSize(writer, 4096)
 					writer = buffer
@@ -217,6 +222,7 @@ func benchmarkStreamRecordDecode(b *testing.B, size int, source io.Reader, reset
 					decoder *Reader
 					err     error
 				)
+
 				if buffered {
 					buffer = bufio.NewReaderSize(reader, 4096)
 					reader = buffer

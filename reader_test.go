@@ -28,6 +28,7 @@ func TestReaderNilAndBool(t *testing.T) {
 				d   = NewReader(r)
 				err error
 			)
+
 			if tt.name == "nil" {
 				err = d.DecodeNil()
 			} else {
@@ -100,6 +101,7 @@ func TestReaderIntegerWire(t *testing.T) {
 				r   = &decoderTestReader{data: src, maxRead: 1}
 				d   = NewReader(r)
 			)
+
 			signed, signedErr := d.DecodeInt64()
 			if signed != tt.signed || signedErr != tt.signedErr || r.position != len(tt.wire) {
 				t.Fatalf("DecodeInt64(%x) = (%d, %v), consumed %d", tt.wire, signed, signedErr, r.position)
@@ -156,6 +158,7 @@ func TestReaderFloat32Wire(t *testing.T) {
 				r = &decoderTestReader{data: tt.wire, maxRead: 1, endErr: io.EOF}
 				d = NewReader(r)
 			)
+
 			value, err := d.DecodeFloat32()
 			if err != nil || math.Float32bits(value) != tt.bits {
 				t.Fatalf("DecodeFloat32(%x) = (%08x, %v)", tt.wire, math.Float32bits(value), err)
@@ -201,6 +204,7 @@ func TestReaderFloat64Wire(t *testing.T) {
 				r = &decoderTestReader{data: tt.wire, maxRead: 1, endErr: io.EOF}
 				d = NewReader(r)
 			)
+
 			value, err := d.DecodeFloat64()
 			if err != nil || math.Float64bits(value) != tt.bits {
 				t.Fatalf("DecodeFloat64(%x) = (%016x, %v)", tt.wire, math.Float64bits(value), err)
@@ -310,6 +314,7 @@ func TestReaderScalarTruncation(t *testing.T) {
 			}},
 		}
 	)
+
 	for _, tt := range tests {
 		for _, wire := range tt.wires {
 			for length := 0; length < len(wire); length++ {
@@ -320,6 +325,7 @@ func TestReaderScalarTruncation(t *testing.T) {
 						want = io.ErrUnexpectedEOF
 						err  = tt.decode(t, d)
 					)
+
 					if length == 0 {
 						want = io.EOF
 					}
@@ -361,6 +367,7 @@ func TestReaderReadErrorsAndEOF(t *testing.T) {
 			{name: "full body and EOF", data: []byte{0xcf, 0, 0, 0, 0, 0, 0, 0, 7}, end: io.EOF},
 		}
 	)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
@@ -369,6 +376,7 @@ func TestReaderReadErrorsAndEOF(t *testing.T) {
 				value uint64
 				err   error
 			)
+
 			value, err = d.DecodeUint64()
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("DecodeUint64() = (%d, %v), want %v", value, err, tt.want)
@@ -416,6 +424,7 @@ func TestReaderZeroProgress(t *testing.T) {
 					initialEmpty: tt.initialEmpty, emptyBetween: tt.emptyBetween}
 				d = NewReader(r)
 			)
+
 			value, err := d.DecodeUint64()
 			if !errors.Is(err, tt.want) || r.reads != tt.reads {
 				t.Fatalf("DecodeUint64() = (%d, %v), reads %d, want error %v and %d reads", value, err, r.reads, tt.want, tt.reads)
@@ -473,12 +482,14 @@ func TestReaderClassification(t *testing.T) {
 			{name: "nonEOF error overrides valid tag", tag: 0xc3, end: failure, want: failure},
 		}
 	)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
 				r = &decoderTestReader{data: []byte{tt.tag}, endErr: tt.end}
 				d = NewReader(r)
 			)
+
 			value, err := d.DecodeBool()
 			if value || !errors.Is(err, tt.want) || r.position != 1 || r.reads != 1 {
 				t.Fatalf("DecodeBool(%x) = (%v, %v), consumed %d in %d reads", tt.tag, value, err, r.position, r.reads)
@@ -503,6 +514,7 @@ func TestReaderConsecutiveScalars(t *testing.T) {
 		r = &decoderTestReader{data: wire}
 		d = NewReader(r)
 	)
+
 	if err := d.DecodeNil(); err != nil || r.position != 1 {
 		t.Fatalf("nil = %v at %d", err, r.position)
 	}
@@ -596,6 +608,7 @@ func TestReaderNilFixtures(t *testing.T) {
 				n      int
 				err    error
 			)
+
 			sourceNil := bytes.NewReader(tt.src)
 			err = NewReader(sourceNil).DecodeNil()
 			n = len(tt.src) - sourceNil.Len()
@@ -658,6 +671,7 @@ func TestReaderBoolFixtures(t *testing.T) {
 				n      int
 				err    error
 			)
+
 			sourceBool := bytes.NewReader(tt.src)
 			value, err = NewReader(sourceBool).DecodeBool()
 			n = len(tt.src) - sourceBool.Len()
@@ -773,6 +787,7 @@ func TestReaderIntegersFixtures(t *testing.T) {
 						wantSignedN   int
 						wantUnsignedN int
 					)
+
 					if tt.signedErr == nil {
 						wantSignedN = len(tt.src)
 					}
@@ -837,6 +852,7 @@ func TestReaderIntegersTruncatedFixtures(t *testing.T) {
 						signedErr     error
 						unsignedErr   error
 					)
+
 					sourceInt64 := bytes.NewReader(src)
 					signed, signedErr = NewReader(sourceInt64).DecodeInt64()
 					signedCount = len(src) - sourceInt64.Len()
@@ -903,6 +919,7 @@ func TestReaderFloatsErrorsFixtures(t *testing.T) {
 				n      int
 				err    error
 			)
+
 			sourceFloat32 := bytes.NewReader(tt.src)
 			narrow, err = NewReader(sourceFloat32).DecodeFloat32()
 			n = len(tt.src) - sourceFloat32.Len()
@@ -950,6 +967,7 @@ func TestReaderFloatsTruncatedFixtures(t *testing.T) {
 						n         int
 						err       error
 					)
+
 					if length > 0 && tt.wire[0] == 0xcb {
 						narrowErr = ErrTypeMismatch
 					}
@@ -998,6 +1016,7 @@ func TestReaderArrayHeaderWiderFixtures(t *testing.T) {
 				n      int
 				err    error
 			)
+
 			sourceArrayHeader := bytes.NewReader(tt.wire)
 			count, err = NewReader(sourceArrayHeader).DecodeArrayHeader()
 			n = len(tt.wire) - sourceArrayHeader.Len()
@@ -1052,6 +1071,7 @@ func TestReaderArrayHeaderErrorsFixtures(t *testing.T) {
 				n      int
 				err    error
 			)
+
 			sourceArrayHeader := bytes.NewReader(tt.src)
 			count, err = NewReader(sourceArrayHeader).DecodeArrayHeader()
 			n = len(tt.src) - sourceArrayHeader.Len()
@@ -1080,6 +1100,7 @@ func TestReaderArrayHeaderTruncatedFixtures(t *testing.T) {
 					n      int
 					err    error
 				)
+
 				sourceArrayHeader := bytes.NewReader(wire[:length])
 				count, err = NewReader(sourceArrayHeader).DecodeArrayHeader()
 				n = len(wire[:length]) - sourceArrayHeader.Len()
@@ -1105,6 +1126,7 @@ func TestReaderArrayHeaderDoesNotValidateChildrenFixtures(t *testing.T) {
 			err    error
 			want   = errFuzzTruncated
 		)
+
 		sourceArrayHeader := bytes.NewReader(src)
 		count, err = NewReader(sourceArrayHeader).DecodeArrayHeader()
 		n = len(src) - sourceArrayHeader.Len()
@@ -1150,6 +1172,7 @@ func TestReaderMapHeaderWiderFixtures(t *testing.T) {
 				n      int
 				err    error
 			)
+
 			sourceMapHeader := bytes.NewReader(tt.wire)
 			count, err = NewReader(sourceMapHeader).DecodeMapHeader()
 			n = len(tt.wire) - sourceMapHeader.Len()
@@ -1204,6 +1227,7 @@ func TestReaderMapHeaderErrorsFixtures(t *testing.T) {
 				n      int
 				err    error
 			)
+
 			sourceMapHeader := bytes.NewReader(tt.src)
 			count, err = NewReader(sourceMapHeader).DecodeMapHeader()
 			n = len(tt.src) - sourceMapHeader.Len()
@@ -1232,6 +1256,7 @@ func TestReaderMapHeaderTruncatedFixtures(t *testing.T) {
 					n      int
 					err    error
 				)
+
 				sourceMapHeader := bytes.NewReader(wire[:length])
 				count, err = NewReader(sourceMapHeader).DecodeMapHeader()
 				n = len(wire[:length]) - sourceMapHeader.Len()
@@ -1257,6 +1282,7 @@ func TestReaderMapHeaderDoesNotValidateChildrenFixtures(t *testing.T) {
 			err    error
 			want   = errFuzzTruncated
 		)
+
 		sourceMapHeader := bytes.NewReader(src)
 		count, err = NewReader(sourceMapHeader).DecodeMapHeader()
 		n = len(src) - sourceMapHeader.Len()
@@ -1303,6 +1329,7 @@ func TestReaderStringWiderHeadersFixtures(t *testing.T) {
 				n     int
 				err   error
 			)
+
 			sourceString := bytes.NewReader(tt.src)
 			owned, err = NewReader(sourceString).DecodeString()
 			n = len(tt.src) - sourceString.Len()
@@ -1355,6 +1382,7 @@ func TestReaderStringErrorsFixtures(t *testing.T) {
 				n      int
 				err    error
 			)
+
 			sourceString := bytes.NewReader(tt.src)
 			owned, err = NewReader(sourceString).DecodeString()
 			n = len(tt.src) - sourceString.Len()
@@ -1386,6 +1414,7 @@ func TestReaderStringsTruncatedFixtures(t *testing.T) {
 					n      int
 					err    error
 				)
+
 				sourceString := bytes.NewReader(src)
 				owned, err = NewReader(sourceString).DecodeString()
 				n = len(src) - sourceString.Len()
@@ -1407,6 +1436,7 @@ func TestReadererStringOwnershipFixtureFixtures(t *testing.T) {
 		r          = NewReader(bytes.NewReader(src))
 		owned, err = r.DecodeString()
 	)
+
 	if err != nil || owned != "abc" {
 		t.Fatalf("DecodeString() = (%q, %v)", owned, err)
 	}
@@ -1437,6 +1467,7 @@ func TestReaderBytesWiderHeadersFixtures(t *testing.T) {
 				n    int
 				err  error
 			)
+
 			sourceBytes := bytes.NewReader(tt.src)
 			view, err = NewReader(sourceBytes).DecodeBytes()
 			n = len(tt.src) - sourceBytes.Len()
@@ -1489,6 +1520,7 @@ func TestReaderBytesErrorsFixtures(t *testing.T) {
 				n      int
 				err    error
 			)
+
 			sourceBytes := bytes.NewReader(tt.src)
 			view, err = NewReader(sourceBytes).DecodeBytes()
 			n = len(tt.src) - sourceBytes.Len()
@@ -1519,6 +1551,7 @@ func TestReaderBytesTruncatedFixtures(t *testing.T) {
 					n      int
 					err    error
 				)
+
 				sourceBytes := bytes.NewReader(src)
 				view, err = NewReader(sourceBytes).DecodeBytes()
 				n = len(src) - sourceBytes.Len()
@@ -1540,6 +1573,7 @@ func TestReadererBytesOwnershipFixtureFixtures(t *testing.T) {
 		r          = NewReader(bytes.NewReader(src))
 		owned, err = r.DecodeBytes()
 	)
+
 	if err != nil || string(owned) != "abc" {
 		t.Fatalf("DecodeBytes() = (%x, %v)", owned, err)
 	}
@@ -1565,6 +1599,7 @@ func TestReaderZeroAllocations(t *testing.T) {
 		input bytes.Reader
 		r     = NewReader(&input)
 	)
+
 	allocations := testing.AllocsPerRun(1000, func() {
 		input.Reset(wire)
 		r.Reset(&input)
@@ -1617,6 +1652,7 @@ func TestReaderInitializationAndReset(t *testing.T) {
 			{name: "nil constructor", d: NewReader(nil)},
 		}
 	)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			requireReaderScalarFailure(t, tt.d, ErrUninitialized)
@@ -1677,6 +1713,7 @@ func TestReaderLimits(t *testing.T) {
 			MaxSkipValues: math.MaxUint64, MaxSkipBytes: math.MaxUint64}
 		zero Reader
 	)
+
 	zero.Reset(nil)
 	if zero.state.limits != defaults || NewReader(nil).state.limits != defaults {
 		t.Fatal("constructor/zero Reset did not initialize default limits")
@@ -1733,6 +1770,7 @@ func TestReaderSetLimitsPreservesFailure(t *testing.T) {
 		failure = d.DecodeNil()
 		reads   = r.reads
 	)
+
 	if failure != ErrInvalidFormat {
 		t.Fatalf("initial failure = %v", failure)
 	}
@@ -1765,6 +1803,7 @@ func TestReaderCopiesShareEOFResetAndLimits(t *testing.T) {
 		value, err = copied.DecodeBool()
 		first      error
 	)
+
 	if err != nil || !value {
 		t.Fatalf("copied DecodeBool = (%v, %v)", value, err)
 	}
@@ -1831,6 +1870,7 @@ func TestReaderPayloadWire(t *testing.T) {
 					r    = &decoderTestReader{data: wire, maxRead: 7}
 					d    = NewReader(r)
 				)
+
 				owned, err := family.owned(d)
 				if err != nil || owned == nil || !bytes.Equal(owned, value) || r.position != len(wire)-1 {
 					t.Fatalf("owned result = (%d bytes, %v), consumed %d", len(owned), err, r.position)
@@ -1889,6 +1929,7 @@ func TestReaderPayloadWiderHeadersAndRawBytes(t *testing.T) {
 				owned []byte
 				err   error
 			)
+
 			if tt.isString {
 				var text string
 				text, err = d.DecodeString()
@@ -1912,6 +1953,7 @@ func TestReaderPayloadWiderHeadersAndRawBytes(t *testing.T) {
 				dst bytes.Buffer
 				n   uint64
 			)
+
 			if tt.isString {
 				n, err = d.DecodeStringTo(&dst)
 			} else {
@@ -1949,6 +1991,7 @@ func TestReaderPayloadTruncation(t *testing.T) {
 					owned []byte
 					err   error
 				)
+
 				if length == 0 {
 					want = io.EOF
 				}
@@ -1975,6 +2018,7 @@ func TestReaderPayloadTruncation(t *testing.T) {
 					n     uint64
 					wantN int
 				)
+
 				if length > tt.header {
 					wantN = length - tt.header
 				}
@@ -2104,6 +2148,7 @@ func TestReaderPayloadOwnership(t *testing.T) {
 		wire = []byte{0xa3, 'a', 'b', 'c', 0xc4, 3, 1, 2, 3, 0xa1, 'z', 0xc4, 1, 9}
 		d    = NewReader(bytes.NewReader(wire))
 	)
+
 	text, textErr := d.DecodeString()
 	value, bytesErr := d.DecodeBytes()
 	if textErr != nil || bytesErr != nil || text != "abc" || !bytes.Equal(value, []byte{1, 2, 3}) {
@@ -2119,6 +2164,7 @@ func TestReaderPayloadOwnership(t *testing.T) {
 		later []byte
 		err   error
 	)
+
 	if later, err = d.DecodeBytes(); err != nil {
 		t.Fatal(err)
 	}
@@ -2182,6 +2228,7 @@ func TestReaderPayloadClassification(t *testing.T) {
 					want = readTypeError(tag)
 					err  = method.run(d)
 				)
+
 				if err != want || r.position != 1 {
 					t.Fatalf("classification = %v, consumed %d, want %v and one byte", err, r.position, want)
 				}
@@ -2214,6 +2261,7 @@ func TestReaderPayloadTransferValidationAndEmpty(t *testing.T) {
 				d          = NewReader(r)
 				writer     = &encoderPayloadWriter{failCall: 1, err: io.ErrClosedPipe}
 			)
+
 			if n, err := method.run(&unattached, nil); n != 0 || err != ErrUninitialized {
 				t.Fatalf("unattached nil transfer = (%d, %v)", n, err)
 			}
@@ -2261,6 +2309,7 @@ func TestReaderPayloadSourceErrors(t *testing.T) {
 			{name: "full payload EOF", tail: []byte{1, 2, 3, 4}, end: io.EOF, wantN: 4},
 		}
 	)
+
 	for _, isString := range []bool{false, true} {
 		for _, tt := range tests {
 			t.Run(fmt.Sprintf("string_%t/%s", isString, tt.name), func(t *testing.T) {
@@ -2277,6 +2326,7 @@ func TestReaderPayloadSourceErrors(t *testing.T) {
 					d    = NewReader(r)
 					err  error
 				)
+
 				if isString {
 					value, readErr := d.DecodeString()
 					err = readErr
@@ -2301,6 +2351,7 @@ func TestReaderPayloadSourceErrors(t *testing.T) {
 					dst bytes.Buffer
 					n   uint64
 				)
+
 				if isString {
 					n, err = d.DecodeStringTo(&dst)
 				} else {
@@ -2336,6 +2387,7 @@ func TestReaderPayloadHeaderErrors(t *testing.T) {
 			n   uint64
 			err error
 		)
+
 		if wire[0] >= 0xa0 && wire[0] <= 0xbf || wire[0] >= 0xd9 && wire[0] <= 0xdb {
 			n, err = d.DecodeStringTo(io.Discard)
 		} else {
@@ -2371,6 +2423,7 @@ func TestReaderPayloadDestinationFailures(t *testing.T) {
 			{name: "simultaneous short nil", accept: 2, readErr: sourceFailure, want: io.ErrShortWrite, wantN: 2},
 		}
 	)
+
 	for _, method := range []struct {
 		name   string
 		header []byte
@@ -2387,6 +2440,7 @@ func TestReaderPayloadDestinationFailures(t *testing.T) {
 					writer = &encoderPayloadWriter{failCall: 1, accept: tt.accept, acceptAll: tt.acceptAll, err: tt.writeErr}
 					n, err = method.run(d, writer)
 				)
+
 				if n != tt.wantN || !errors.Is(err, tt.want) || errors.Is(err, sourceFailure) || !bytes.Equal(writer.data, []byte{1, 2, 3, 4}[:int(tt.wantN)]) {
 					t.Fatalf("destination failure = (%d, %v), accepted %x", n, err, writer.data)
 				}
@@ -2422,6 +2476,7 @@ func TestReaderPayloadZeroProgress(t *testing.T) {
 				n      uint64
 				err    error
 			)
+
 			if isString {
 				n, err = d.DecodeStringTo(&dst)
 			} else {
@@ -2462,6 +2517,7 @@ func TestReaderGeneratedPayloadTransfer(t *testing.T) {
 				d      = NewReader(reader)
 				writer = &decoderCountingWriter{source: source}
 			)
+
 			if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 1}); err != nil {
 				t.Fatal(err)
 			}
@@ -2492,6 +2548,7 @@ func TestReaderPayloadFailureDoesNotDrain(t *testing.T) {
 			wantN    = uint64(failCall-1)*32768 + 3
 			wantRead = uint64(failCall) * 32768
 		)
+
 		if n != wantN || !errors.Is(err, io.ErrClosedPipe) || source.read != wantRead || source.read == source.length {
 			t.Fatalf("failed chunk %d = (%d, %v), source read %d", failCall, n, err, source.read)
 		}
@@ -2515,6 +2572,7 @@ func TestReaderPayloadLaterChunkSourceFailure(t *testing.T) {
 			n    uint64
 			err  error
 		)
+
 		if tag == 0xdb {
 			n, err = d.DecodeStringTo(&dst)
 		} else {
@@ -2549,6 +2607,7 @@ func TestReaderPayloadNoProgressRetainsPartialCount(t *testing.T) {
 		dst    bytes.Buffer
 		n, err = d.DecodeBytesTo(&dst)
 	)
+
 	if n != 1 || !errors.Is(err, io.ErrNoProgress) || !bytes.Equal(dst.Bytes(), []byte{1}) || source.reads != 101 {
 		t.Fatalf("partial no progress = (%d, %v), output %x, reads %d", n, err, dst.Bytes(), source.reads)
 	}
@@ -2563,6 +2622,7 @@ func TestReaderHugeTransferHeaderDoesNotMaterialize(t *testing.T) {
 			err error
 			dst bytes.Buffer
 		)
+
 		if tag == 0xdb {
 			n, err = d.DecodeStringTo(&dst)
 		} else {
@@ -2630,6 +2690,7 @@ func TestSkipSupportedValues(t *testing.T) {
 					r    = &decoderTestReader{data: wire, maxRead: fragment, endErr: io.EOF}
 					d    = NewReader(r)
 				)
+
 				if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 1}); err != nil {
 					t.Fatal(err)
 				}
@@ -2676,6 +2737,7 @@ func TestSkipGeneratedPayloadBoundaries(t *testing.T) {
 				next    = bytes.NewReader([]byte{0xc3})
 				d       = NewReader(io.MultiReader(bytes.NewReader(tt.header), payload, next))
 			)
+
 			if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 1, MaxSkipBytes: uint64(len(tt.header)) + tt.length}); err != nil {
 				t.Fatal(err)
 			}
@@ -2717,6 +2779,7 @@ func TestSkipGeneratedContainerBoundaries(t *testing.T) {
 				next     = bytes.NewReader([]byte{0xc3})
 				d        = NewReader(io.MultiReader(bytes.NewReader(tt.header), children, next))
 			)
+
 			if err := d.SetLimits(ReaderLimits{MaxSkipValues: tt.children + 1, MaxSkipBytes: uint64(len(tt.header)) + tt.children}); err != nil {
 				t.Fatal(err)
 			}
@@ -2758,6 +2821,7 @@ func TestSkipTruncation(t *testing.T) {
 					want = io.ErrUnexpectedEOF
 					err  = d.Skip()
 				)
+
 				if length == 0 {
 					want = io.EOF
 				}
@@ -2825,6 +2889,7 @@ func TestSkipLimits(t *testing.T) {
 				r = &decoderTestReader{data: tt.wire, maxRead: 1}
 				d = NewReader(r)
 			)
+
 			if err := d.SetLimits(tt.limits); err != nil {
 				t.Fatal(err)
 			}
@@ -2857,6 +2922,7 @@ func TestSkipDepthLimits(t *testing.T) {
 					containers = depth
 					wire       []byte
 				)
+
 				if end == 0x90 || end == 0x80 {
 					containers--
 				}
@@ -2928,6 +2994,7 @@ func TestSkipClassificationAndSourceErrors(t *testing.T) {
 				d   = NewReader(r)
 				err = d.Skip()
 			)
+
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("Skip() = %v, want %v", err, tt.want)
 			}
@@ -2990,6 +3057,7 @@ func TestSkipBudgetsRestartAndReset(t *testing.T) {
 		r = &decoderTestReader{data: []byte{0x91, 0xc0, 0x91, 0xc0, 0xc3}}
 		d = NewReader(r)
 	)
+
 	if err := d.SetLimits(ReaderLimits{MaxSkipDepth: 1, MaxSkipValues: 2, MaxSkipBytes: 2}); err != nil {
 		t.Fatal(err)
 	}
@@ -3040,6 +3108,7 @@ func TestSkipZeroProgress(t *testing.T) {
 				d   = NewReader(r)
 				err = d.Skip()
 			)
+
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("Skip() = %v, want %v", err, tt.want)
 			}
@@ -3076,6 +3145,7 @@ func TestSkipLargePayloadPreflightAndFailures(t *testing.T) {
 				available: length - 2, end: failure, want: failure, read: length - 2},
 		}
 	)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
@@ -3083,6 +3153,7 @@ func TestSkipLargePayloadPreflightAndFailures(t *testing.T) {
 				end     = &decoderTestReader{endErr: tt.end}
 				d       = NewReader(io.MultiReader(bytes.NewReader(header), payload, end))
 			)
+
 			if err := d.SetLimits(ReaderLimits{MaxSkipBytes: tt.byteBudget}); err != nil {
 				t.Fatal(err)
 			}
@@ -3127,6 +3198,7 @@ func TestStreamContainerHeaderOnlyAndWiderForms(t *testing.T) {
 				count uint32
 				err   error
 			)
+
 			if tt.isMap {
 				count, err = d.DecodeMapHeader()
 			} else {
@@ -3162,6 +3234,7 @@ func TestStreamContainerTruncationAndClassification(t *testing.T) {
 						err   error
 						want  = io.ErrUnexpectedEOF
 					)
+
 					if length == 0 {
 						want = io.EOF
 					}
@@ -3196,6 +3269,7 @@ func TestStreamContainerTruncationAndClassification(t *testing.T) {
 				err   error
 				want  = readTypeError(tag)
 			)
+
 			if isMap {
 				count, err = d.DecodeMapHeader()
 			} else {

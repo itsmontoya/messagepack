@@ -136,7 +136,9 @@ func NewReader(src io.Reader) (out *Reader) {
 * Keep vertical noise low.
 * Avoid unnecessary blank lines.
 * Separate distinct steps, such as validation, initialization, and state mutation,
-  with a single blank line. Keep a result declaration next to its call and error guard.
+  with a single blank line.
+* Leave a blank line after a multiline `var (...)` block before the next statement
+  or declaration. Apply this in nested blocks and at package scope.
 * Leave a blank line after every completed `if` statement when another statement
   follows in the same block. Apply this in nested blocks too.
 * Treat an `if`/`else` chain as one statement for spacing. Keep `else` and `else if`
@@ -169,6 +171,7 @@ Avoid stutter:
 ## Prefer var over := (with narrow exceptions)
 
 We prefer explicit variable declarations.
+Follow a multiline `var (...)` block with a blank line before continuing the code.
 
 ### Why
 

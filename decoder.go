@@ -38,6 +38,7 @@ func (d *Decoder) Decode(value any) (err error) {
 		decodee Decodee
 		ok      bool
 	)
+
 	if decodee, ok = value.(Decodee); !ok {
 		return ErrUnsupportedType
 	}

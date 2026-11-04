@@ -17,6 +17,7 @@ func TestStreamingApplicationMessageWireAndInteroperability(t *testing.T) {
 		e       = NewWriter(&writer)
 		fixture = applicationMessageFixture()
 	)
+
 	if err := encodeStreamingApplicationMessage(e, message); err != nil {
 		t.Fatal(err)
 	}
@@ -50,6 +51,7 @@ func TestStreamingApplicationMessageSequenceAndOwnership(t *testing.T) {
 		second  applicationMessage
 		err     error
 	)
+
 	first, err = decodeStreamingApplicationMessage(d)
 	if err != nil || r.position != len(fixture) {
 		t.Fatalf("first message = (%+v, %v), position %d", first, err, r.position)
@@ -89,6 +91,7 @@ func TestStreamingApplicationMessageTruncation(t *testing.T) {
 				err     error
 				want    = io.ErrUnexpectedEOF
 			)
+
 			if length == 0 {
 				want = io.EOF
 			}
@@ -110,6 +113,7 @@ func TestStreamingApplicationMessageInvalidSchema(t *testing.T) {
 		wrongArrayCount = applicationMessageFixture()
 		wrongSampleType = applicationMessageFixture()
 	)
+
 	wrongArrayCount[len(wrongArrayCount)-3] = 0x91
 	wrongSampleType[len(wrongSampleType)-1] = 0xc0
 	tests := []struct {

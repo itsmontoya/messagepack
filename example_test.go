@@ -14,6 +14,7 @@ func Example() {
 		decoded applicationMessage
 		err     error
 	)
+
 	if err = e.Encode(message); err != nil {
 		fmt.Println("encode:", err)
 		return
@@ -54,6 +55,7 @@ func Example_concatenatedMessages() {
 		n       int
 		err     error
 	)
+
 	if err = e.Encode(message); err != nil {
 		fmt.Println("first encode:", err)
 		return

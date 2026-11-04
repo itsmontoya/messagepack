@@ -28,6 +28,7 @@ func FuzzStreamSkip(f *testing.F) {
 			settings [9]byte
 			before   = append([]byte(nil), src...)
 		)
+
 		copy(settings[:], controls)
 		var (
 			limits = ReaderLimits{MaxPayloadBytes: 1, MaxSkipDepth: uint32(settings[8])%16 + 1,
@@ -39,6 +40,7 @@ func FuzzStreamSkip(f *testing.F) {
 			deepest     uint32
 			baselineErr error
 		)
+
 		if err := baseline.SetLimits(limits); err != nil {
 			t.Fatal(err)
 		}
@@ -78,6 +80,7 @@ func FuzzStreamSkip(f *testing.F) {
 			err  = d.Skip()
 			want = baselineErr
 		)
+
 		if errors.Is(want, io.EOF) {
 			want = io.EOF
 		}
@@ -141,6 +144,7 @@ func streamFuzzValueSize(src []byte, depth uint32, values, deepest *uint32) (n i
 		count    uint32
 		children uint64
 	)
+
 	switch {
 	case tag <= 0x7f || tag >= 0xe0 || tag == 0xc0 || tag == 0xc2 || tag == 0xc3:
 		return 1, nil

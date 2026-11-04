@@ -29,6 +29,7 @@ func (m *exampleMessage) DecodeMessagePack(r messagepack.Reader) (err error) {
 		count uint32
 		key   string
 	)
+
 	if count, err = r.DecodeMapHeader(); err != nil {
 		return err
 	}

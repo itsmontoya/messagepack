@@ -20,6 +20,7 @@ func TestFlexibleStreamingApplicationMessage(t *testing.T) {
 					want = applicationMessage{ID: 7, Name: "Ada", Active: true, Score: 1.5,
 						Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
 				)
+
 				message, err := decodeFlexibleStreamingApplicationMessage(d)
 				if err != nil || !reflect.DeepEqual(message, want) || r.position != len(fixture) {
 					t.Fatalf("flexible schema = (%+v, %v), position %d", message, err, r.position)
@@ -42,6 +43,7 @@ func TestFlexibleStreamingApplicationInvalidSchema(t *testing.T) {
 		missingID = flexibleStreamingApplicationFixture()
 		duplicate = applicationMessageFixture()
 	)
+
 	missingID = missingID[:len(missingID)-4]
 	missingID[0] = 0x86
 	duplicate[0] = 0x87
@@ -76,6 +78,7 @@ func TestFlexibleStreamingApplicationSixteenFieldLimit(t *testing.T) {
 		fixture = applicationMessageFixture()
 		wire    = append([]byte{0xde, 0, 16}, fixture[1:]...)
 	)
+
 	for index := byte(0); index < 10; index++ {
 		wire = append(wire, 0xa2, 'x', '0'+index, 0xc0)
 	}
@@ -93,6 +96,7 @@ func TestFlexibleStreamingApplicationTruncation(t *testing.T) {
 				want = io.ErrUnexpectedEOF
 				d    = NewReader(bytes.NewReader(fixture[:length]))
 			)
+
 			if length == 0 {
 				want = io.EOF
 			}

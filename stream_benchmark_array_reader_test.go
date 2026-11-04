@@ -71,6 +71,7 @@ func TestStreamBenchmarkArraySource(t *testing.T) {
 			n      int
 			err    error
 		)
+
 		source.Reset()
 		for {
 			n, err = source.Read(buffer[:chunkSize])

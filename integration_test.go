@@ -20,6 +20,7 @@ func TestApplicationMessageEncoding(t *testing.T) {
 			{name: "existing prefix", dst: []byte{0xaa, 0xbb}},
 		}
 	)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
@@ -27,6 +28,7 @@ func TestApplicationMessageEncoding(t *testing.T) {
 				output = bytes.NewBuffer(tt.dst)
 				err    error
 			)
+
 			err = NewEncoder(output).Encode(message)
 			if err != nil || !bytes.Equal(output.Bytes(), want) {
 				t.Fatalf("Encode() = (%x, %v), want %x", output.Bytes(), err, want)
@@ -45,6 +47,7 @@ func TestApplicationMessageDecoding(t *testing.T) {
 			n       int
 			err     error
 		)
+
 		message, n, err = readApplicationMessage(src)
 		if err != nil || n != len(fixture) {
 			t.Fatalf("readApplicationMessage() = (%+v, %d, %v)", message, n, err)
@@ -80,6 +83,7 @@ func TestApplicationMessageInvalidSchema(t *testing.T) {
 		wrongArrayCount = applicationMessageFixture()
 		wrongSampleType = applicationMessageFixture()
 	)
+
 	wrongArrayCount[len(wrongArrayCount)-3] = 0x91
 	wrongSampleType[len(wrongSampleType)-1] = 0xc0
 	tests := []struct {
@@ -104,6 +108,7 @@ func TestApplicationMessageInvalidSchema(t *testing.T) {
 				n       int
 				err     error
 			)
+
 			message, n, err = readApplicationMessage(tt.src)
 			if !errors.Is(err, tt.err) || message.ID != 0 || message.Name != "" ||
 				message.Active || message.Score != 0 || message.Payload != nil || message.Samples != [2]int64{} {
@@ -127,6 +132,7 @@ func TestApplicationMessageTruncated(t *testing.T) {
 				n       int
 				err     error
 			)
+
 			message, n, err = readApplicationMessage(wire[:length])
 			if !errors.Is(err, streamFuzzError(errFuzzTruncated, length)) || message.ID != 0 || message.Name != "" ||
 				message.Active || message.Score != 0 || message.Payload != nil || message.Samples != [2]int64{} {
@@ -147,6 +153,7 @@ func TestApplicationMessageOwnershipAndReuse(t *testing.T) {
 		out     []byte
 		err     error
 	)
+
 	if message, err = readCompleteApplicationMessage(wire); err != nil {
 		t.Fatal(err)
 	}

@@ -308,6 +308,7 @@ func (w *Writer) copyPayloadFrom(operation string, remaining uint64, src io.Read
 		readErr error
 		chunk   []byte
 	)
+
 	for remaining > 0 {
 		chunk = w.payloadBuffer()
 		if remaining < uint64(len(chunk)) {

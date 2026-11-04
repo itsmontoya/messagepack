@@ -18,6 +18,7 @@ func TestDecoderDecodee(t *testing.T) {
 			Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
 		err error
 	)
+
 	for count := 1; count <= 2; count++ {
 		if err = d.Decode(&message); err != nil {
 			t.Fatal(err)
@@ -56,6 +57,7 @@ func TestDecoderUnsupportedValues(t *testing.T) {
 				}}
 				err = d.Decode(tt.value)
 			)
+
 			if err != ErrUnsupportedType || input.reads != 0 {
 				t.Fatalf("Decode(%T) = %v, reads %d", tt.value, err, input.reads)
 			}
@@ -109,6 +111,7 @@ func TestDecoderFailuresAreTerminal(t *testing.T) {
 				decode: func(r Reader) (err error) { _ = r.DecodeNil(); return customFailure }},
 		}
 	)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
@@ -119,6 +122,7 @@ func TestDecoderFailuresAreTerminal(t *testing.T) {
 				reads = input.reads
 				err   error
 			)
+
 			if !errors.Is(first, tt.wantErr) {
 				t.Fatalf("Decode = %v, want %v", first, tt.wantErr)
 			}
@@ -150,6 +154,7 @@ func TestDecoderCloseLeavesInputOpen(t *testing.T) {
 		tail  [1]byte
 		n     int
 	)
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,6 +196,7 @@ func TestDecoderPublicMethods(t *testing.T) {
 		typ  = reflect.TypeOf(&Decoder{})
 		want = []string{"Close", "Decode"}
 	)
+
 	if typ.NumMethod() != len(want) {
 		t.Fatalf("Decoder exposes %d methods, want %v", typ.NumMethod(), want)
 	}

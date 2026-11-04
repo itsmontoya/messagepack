@@ -14,6 +14,7 @@ func ExampleDecoder() {
 		message exampleMessage
 		err     error
 	)
+
 	if err = d.Decode(&message); err != nil {
 		panic(err)
 	}

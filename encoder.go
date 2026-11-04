@@ -37,6 +37,7 @@ func (e *Encoder) Encode(value any) (err error) {
 		encodee Encodee
 		ok      bool
 	)
+
 	if encodee, ok = value.(Encodee); !ok {
 		return ErrUnsupportedType
 	}

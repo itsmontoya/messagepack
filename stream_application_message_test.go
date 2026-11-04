@@ -58,6 +58,7 @@ func decodeStreamingApplicationMessage(d *Reader) (message applicationMessage, e
 		count uint32
 		key   string
 	)
+
 	if count, err = d.DecodeMapHeader(); err != nil {
 		return applicationMessage{}, err
 	}

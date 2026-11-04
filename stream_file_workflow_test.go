@@ -56,6 +56,7 @@ func checkStreamingDataset(d *Reader, count uint32, length uint64) (err error) {
 		n      uint64
 		sink   streamCheckingWriter
 	)
+
 	if actual, err = d.DecodeArrayHeader(); err != nil {
 		return err
 	}
@@ -102,6 +103,7 @@ func TestStreamingTemporaryFileDataset(t *testing.T) {
 		file *os.File
 		err  error
 	)
+
 	if file, err = os.Create(path); err != nil {
 		t.Fatal(err)
 	}
@@ -125,6 +127,7 @@ func TestStreamingTemporaryFileDataset(t *testing.T) {
 		buffered = bufio.NewReaderSize(file, 4096)
 		d        = NewReader(buffered)
 	)
+
 	if err = d.SetLimits(ReaderLimits{MaxPayloadBytes: 1}); err != nil {
 		t.Fatal(err)
 	}
@@ -150,6 +153,7 @@ func TestStreamingFileErrors(t *testing.T) {
 		writeFailure = errors.New("test: file write failure")
 		closeFailure = errors.New("test: file close failure")
 	)
+
 	for _, tt := range []struct {
 		name     string
 		count    uint32
@@ -167,6 +171,7 @@ func TestStreamingFileErrors(t *testing.T) {
 				file = &streamFileWriter{writeErr: tt.writeErr, closeErr: tt.closeErr}
 				err  = writeStreamingDataset(file, tt.count, 0)
 			)
+
 			if err == nil || (tt.writeErr != nil && !errors.Is(err, tt.writeErr)) ||
 				(tt.closeErr != nil && !errors.Is(err, tt.closeErr)) || file.closes != 1 {
 				t.Fatalf("file failure = %v, closes %d", err, file.closes)

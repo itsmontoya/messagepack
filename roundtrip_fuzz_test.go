@@ -21,6 +21,7 @@ func FuzzRoundTripInt64(f *testing.F) {
 			n      int
 			err    error
 		)
+
 		if err = NewWriter(&output).EncodeInt64(value); err != nil {
 			t.Fatal(err)
 		}
@@ -48,6 +49,7 @@ func FuzzRoundTripUint64(f *testing.F) {
 			n      int
 			err    error
 		)
+
 		if err = NewWriter(&output).EncodeUint64(value); err != nil {
 			t.Fatal(err)
 		}
@@ -75,6 +77,7 @@ func FuzzRoundTripFloat32(f *testing.F) {
 			n      int
 			err    error
 		)
+
 		if err = NewWriter(&output).EncodeFloat32(math.Float32frombits(bits)); err != nil {
 			t.Fatal(err)
 		}
@@ -103,6 +106,7 @@ func FuzzRoundTripFloat64(f *testing.F) {
 			n      int
 			err    error
 		)
+
 		if err = NewWriter(&output).EncodeFloat64(math.Float64frombits(bits)); err != nil {
 			t.Fatal(err)
 		}
@@ -135,6 +139,7 @@ func FuzzRoundTripString(f *testing.F) {
 			n      int
 			err    error
 		)
+
 		if err = NewWriter(&output).EncodeString(value); err != nil {
 			t.Fatal(err)
 		}
@@ -167,6 +172,7 @@ func FuzzRoundTripBytes(f *testing.F) {
 			n      int
 			err    error
 		)
+
 		if err = NewWriter(&output).EncodeBytes(value); err != nil {
 			t.Fatal(err)
 		}

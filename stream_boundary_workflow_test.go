@@ -50,6 +50,7 @@ func TestStreamingExactlyOneFrame(t *testing.T) {
 				message    applicationMessage
 				err        error
 			)
+
 			message, err = decodeExactlyOneStreamingMessage(frame)
 			if !errors.Is(err, tt.want) || (err == nil && message.ID != 7) {
 				t.Fatalf("framed message = (%+v, %v), want %v", message, err, tt.want)
@@ -79,6 +80,7 @@ func TestStreamingCallerOwnedBuffering(t *testing.T) {
 		message  = applicationMessage{ID: 7, Name: "Ada", Active: true, Score: 1.5,
 			Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
 	)
+
 	if err := encodeStreamingApplicationMessage(e, message); err != nil {
 		t.Fatal(err)
 	}
@@ -100,6 +102,7 @@ func TestStreamingCallerOwnedBuffering(t *testing.T) {
 		d     = NewReader(input)
 		tail  [4]byte
 	)
+
 	if _, err := decodeStreamingApplicationMessage(d); err != nil {
 		t.Fatal(err)
 	}
@@ -133,6 +136,7 @@ func TestStreamingPipeMessageSequence(t *testing.T) {
 		message        = applicationMessage{ID: 7, Name: "Ada", Active: true, Score: 1.5,
 			Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
 	)
+
 	stop := context.AfterFunc(ctx, func() {
 		defer close(canceled)
 		if err := reader.CloseWithError(ctx.Err()); err != nil {
@@ -185,6 +189,7 @@ func TestStreamingPipeMessageSequence(t *testing.T) {
 		buffered = bufio.NewReader(reader)
 		d        = NewReader(buffered)
 	)
+
 	first, firstErr := decodeStreamingApplicationMessage(d)
 	if firstErr != nil || first.ID != 7 {
 		t.Fatalf("first persistent-stream message = (%+v, %v)", first, firstErr)
