@@ -184,6 +184,12 @@ func (w *Writer) EncodeString(value string) (err error) {
 		return err
 	}
 
+	if len(value) > 0 && len(value) <= len(w.scratch) {
+		copy(w.scratch[:], value)
+		_, err = w.write("encode string", w.scratch[:len(value)])
+		return err
+	}
+
 	for len(value) > 0 {
 		n := copy(w.payloadBuffer(), value)
 		if _, err = w.write("encode string", w.state.buffer[:n]); err != nil {

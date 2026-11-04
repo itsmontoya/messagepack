@@ -1,0 +1,467 @@
+--- a/reader.go
++++ b/reader.go
+@@ -20,8 +20,7 @@
+ // Its zero value is unattached. Initialized copies share input, limits, and failure state.
+ // Failures after I/O are terminal until Reset; shared instances require synchronization.
+ type Reader struct {
+-	state   *readerState
+-	scratch [9]byte
++	state *readerState
+ }
+ 
+ // Reset attaches src and clears shared failure and EOF state while preserving limits.
+@@ -173,7 +172,7 @@
+ 		return 0, err
+ 	}
+ 
+-	return math.Float32frombits(binary.BigEndian.Uint32(r.scratch[1:5])), nil
++	return math.Float32frombits(binary.BigEndian.Uint32(r.state.scratch[1:5])), nil
+ }
+ 
+ // DecodeFloat64 preserves float64 bits or widens float32 with Go's conversion.
+@@ -201,10 +200,10 @@
+ 	}
+ 
+ 	if tag == 0xca {
+-		return float64(math.Float32frombits(binary.BigEndian.Uint32(r.scratch[1:5]))), nil
+-	}
+-
+-	return math.Float64frombits(binary.BigEndian.Uint64(r.scratch[1:9])), nil
++		return float64(math.Float32frombits(binary.BigEndian.Uint32(r.state.scratch[1:5]))), nil
++	}
++
++	return math.Float64frombits(binary.BigEndian.Uint64(r.state.scratch[1:9])), nil
+ }
+ 
+ // DecodeArrayHeader consumes only a header and returns its element count.
+@@ -246,9 +245,9 @@
+ 	case 1:
+ 		return uint32(tag & 0x0f), nil
+ 	case 3:
+-		return uint32(binary.BigEndian.Uint16(r.scratch[1:3])), nil
+-	default:
+-		return binary.BigEndian.Uint32(r.scratch[1:5]), nil
++		return uint32(binary.BigEndian.Uint16(r.state.scratch[1:3])), nil
++	default:
++		return binary.BigEndian.Uint32(r.state.scratch[1:5]), nil
+ 	}
+ }
+ 
+@@ -323,11 +322,11 @@
+ }
+ 
+ func (r *Reader) skipValue(state *skipState) (children uint64, container bool, err error) {
+-	if err = r.readSkip(state, r.scratch[:1]); err != nil {
++	if err = r.readSkip(state, r.state.scratch[:1]); err != nil {
+ 		return 0, false, err
+ 	}
+ 
+-	tag := r.scratch[0]
++	tag := r.state.scratch[0]
+ 	switch {
+ 	case tag <= 0x7f || tag >= 0xe0 || tag == 0xc0 || tag == 0xc2 || tag == 0xc3:
+ 		return 0, false, nil
+@@ -345,13 +344,13 @@
+ func (r *Reader) skipTaggedValue(state *skipState, tag byte) (children uint64, container bool, err error) {
+ 	switch tag {
+ 	case 0xcc, 0xd0:
+-		return 0, false, r.readSkip(state, r.scratch[1:2])
++		return 0, false, r.readSkip(state, r.state.scratch[1:2])
+ 	case 0xcd, 0xd1:
+-		return 0, false, r.readSkip(state, r.scratch[1:3])
++		return 0, false, r.readSkip(state, r.state.scratch[1:3])
+ 	case 0xce, 0xd2, 0xca:
+-		return 0, false, r.readSkip(state, r.scratch[1:5])
++		return 0, false, r.readSkip(state, r.state.scratch[1:5])
+ 	case 0xcf, 0xd3, 0xcb:
+-		return 0, false, r.readSkip(state, r.scratch[1:9])
++		return 0, false, r.readSkip(state, r.state.scratch[1:9])
+ 	case 0xc4, 0xd9:
+ 		return 0, false, r.skipPayloadValue(state, 1)
+ 	case 0xc5, 0xda:
+@@ -389,17 +388,17 @@
+ }
+ 
+ func (r *Reader) readSkipLength(state *skipState, width int) (length uint64, err error) {
+-	if err = r.readSkip(state, r.scratch[1:1+width]); err != nil {
++	if err = r.readSkip(state, r.state.scratch[1:1+width]); err != nil {
+ 		return 0, err
+ 	}
+ 
+ 	switch width {
+ 	case 1:
+-		return uint64(r.scratch[1]), nil
++		return uint64(r.state.scratch[1]), nil
+ 	case 2:
+-		return uint64(binary.BigEndian.Uint16(r.scratch[1:3])), nil
+-	default:
+-		return uint64(binary.BigEndian.Uint32(r.scratch[1:5])), nil
++		return uint64(binary.BigEndian.Uint16(r.state.scratch[1:3])), nil
++	default:
++		return uint64(binary.BigEndian.Uint32(r.state.scratch[1:5])), nil
+ 	}
+ }
+ 
+@@ -488,11 +487,11 @@
+ 
+ 	switch size {
+ 	case 2:
+-		return uint64(r.scratch[1]), nil
++		return uint64(r.state.scratch[1]), nil
+ 	case 3:
+-		return uint64(binary.BigEndian.Uint16(r.scratch[1:3])), nil
+-	default:
+-		return uint64(binary.BigEndian.Uint32(r.scratch[1:5])), nil
++		return uint64(binary.BigEndian.Uint16(r.state.scratch[1:3])), nil
++	default:
++		return uint64(binary.BigEndian.Uint32(r.state.scratch[1:5])), nil
+ 	}
+ }
+ 
+@@ -616,11 +615,11 @@
+ 		return 0, err
+ 	}
+ 
+-	if _, err = r.readFull(operation, r.scratch[:1], false); err != nil {
++	if _, err = r.readFull(operation, r.state.scratch[:1], false); err != nil {
+ 		return 0, r.fail(err)
+ 	}
+ 
+-	return r.scratch[0], nil
++	return r.state.scratch[0], nil
+ }
+ 
+ func (r *Reader) readInteger(operation string) (wire []byte, err error) {
+@@ -650,11 +649,11 @@
+ 		return nil, err
+ 	}
+ 
+-	return r.scratch[:size], nil
++	return r.state.scratch[:size], nil
+ }
+ 
+ func (r *Reader) readScalarBody(operation string, size int) (err error) {
+-	_, err = r.readFull(operation, r.scratch[1:size], true)
++	_, err = r.readFull(operation, r.state.scratch[1:size], true)
+ 	return r.fail(err)
+ }
+ 
+--- a/reader_state.go
++++ b/reader_state.go
+@@ -10,9 +10,10 @@
+ 
+ // readerState keeps initialized Reader copies on the same input and failure boundary.
+ type readerState struct {
+-	reader io.Reader
+-	err    error
+-	eof    bool
+-	limits ReaderLimits
+-	buffer []byte
++	reader  io.Reader
++	err     error
++	eof     bool
++	limits  ReaderLimits
++	buffer  []byte
++	scratch [9]byte
+ }
+--- a/writer.go
++++ b/writer.go
+@@ -22,8 +22,7 @@
+ // Its zero value is unattached. Initialized copies share output and failure state.
+ // I/O failures remain terminal until Reset; shared instances must not be used concurrently.
+ type Writer struct {
+-	state   *writerState
+-	scratch [9]byte
++	state *writerState
+ }
+ 
+ // Reset attaches dst and clears the shared failure without flushing or closing.
+@@ -39,25 +38,37 @@
+ 
+ // EncodeNil writes a nil value, preserving the distinction from empty payloads.
+ func (w *Writer) EncodeNil() (err error) {
+-	w.scratch[0] = 0xc0
+-	_, err = w.write("encode nil", w.scratch[:1])
++	if err = w.ready(); err != nil {
++		return err
++	}
++
++	w.state.scratch[0] = 0xc0
++	_, err = w.write("encode nil", w.state.scratch[:1])
+ 	return err
+ }
+ 
+ // EncodeBool writes value without buffering output for later operations.
+ func (w *Writer) EncodeBool(value bool) (err error) {
+-	w.scratch[0] = 0xc2
++	if err = w.ready(); err != nil {
++		return err
++	}
++
++	w.state.scratch[0] = 0xc2
+ 	if value {
+-		w.scratch[0] = 0xc3
+-	}
+-
+-	_, err = w.write("encode bool", w.scratch[:1])
++		w.state.scratch[0] = 0xc3
++	}
++
++	_, err = w.write("encode bool", w.state.scratch[:1])
+ 	return err
+ }
+ 
+ // EncodeInt64 writes the smallest integer representation of value.
+ // Nonnegative values encode identically to EncodeUint64.
+ func (w *Writer) EncodeInt64(value int64) (err error) {
++	if err = w.ready(); err != nil {
++		return err
++	}
++
+ 	if value >= 0 {
+ 		return w.encodeUint64("encode int64", uint64(value))
+ 	}
+@@ -65,25 +76,25 @@
+ 	var size int
+ 	switch {
+ 	case value >= -32:
+-		w.scratch[0] = byte(value)
++		w.state.scratch[0] = byte(value)
+ 		size = 1
+ 	case value >= math.MinInt8:
+-		w.scratch[0], w.scratch[1] = 0xd0, byte(value)
++		w.state.scratch[0], w.state.scratch[1] = 0xd0, byte(value)
+ 		size = 2
+ 	case value >= math.MinInt16:
+-		w.scratch[0] = 0xd1
+-		binary.BigEndian.PutUint16(w.scratch[1:3], uint16(value))
++		w.state.scratch[0] = 0xd1
++		binary.BigEndian.PutUint16(w.state.scratch[1:3], uint16(value))
+ 		size = 3
+ 	case value >= math.MinInt32:
+-		w.scratch[0] = 0xd2
+-		binary.BigEndian.PutUint32(w.scratch[1:5], uint32(value))
++		w.state.scratch[0] = 0xd2
++		binary.BigEndian.PutUint32(w.state.scratch[1:5], uint32(value))
+ 		size = 5
+ 	default:
+-		w.scratch[0] = 0xd3
+-		binary.BigEndian.PutUint64(w.scratch[1:9], uint64(value))
++		w.state.scratch[0] = 0xd3
++		binary.BigEndian.PutUint64(w.state.scratch[1:9], uint64(value))
+ 		size = 9
+ 	}
+-	_, err = w.write("encode int64", w.scratch[:size])
++	_, err = w.write("encode int64", w.state.scratch[:size])
+ 	return err
+ }
+ 
+@@ -94,86 +105,106 @@
+ 
+ // encodeUint64 preserves the operation context for both signed and unsigned callers.
+ func (w *Writer) encodeUint64(operation string, value uint64) (err error) {
++	if err = w.ready(); err != nil {
++		return err
++	}
++
+ 	var size int
+ 	switch {
+ 	case value <= 127:
+-		w.scratch[0] = byte(value)
++		w.state.scratch[0] = byte(value)
+ 		size = 1
+ 	case value <= math.MaxUint8:
+-		w.scratch[0], w.scratch[1] = 0xcc, byte(value)
++		w.state.scratch[0], w.state.scratch[1] = 0xcc, byte(value)
+ 		size = 2
+ 	case value <= math.MaxUint16:
+-		w.scratch[0] = 0xcd
+-		binary.BigEndian.PutUint16(w.scratch[1:3], uint16(value))
++		w.state.scratch[0] = 0xcd
++		binary.BigEndian.PutUint16(w.state.scratch[1:3], uint16(value))
+ 		size = 3
+ 	case value <= math.MaxUint32:
+-		w.scratch[0] = 0xce
+-		binary.BigEndian.PutUint32(w.scratch[1:5], uint32(value))
++		w.state.scratch[0] = 0xce
++		binary.BigEndian.PutUint32(w.state.scratch[1:5], uint32(value))
+ 		size = 5
+ 	default:
+-		w.scratch[0] = 0xcf
+-		binary.BigEndian.PutUint64(w.scratch[1:9], value)
++		w.state.scratch[0] = 0xcf
++		binary.BigEndian.PutUint64(w.state.scratch[1:9], value)
+ 		size = 9
+ 	}
+-	_, err = w.write(operation, w.scratch[:size])
++	_, err = w.write(operation, w.state.scratch[:size])
+ 	return err
+ }
+ 
+ // EncodeFloat32 preserves value's float32 width and bits, including NaN payloads.
+ func (w *Writer) EncodeFloat32(value float32) (err error) {
+-	w.scratch[0] = 0xca
+-	binary.BigEndian.PutUint32(w.scratch[1:5], math.Float32bits(value))
+-	_, err = w.write("encode float32", w.scratch[:5])
++	if err = w.ready(); err != nil {
++		return err
++	}
++
++	w.state.scratch[0] = 0xca
++	binary.BigEndian.PutUint32(w.state.scratch[1:5], math.Float32bits(value))
++	_, err = w.write("encode float32", w.state.scratch[:5])
+ 	return err
+ }
+ 
+ // EncodeFloat64 preserves value's float64 width and bits, including NaN payloads.
+ func (w *Writer) EncodeFloat64(value float64) (err error) {
+-	w.scratch[0] = 0xcb
+-	binary.BigEndian.PutUint64(w.scratch[1:9], math.Float64bits(value))
+-	_, err = w.write("encode float64", w.scratch[:9])
++	if err = w.ready(); err != nil {
++		return err
++	}
++
++	w.state.scratch[0] = 0xcb
++	binary.BigEndian.PutUint64(w.state.scratch[1:9], math.Float64bits(value))
++	_, err = w.write("encode float64", w.state.scratch[:9])
+ 	return err
+ }
+ 
+ // EncodeArrayHeader writes only the header for count elements.
+ // Callers encode the children explicitly; this method does not validate them.
+ func (w *Writer) EncodeArrayHeader(count uint32) (err error) {
++	if err = w.ready(); err != nil {
++		return err
++	}
++
+ 	var size int
+ 	switch {
+ 	case count <= 15:
+-		w.scratch[0] = 0x90 | byte(count)
++		w.state.scratch[0] = 0x90 | byte(count)
+ 		size = 1
+ 	case count <= math.MaxUint16:
+-		w.scratch[0] = 0xdc
+-		binary.BigEndian.PutUint16(w.scratch[1:3], uint16(count))
++		w.state.scratch[0] = 0xdc
++		binary.BigEndian.PutUint16(w.state.scratch[1:3], uint16(count))
+ 		size = 3
+ 	default:
+-		w.scratch[0] = 0xdd
+-		binary.BigEndian.PutUint32(w.scratch[1:5], count)
++		w.state.scratch[0] = 0xdd
++		binary.BigEndian.PutUint32(w.state.scratch[1:5], count)
+ 		size = 5
+ 	}
+-	_, err = w.write("encode array header", w.scratch[:size])
++	_, err = w.write("encode array header", w.state.scratch[:size])
+ 	return err
+ }
+ 
+ // EncodeMapHeader writes only the header for count key/value pairs.
+ // Callers encode both the keys and values explicitly.
+ func (w *Writer) EncodeMapHeader(count uint32) (err error) {
++	if err = w.ready(); err != nil {
++		return err
++	}
++
+ 	var size int
+ 	switch {
+ 	case count <= 15:
+-		w.scratch[0] = 0x80 | byte(count)
++		w.state.scratch[0] = 0x80 | byte(count)
+ 		size = 1
+ 	case count <= math.MaxUint16:
+-		w.scratch[0] = 0xde
+-		binary.BigEndian.PutUint16(w.scratch[1:3], uint16(count))
++		w.state.scratch[0] = 0xde
++		binary.BigEndian.PutUint16(w.state.scratch[1:3], uint16(count))
+ 		size = 3
+ 	default:
+-		w.scratch[0] = 0xdf
+-		binary.BigEndian.PutUint32(w.scratch[1:5], count)
++		w.state.scratch[0] = 0xdf
++		binary.BigEndian.PutUint32(w.state.scratch[1:5], count)
+ 		size = 5
+ 	}
+-	_, err = w.write("encode map header", w.scratch[:size])
++	_, err = w.write("encode map header", w.state.scratch[:size])
+ 	return err
+ }
+ 
+@@ -246,37 +277,37 @@
+ 	if isString {
+ 		switch {
+ 		case length <= 31:
+-			w.scratch[0] = 0xa0 | byte(length)
++			w.state.scratch[0] = 0xa0 | byte(length)
+ 			size = 1
+ 		case length <= math.MaxUint8:
+-			w.scratch[0], w.scratch[1] = 0xd9, byte(length)
++			w.state.scratch[0], w.state.scratch[1] = 0xd9, byte(length)
+ 			size = 2
+ 		case length <= math.MaxUint16:
+-			w.scratch[0] = 0xda
+-			binary.BigEndian.PutUint16(w.scratch[1:3], uint16(length))
++			w.state.scratch[0] = 0xda
++			binary.BigEndian.PutUint16(w.state.scratch[1:3], uint16(length))
+ 			size = 3
+ 		default:
+-			w.scratch[0] = 0xdb
+-			binary.BigEndian.PutUint32(w.scratch[1:5], uint32(length))
++			w.state.scratch[0] = 0xdb
++			binary.BigEndian.PutUint32(w.state.scratch[1:5], uint32(length))
+ 			size = 5
+ 		}
+ 	} else {
+ 		switch {
+ 		case length <= math.MaxUint8:
+-			w.scratch[0], w.scratch[1] = 0xc4, byte(length)
++			w.state.scratch[0], w.state.scratch[1] = 0xc4, byte(length)
+ 			size = 2
+ 		case length <= math.MaxUint16:
+-			w.scratch[0] = 0xc5
+-			binary.BigEndian.PutUint16(w.scratch[1:3], uint16(length))
++			w.state.scratch[0] = 0xc5
++			binary.BigEndian.PutUint16(w.state.scratch[1:3], uint16(length))
+ 			size = 3
+ 		default:
+-			w.scratch[0] = 0xc6
+-			binary.BigEndian.PutUint32(w.scratch[1:5], uint32(length))
++			w.state.scratch[0] = 0xc6
++			binary.BigEndian.PutUint32(w.state.scratch[1:5], uint32(length))
+ 			size = 5
+ 		}
+ 	}
+ 
+-	_, err = w.write(operation, w.scratch[:size])
++	_, err = w.write(operation, w.state.scratch[:size])
+ 	return err
+ }
+ 
+--- a/writer_state.go
++++ b/writer_state.go
+@@ -10,7 +10,8 @@
+ 
+ // writerState keeps initialized Writer copies on the same output and failure boundary.
+ type writerState struct {
+-	writer io.Writer
+-	err    error
+-	buffer []byte
++	writer  io.Writer
++	err     error
++	buffer  []byte
++	scratch [9]byte
+ }
+--- a/stream_decode_fuzz_test.go
++++ b/stream_decode_fuzz_test.go
+@@ -110,7 +110,7 @@
+ 		var value, expected float64
+ 		expected, want = baseline.DecodeFloat64()
+ 		value, got = d.DecodeFloat64()
+-		if got == nil && math.IsNaN(value) && math.IsNaN(expected) && baseline.scratch[0] == 0xca {
++		if got == nil && math.IsNaN(value) && math.IsNaN(expected) && baseline.state.scratch[0] == 0xca {
+ 			break // The contract leaves widened float32 NaN payload bits unspecified.
+ 		}
+ 

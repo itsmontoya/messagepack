@@ -1,0 +1,756 @@
+Applied allocation improvement audit — 2026-11-04
+Go: go1.27.2 darwin/arm64; Apple M3; default eight logical CPUs (-8)
+Before production source: 97dd666993514f4eaddbd0b900d61e04234fc91d
+After production changes: short-string encoding and short-payload Skip scratch reuse
+Same benchmark definitions in both executables; no profiling or concurrent tests.
+32 cases per version, five samples each, 300ms target: 320 samples total.
+All timing summaries use medians, without a statistical significance claim.
+Matching executables and source snapshots: /private/tmp/messagepack-improvements-20261104
+
+Source SHA-256 checksums
+======================
+reader.go before 0d5bfe704f98b6a1abdce51e04f50366e23a76fff694b0247eee6713bbded2a0
+reader.go after  cec1deb6f1b6aa5ca3c7e1bdfa09588a47b06f0f8477426687d37e347792bc6f
+writer.go before 52ad93b4d0fcda9e52fad381ce4ad24f42bafbc6ccd94d479c50d13d7a633170
+writer.go after  85b4799c7256f01a43dcc0fff5cd4a2b364b4109644409ee40fe2bdf3fb15f3a
+
+Version order
+=============
+Sample 1: before
+Sample 1: after
+Sample 2: after
+Sample 2: before
+Sample 3: before
+Sample 3: after
+Sample 4: after
+Sample 4: before
+Sample 5: before
+Sample 5: after
+
+Production diff
+===============
+diff --git a/reader.go b/reader.go
+index 025d863..fb2149b 100644
+--- a/reader.go
++++ b/reader.go
+@@ -430,6 +430,10 @@ func (r *Reader) skipPayload(state *skipState, length uint64) (err error) {
+ 		return ErrLimitExceeded
+ 	}
+ 
++	if length <= uint64(len(r.scratch)) {
++		return r.readSkip(state, r.scratch[:int(length)])
++	}
++
+ 	for length > 0 {
+ 		var chunk = r.payloadBuffer()
+ 		if length < uint64(len(chunk)) {
+diff --git a/writer.go b/writer.go
+index 09abaa3..45012d5 100644
+--- a/writer.go
++++ b/writer.go
+@@ -184,6 +184,12 @@ func (w *Writer) EncodeString(value string) (err error) {
+ 		return err
+ 	}
+ 
++	if len(value) > 0 && len(value) <= len(w.scratch) {
++		copy(w.scratch[:], value)
++		_, err = w.write("encode string", w.scratch[:len(value)])
++		return err
++	}
++
+ 	for len(value) > 0 {
+ 		n := copy(w.payloadBuffer(), value)
+ 		if _, err = w.write("encode string", w.state.buffer[:n]); err != nil {
+
+All-case summary (timings in ns/op)
+==================================
+Case | before median [min,max] | after median [min,max] | time change | bytes/op before->after | allocs/op before->after
+BenchmarkStreamMessage/Encode/Unbuffered/New | 1615 [1559,1681] | 115.1 [114.1,122.7] | -92.9% | 32856->88 | 3->2
+BenchmarkStreamMessage/Encode/Unbuffered/Reset | 107.3 [106.6,127.9] | 101 [100.2,101.2] | -5.9% | 0->0 | 0->0
+BenchmarkStreamMessage/Encode/Buffered4KiB/New | 1627 [1601,1680] | 171.8 [167.9,172.7] | -89.4% | 32856->88 | 3->2
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset | 162.5 [157.3,180.6] | 155.8 [154,159.6] | -4.1% | 0->0 | 0->0
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/New | 19.71 [18.79,20.12] | 19.84 [19.31,22.25] | +0.7% | 88->88 | 2->2
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/Reset | 6.386 [6.253,6.651] | 6.664 [6.652,8.894] | +4.4% | 0->0 | 0->0
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/New | 1522 [1481,1589] | 23.04 [22.51,23.73] | -98.5% | 32856->88 | 3->2
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/Reset | 10.66 [10.55,11.33] | 9.863 [9.767,11.52] | -7.5% | 0->0 | 0->0
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/New | 1548 [1502,1595] | 22.36 [21.99,23.04] | -98.6% | 32856->88 | 3->2
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/Reset | 9.937 [9.812,9.967] | 9.142 [9.042,16.36] | -8.0% | 0->0 | 0->0
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/New | 1546 [1520,1563] | 22.26 [21.84,22.49] | -98.6% | 32856->88 | 3->2
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/Reset | 9.935 [9.839,11.02] | 9.106 [9.075,9.145] | -8.3% | 0->0 | 0->0
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/New | 1514 [1487,1597] | 1525 [1503,1561] | +0.7% | 32856->32856 | 3->3
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/Reset | 9.93 [9.806,10.01] | 10.18 [10.16,10.3] | +2.5% | 0->0 | 0->0
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/New | 1581 [1481,1618] | 1556 [1503,1635] | -1.6% | 32856->32856 | 3->3
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/Reset | 9.949 [9.785,9.996] | 10.15 [10.1,11.18] | +2.0% | 0->0 | 0->0
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/New | 1532 [1508,1652] | 1545 [1501,1578] | +0.8% | 32856->32856 | 3->3
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/Reset | 20.57 [19.4,20.82] | 20.47 [19.76,20.61] | -0.5% | 0->0 | 0->0
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/New | 1884 [1848,1989] | 1922 [1903,1998] | +2.0% | 32856->32856 | 3->3
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/Reset | 439.3 [395.7,516.6] | 403.6 [386.4,505.2] | -8.1% | 0->0 | 0->0
+BenchmarkAllocationSkip/String9/Unbuffered/New | 1594 [1560,1604] | 65.79 [64.21,67.95] | -95.9% | 32888->120 | 3->2
+BenchmarkAllocationSkip/String9/Unbuffered/Reset | 45.28 [45.2,46.65] | 43.85 [43.72,44.33] | -3.2% | 0->0 | 0->0
+BenchmarkAllocationSkip/String10/Unbuffered/New | 1601 [1498,1626] | 1566 [1530,1611] | -2.2% | 32888->32888 | 3->3
+BenchmarkAllocationSkip/String10/Unbuffered/Reset | 45.21 [45.09,48.82] | 45.11 [44.74,45.38] | -0.2% | 0->0 | 0->0
+BenchmarkAllocationSkip/Binary9/Unbuffered/New | 1596 [1574,1618] | 75.04 [73.14,76.25] | -95.3% | 32888->120 | 3->2
+BenchmarkAllocationSkip/Binary9/Unbuffered/Reset | 53.94 [53.05,53.98] | 53.28 [52.63,53.74] | -1.2% | 0->0 | 0->0
+BenchmarkAllocationSkip/Binary10/Unbuffered/New | 1596 [1566,1618] | 1583 [1560,1613] | -0.8% | 32888->32888 | 3->3
+BenchmarkAllocationSkip/Binary10/Unbuffered/Reset | 53.83 [52.86,53.99] | 54.38 [54.19,54.51] | +1.0% | 0->0 | 0->0
+BenchmarkAllocationSkip/Message/Unbuffered/New | 1758 [1707,1790] | 290 [285.2,292.4] | -83.5% | 32888->120 | 3->2
+BenchmarkAllocationSkip/Message/Unbuffered/Reset | 268.2 [267.5,269.4] | 265.7 [263.9,269.7] | -0.9% | 0->0 | 0->0
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset | 20.83 [20.69,20.88] | 20.77 [20.7,20.83] | -0.3% | 0->0 | 0->0
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset | 79.99 [78.9,85.35] | 79.9 [79.4,80.13] | -0.1% | 0->0 | 0->0
+
+Before samples
+==============
+
+Sample 1
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkStreamMessage$/^Encode$/^(Unbuffered|Buffered4KiB)$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamMessage/Encode/Unbuffered/New-8         	  215444	      1681 ns/op	  33.92 MB/s	         0 readcalls/op	        23.00 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8       	 3354514	       127.9 ns/op	 445.70 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8       	  197365	      1680 ns/op	  33.92 MB/s	         0 readcalls/op	         1.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8     	 2210736	       157.3 ns/op	 362.35 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 1
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkAllocationStringEncode$/^Bytes(0|1|8|9|10|31|1024|32768)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/New-8         	18182162	        18.79 ns/op	  53.23 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/Reset-8       	59810181	         6.253 ns/op	 159.92 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/New-8         	  226346	      1546 ns/op	   1.29 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/Reset-8       	34510717	        10.55 ns/op	 189.56 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/New-8         	  219903	      1595 ns/op	   5.64 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/Reset-8       	37057212	         9.812 ns/op	 917.21 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/New-8         	  219102	      1563 ns/op	   6.40 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/Reset-8       	36318999	         9.839 ns/op	1016.38 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/New-8        	  215630	      1558 ns/op	   7.06 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/Reset-8      	36776442	         9.806 ns/op	1121.75 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/New-8        	  220424	      1589 ns/op	  20.14 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/Reset-8      	36858968	         9.785 ns/op	3270.45 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/New-8      	  213463	      1572 ns/op	 653.23 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/Reset-8    	17665423	        20.39 ns/op	50366.33 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/New-8     	  173262	      1884 ns/op	17397.19 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/Reset-8   	  965200	       415.2 ns/op	78934.17 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 1
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkAllocationSkip$/^(Message|String9|String10|Binary9|Binary10)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/String9/Unbuffered/New-8         	  217360	      1600 ns/op	   6.25 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String9/Unbuffered/Reset-8       	 8060866	        46.65 ns/op	 214.38 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/New-8        	  219668	      1601 ns/op	   6.87 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/Reset-8      	 8007978	        47.85 ns/op	 229.88 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/New-8         	  213357	      1618 ns/op	   6.80 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/Reset-8       	 6724776	        53.05 ns/op	 207.37 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/New-8        	  206571	      1578 ns/op	   7.61 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/Reset-8      	 6783423	        52.86 ns/op	 227.00 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/New-8         	  205677	      1790 ns/op	  31.84 MB/s	        25.00 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8       	 1334082	       267.5 ns/op	 213.07 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 1
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkStreamPrimitives$/^(Encode|Decode)$/^Unbuffered$/^Reset$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	17405598	        20.69 ns/op	1449.88 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 4568577	        78.90 ns/op	 380.24 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 2
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkStreamMessage$/^Encode$/^(Unbuffered|Buffered4KiB)$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamMessage/Encode/Unbuffered/New-8         	  211160	      1609 ns/op	  35.42 MB/s	         0 readcalls/op	        23.00 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8       	 3356270	       106.6 ns/op	 534.93 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8       	  202134	      1620 ns/op	  35.19 MB/s	         0 readcalls/op	         1.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8     	 2207032	       162.6 ns/op	 350.46 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 2
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkAllocationStringEncode$/^Bytes(0|1|8|9|10|31|1024|32768)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/New-8         	18137542	        19.19 ns/op	  52.12 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/Reset-8       	56627145	         6.386 ns/op	 156.59 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/New-8         	  216033	      1522 ns/op	   1.31 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/Reset-8       	33707469	        10.65 ns/op	 187.80 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/New-8         	  222585	      1502 ns/op	   5.99 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/Reset-8       	36504213	         9.920 ns/op	 907.27 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/New-8         	  221294	      1520 ns/op	   6.58 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/Reset-8       	36281635	         9.901 ns/op	1009.96 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/New-8        	  221625	      1507 ns/op	   7.30 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/Reset-8      	36373740	         9.930 ns/op	1107.74 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/New-8        	  226528	      1494 ns/op	  21.41 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/Reset-8      	30616474	         9.904 ns/op	3230.86 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/New-8      	  220418	      1508 ns/op	 680.85 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/Reset-8    	17473429	        20.57 ns/op	49928.33 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/New-8     	  169038	      1884 ns/op	17392.21 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/Reset-8   	 1000000	       395.7 ns/op	82825.14 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 2
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkAllocationSkip$/^(Message|String9|String10|Binary9|Binary10)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/String9/Unbuffered/New-8         	  218826	      1594 ns/op	   6.28 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String9/Unbuffered/Reset-8       	 7908350	        45.25 ns/op	 220.97 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/New-8        	  207465	      1589 ns/op	   6.92 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/Reset-8      	 7918272	        45.09 ns/op	 243.98 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/New-8         	  209935	      1574 ns/op	   6.99 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/Reset-8       	 6660067	        53.83 ns/op	 204.34 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/New-8        	  220798	      1598 ns/op	   7.51 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/Reset-8      	 6670377	        53.78 ns/op	 223.13 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/New-8         	  181686	      1758 ns/op	  32.42 MB/s	        25.00 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8       	 1328413	       267.7 ns/op	 212.96 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 2
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkStreamPrimitives$/^(Encode|Decode)$/^Unbuffered$/^Reset$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	17454615	        20.80 ns/op	1442.09 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 4486569	        80.78 ns/op	 371.37 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 3
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkStreamMessage$/^Encode$/^(Unbuffered|Buffered4KiB)$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamMessage/Encode/Unbuffered/New-8         	  214549	      1559 ns/op	  36.57 MB/s	         0 readcalls/op	        23.00 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8       	 3363537	       106.9 ns/op	 533.46 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8       	  204944	      1627 ns/op	  35.04 MB/s	         0 readcalls/op	         1.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8     	 2212244	       162.5 ns/op	 350.79 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 3
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkAllocationStringEncode$/^Bytes(0|1|8|9|10|31|1024|32768)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/New-8         	17242927	        19.87 ns/op	  50.34 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/Reset-8       	56914368	         6.382 ns/op	 156.69 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/New-8         	  232250	      1481 ns/op	   1.35 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/Reset-8       	33874248	        10.66 ns/op	 187.60 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/New-8         	  224293	      1527 ns/op	   5.89 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/Reset-8       	36367617	         9.965 ns/op	 903.20 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/New-8         	  203634	      1546 ns/op	   6.47 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/Reset-8       	35668284	        11.02 ns/op	 907.72 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/New-8        	  228288	      1487 ns/op	   7.39 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/Reset-8      	36345279	         9.930 ns/op	1107.71 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/New-8        	  250188	      1581 ns/op	  20.24 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/Reset-8      	36191662	         9.949 ns/op	3216.45 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/New-8      	  225134	      1525 ns/op	 673.33 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/Reset-8    	17434785	        20.61 ns/op	49832.56 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/New-8     	  160098	      1902 ns/op	17232.65 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/Reset-8   	  946786	       439.3 ns/op	74603.02 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 3
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkAllocationSkip$/^(Message|String9|String10|Binary9|Binary10)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/String9/Unbuffered/New-8         	  227241	      1560 ns/op	   6.41 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String9/Unbuffered/Reset-8       	 7806739	        45.84 ns/op	 218.14 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/New-8        	  231332	      1498 ns/op	   7.35 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/Reset-8      	 7937775	        45.21 ns/op	 243.28 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/New-8         	  216220	      1577 ns/op	   6.98 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/Reset-8       	 6673029	        53.98 ns/op	 203.77 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/New-8        	  210412	      1596 ns/op	   7.52 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/Reset-8      	 6658702	        53.83 ns/op	 222.92 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/New-8         	  186720	      1731 ns/op	  32.92 MB/s	        25.00 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8       	 1338502	       269.4 ns/op	 211.55 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 3
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkStreamPrimitives$/^(Encode|Decode)$/^Unbuffered$/^Reset$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	16826852	        20.83 ns/op	1440.41 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 4441450	        85.35 ns/op	 351.48 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 4
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkStreamMessage$/^Encode$/^(Unbuffered|Buffered4KiB)$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamMessage/Encode/Unbuffered/New-8         	  210912	      1669 ns/op	  34.15 MB/s	         0 readcalls/op	        23.00 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8       	 3331576	       115.5 ns/op	 493.51 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8       	  209593	      1673 ns/op	  34.07 MB/s	         0 readcalls/op	         1.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8     	 2163334	       180.6 ns/op	 315.54 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 4
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkAllocationStringEncode$/^Bytes(0|1|8|9|10|31|1024|32768)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/New-8         	17478768	        19.71 ns/op	  50.75 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/Reset-8       	55289635	         6.651 ns/op	 150.35 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/New-8         	  196939	      1589 ns/op	   1.26 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/Reset-8       	31310359	        11.33 ns/op	 176.45 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/New-8         	  218620	      1548 ns/op	   5.82 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/Reset-8       	36010651	         9.937 ns/op	 905.67 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/New-8         	  218910	      1525 ns/op	   6.56 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/Reset-8       	36227023	         9.952 ns/op	1004.84 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/New-8        	  224634	      1597 ns/op	   6.89 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/Reset-8      	33373761	         9.918 ns/op	1109.14 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/New-8        	  215142	      1618 ns/op	  19.77 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/Reset-8      	35137806	         9.954 ns/op	3214.90 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/New-8      	  200295	      1652 ns/op	 621.69 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/Reset-8    	18574813	        19.40 ns/op	52945.97 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/New-8     	  167894	      1989 ns/op	16474.03 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/Reset-8   	 1000000	       516.6 ns/op	63441.89 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 4
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkAllocationSkip$/^(Message|String9|String10|Binary9|Binary10)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/String9/Unbuffered/New-8         	  192960	      1579 ns/op	   6.33 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String9/Unbuffered/Reset-8       	 7946493	        45.28 ns/op	 220.83 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/New-8        	  210878	      1626 ns/op	   6.77 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/Reset-8      	 7952182	        48.82 ns/op	 225.31 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/New-8         	  217387	      1596 ns/op	   6.89 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/Reset-8       	 6665626	        53.94 ns/op	 203.93 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/New-8        	  206672	      1566 ns/op	   7.66 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/Reset-8      	 6414639	        53.99 ns/op	 222.27 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/New-8         	  185480	      1763 ns/op	  32.32 MB/s	        25.00 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8       	 1336623	       268.2 ns/op	 212.54 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 4
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkStreamPrimitives$/^(Encode|Decode)$/^Unbuffered$/^Reset$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	17248468	        20.88 ns/op	1436.80 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 4523450	        79.99 ns/op	 375.06 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 5
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkStreamMessage$/^Encode$/^(Unbuffered|Buffered4KiB)$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamMessage/Encode/Unbuffered/New-8         	  220670	      1615 ns/op	  35.30 MB/s	         0 readcalls/op	        23.00 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8       	 3337244	       107.3 ns/op	 531.00 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8       	  208060	      1601 ns/op	  35.59 MB/s	         0 readcalls/op	         1.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8     	 2200653	       161.9 ns/op	 352.00 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 5
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkAllocationStringEncode$/^Bytes(0|1|8|9|10|31|1024|32768)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/New-8         	17710543	        20.12 ns/op	  49.71 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/Reset-8       	56487565	         6.395 ns/op	 156.36 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/New-8         	  223630	      1518 ns/op	   1.32 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/Reset-8       	30876217	        10.68 ns/op	 187.31 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/New-8         	  208930	      1562 ns/op	   5.76 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/Reset-8       	36470930	         9.967 ns/op	 902.99 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/New-8         	  221911	      1549 ns/op	   6.46 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/Reset-8       	36025520	         9.935 ns/op	1006.59 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/New-8        	  210696	      1514 ns/op	   7.26 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/Reset-8      	35822530	        10.01 ns/op	1099.08 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/New-8        	  214788	      1481 ns/op	  21.60 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/Reset-8      	35522197	         9.996 ns/op	3201.27 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/New-8      	  226849	      1532 ns/op	 670.21 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/Reset-8    	17367357	        20.82 ns/op	49319.00 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/New-8     	  189518	      1848 ns/op	17735.92 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/Reset-8   	 1000000	       455.8 ns/op	71898.75 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 5
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkAllocationSkip$/^(Message|String9|String10|Binary9|Binary10)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/String9/Unbuffered/New-8         	  220719	      1604 ns/op	   6.24 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String9/Unbuffered/Reset-8       	 7959054	        45.20 ns/op	 221.22 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/New-8        	  210150	      1603 ns/op	   6.86 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/Reset-8      	 7953493	        45.17 ns/op	 243.50 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/New-8         	  203424	      1610 ns/op	   6.83 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/Reset-8       	 6665878	        53.98 ns/op	 203.79 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/New-8        	  191282	      1618 ns/op	   7.42 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/Reset-8      	 6656367	        53.93 ns/op	 222.51 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/New-8         	  188846	      1707 ns/op	  33.40 MB/s	        25.00 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8       	 1340001	       268.2 ns/op	 212.49 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 5
+$ /private/tmp/messagepack-improvements-20261104/before.test -test.run=^$ -test.bench=^BenchmarkStreamPrimitives$/^(Encode|Decode)$/^Unbuffered$/^Reset$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	17265116	        20.87 ns/op	1437.28 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 4286812	        79.91 ns/op	 375.43 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+After samples
+==============
+
+Sample 1
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkStreamMessage$/^Encode$/^(Unbuffered|Buffered4KiB)$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamMessage/Encode/Unbuffered/New-8         	 2641330	       114.2 ns/op	 499.34 MB/s	         0 readcalls/op	        23.00 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8       	 3571816	       100.2 ns/op	 568.89 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8       	 2137383	       167.9 ns/op	 339.39 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8     	 2320732	       154.6 ns/op	 368.74 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 1
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkAllocationStringEncode$/^Bytes(0|1|8|9|10|31|1024|32768)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/New-8         	18073989	        19.31 ns/op	  51.78 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/Reset-8       	55264868	         6.652 ns/op	 150.32 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/New-8         	15596568	        22.64 ns/op	  88.34 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/Reset-8       	34784570	         9.767 ns/op	 204.77 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/New-8         	16091182	        22.15 ns/op	 406.32 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/Reset-8       	37158412	         9.042 ns/op	 995.36 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/New-8         	15578738	        22.07 ns/op	 453.07 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/Reset-8       	36699895	         9.118 ns/op	1096.68 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/New-8        	  221154	      1503 ns/op	   7.32 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/Reset-8      	35707642	        10.18 ns/op	1080.37 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/New-8        	  222908	      1546 ns/op	  20.69 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/Reset-8      	35526607	        10.10 ns/op	3167.99 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/New-8      	  218637	      1545 ns/op	 664.78 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/Reset-8    	18355522	        19.85 ns/op	51744.61 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/New-8     	  173752	      1998 ns/op	16404.67 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/Reset-8   	 1000000	       395.8 ns/op	82806.52 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 1
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkAllocationSkip$/^(Message|String9|String10|Binary9|Binary10)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/String9/Unbuffered/New-8         	 5562067	        64.21 ns/op	 155.73 MB/s	         2.000 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/String9/Unbuffered/Reset-8       	 8255949	        43.72 ns/op	 228.75 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/New-8        	  212397	      1566 ns/op	   7.03 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/Reset-8      	 7959216	        44.74 ns/op	 245.88 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/New-8         	 4894143	        73.14 ns/op	 150.39 MB/s	         3.000 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/Reset-8       	 6798642	        52.63 ns/op	 208.99 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/New-8        	  214026	      1583 ns/op	   7.58 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/Reset-8      	 6617488	        54.25 ns/op	 221.20 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/New-8         	 1257722	       285.2 ns/op	 199.84 MB/s	        25.00 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8       	 1347332	       263.9 ns/op	 215.98 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 1
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkStreamPrimitives$/^(Encode|Decode)$/^Unbuffered$/^Reset$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	17343372	        20.70 ns/op	1449.43 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 4523328	        80.13 ns/op	 374.40 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 2
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkStreamMessage$/^Encode$/^(Unbuffered|Buffered4KiB)$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamMessage/Encode/Unbuffered/New-8         	 3087528	       114.1 ns/op	 499.77 MB/s	         0 readcalls/op	        23.00 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8       	 3569373	       101.0 ns/op	 564.62 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8       	 2102208	       170.1 ns/op	 335.09 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8     	 2318196	       154.0 ns/op	 370.04 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 2
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkAllocationStringEncode$/^Bytes(0|1|8|9|10|31|1024|32768)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/New-8         	18129246	        19.84 ns/op	  50.40 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/Reset-8       	55113987	         6.663 ns/op	 150.08 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/New-8         	15665370	        22.51 ns/op	  88.86 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/Reset-8       	36917552	         9.841 ns/op	 203.23 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/New-8         	16071637	        21.99 ns/op	 409.20 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/Reset-8       	37690087	         9.124 ns/op	 986.44 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/New-8         	16009041	        21.84 ns/op	 457.87 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/Reset-8       	40014262	         9.075 ns/op	1101.97 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/New-8        	  220932	      1525 ns/op	   7.21 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/Reset-8      	35539321	        10.18 ns/op	1080.50 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/New-8        	  223626	      1503 ns/op	  21.29 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/Reset-8      	34954849	        10.21 ns/op	3133.94 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/New-8      	  236386	      1501 ns/op	 684.32 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/Reset-8    	15885477	        20.61 ns/op	49836.95 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/New-8     	  165649	      1903 ns/op	17217.97 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/Reset-8   	 1000000	       480.5 ns/op	68196.36 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 2
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkAllocationSkip$/^(Message|String9|String10|Binary9|Binary10)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/String9/Unbuffered/New-8         	 5501407	        65.70 ns/op	 152.20 MB/s	         2.000 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/String9/Unbuffered/Reset-8       	 7959648	        43.77 ns/op	 228.49 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/New-8        	  211159	      1554 ns/op	   7.08 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/Reset-8      	 7983772	        45.11 ns/op	 243.87 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/New-8         	 4815618	        76.25 ns/op	 144.27 MB/s	         3.000 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/Reset-8       	 6805270	        52.97 ns/op	 207.67 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/New-8        	  212258	      1584 ns/op	   7.58 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/Reset-8      	 6621190	        54.19 ns/op	 221.45 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/New-8         	 1244827	       287.4 ns/op	 198.30 MB/s	        25.00 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8       	 1351290	       265.7 ns/op	 214.52 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 2
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkStreamPrimitives$/^(Encode|Decode)$/^Unbuffered$/^Reset$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	17098346	        20.83 ns/op	1440.15 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 4518204	        79.91 ns/op	 375.41 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 3
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkStreamMessage$/^Encode$/^(Unbuffered|Buffered4KiB)$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamMessage/Encode/Unbuffered/New-8         	 3083991	       122.7 ns/op	 464.43 MB/s	         0 readcalls/op	        23.00 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8       	 3540028	       101.2 ns/op	 563.03 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8       	 2057038	       172.0 ns/op	 331.34 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8     	 2283064	       157.9 ns/op	 360.98 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 3
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkAllocationStringEncode$/^Bytes(0|1|8|9|10|31|1024|32768)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/New-8         	17526811	        19.68 ns/op	  50.81 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/Reset-8       	53614646	         6.664 ns/op	 150.07 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/New-8         	15533533	        23.17 ns/op	  86.32 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/Reset-8       	35429293	         9.863 ns/op	 202.77 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/New-8         	16132465	        22.36 ns/op	 402.58 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/Reset-8       	39843573	         9.170 ns/op	 981.41 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/New-8         	15746739	        22.26 ns/op	 449.28 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/Reset-8       	39432430	         9.080 ns/op	1101.36 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/New-8        	  223330	      1516 ns/op	   7.25 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/Reset-8      	35503543	        10.21 ns/op	1077.30 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/New-8        	  231894	      1584 ns/op	  20.20 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/Reset-8      	33753032	        10.13 ns/op	3157.96 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/New-8      	  217438	      1545 ns/op	 664.59 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/Reset-8    	17419880	        20.47 ns/op	50174.64 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/New-8     	  165896	      1915 ns/op	17115.21 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/Reset-8   	 1000000	       386.4 ns/op	84807.40 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 3
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkAllocationSkip$/^(Message|String9|String10|Binary9|Binary10)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/String9/Unbuffered/New-8         	 5021743	        67.95 ns/op	 147.18 MB/s	         2.000 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/String9/Unbuffered/Reset-8       	 8191646	        43.85 ns/op	 228.03 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/New-8        	  198622	      1611 ns/op	   6.83 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/Reset-8      	 7951839	        44.95 ns/op	 244.70 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/New-8         	 4800546	        74.73 ns/op	 147.19 MB/s	         3.000 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/Reset-8       	 6752109	        53.59 ns/op	 205.24 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/New-8        	  209026	      1613 ns/op	   7.44 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/Reset-8      	 6514558	        54.38 ns/op	 220.66 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/New-8         	 1234426	       290.0 ns/op	 196.54 MB/s	        25.00 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8       	 1351017	       268.8 ns/op	 212.05 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 3
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkStreamPrimitives$/^(Encode|Decode)$/^Unbuffered$/^Reset$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	17405352	        20.77 ns/op	1444.20 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 4510550	        79.40 ns/op	 377.84 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 4
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkStreamMessage$/^Encode$/^(Unbuffered|Buffered4KiB)$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamMessage/Encode/Unbuffered/New-8         	 3070556	       115.1 ns/op	 495.36 MB/s	         0 readcalls/op	        23.00 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8       	 3547509	       101.0 ns/op	 564.52 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8       	 2056209	       171.8 ns/op	 331.70 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8     	 2288174	       155.8 ns/op	 365.86 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 4
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkAllocationStringEncode$/^Bytes(0|1|8|9|10|31|1024|32768)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/New-8         	17319418	        22.25 ns/op	  44.94 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/Reset-8       	46156561	         8.894 ns/op	 112.43 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/New-8         	14859607	        23.73 ns/op	  84.30 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/Reset-8       	36597918	        11.52 ns/op	 173.55 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/New-8         	14569515	        22.55 ns/op	 399.17 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/Reset-8       	37082340	        16.36 ns/op	 550.14 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/New-8         	15941017	        22.49 ns/op	 444.61 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/Reset-8       	39605227	         9.145 ns/op	1093.50 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/New-8        	  226171	      1546 ns/op	   7.12 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/Reset-8      	34043628	        10.30 ns/op	1067.85 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/New-8        	  210919	      1556 ns/op	  20.56 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/Reset-8      	34581301	        11.18 ns/op	2860.98 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/New-8      	  211826	      1549 ns/op	 662.82 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/Reset-8    	18541647	        19.76 ns/op	51986.82 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/New-8     	  178983	      1925 ns/op	17022.77 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/Reset-8   	 1000000	       403.6 ns/op	81190.73 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 4
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkAllocationSkip$/^(Message|String9|String10|Binary9|Binary10)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/String9/Unbuffered/New-8         	 5432964	        65.79 ns/op	 151.99 MB/s	         2.000 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/String9/Unbuffered/Reset-8       	 8176180	        44.33 ns/op	 225.58 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/New-8        	  206241	      1572 ns/op	   7.00 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/Reset-8      	 7528682	        45.36 ns/op	 242.49 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/New-8         	 4778546	        75.04 ns/op	 146.58 MB/s	         3.000 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/Reset-8       	 6764426	        53.28 ns/op	 206.46 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/New-8        	  210141	      1560 ns/op	   7.69 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/Reset-8      	 6599359	        54.49 ns/op	 220.24 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/New-8         	 1213810	       292.0 ns/op	 195.18 MB/s	        25.00 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8       	 1352863	       264.7 ns/op	 215.37 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 4
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkStreamPrimitives$/^(Encode|Decode)$/^Unbuffered$/^Reset$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	17302839	        20.76 ns/op	1445.11 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 4478319	        79.90 ns/op	 375.47 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 5
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkStreamMessage$/^Encode$/^(Unbuffered|Buffered4KiB)$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamMessage/Encode/Unbuffered/New-8         	 3041156	       115.4 ns/op	 494.13 MB/s	         0 readcalls/op	        23.00 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8       	 3559669	       100.8 ns/op	 565.21 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/New-8       	 2077027	       172.7 ns/op	 330.06 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkStreamMessage/Encode/Buffered4KiB/Reset-8     	 2182111	       159.6 ns/op	 357.16 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 5
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkAllocationStringEncode$/^Bytes(0|1|8|9|10|31|1024|32768)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/New-8         	17708835	        20.02 ns/op	  49.94 MB/s	         0 readcalls/op	         1.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes0/Unbuffered/Reset-8       	53885487	         6.664 ns/op	 150.07 MB/s	         0 readcalls/op	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/New-8         	15328416	        23.04 ns/op	  86.79 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes1/Unbuffered/Reset-8       	34102882	        10.13 ns/op	 197.38 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/New-8         	15865611	        23.04 ns/op	 390.66 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes8/Unbuffered/Reset-8       	39395566	         9.142 ns/op	 984.44 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/New-8         	15514983	        22.31 ns/op	 448.19 MB/s	         0 readcalls/op	         2.000 writecalls/op	      88 B/op	       2 allocs/op
+BenchmarkAllocationStringEncode/Bytes9/Unbuffered/Reset-8       	39702780	         9.106 ns/op	1098.15 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/New-8        	  224343	      1561 ns/op	   7.05 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes10/Unbuffered/Reset-8      	35476861	        10.16 ns/op	1082.48 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/New-8        	  204678	      1635 ns/op	  19.57 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes31/Unbuffered/Reset-8      	35366497	        10.15 ns/op	3152.57 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/New-8      	  215202	      1578 ns/op	 650.85 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes1024/Unbuffered/Reset-8    	17516116	        20.49 ns/op	50124.06 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/New-8     	  159972	      1922 ns/op	17049.66 MB/s	         0 readcalls/op	         2.000 writecalls/op	   32856 B/op	       3 allocs/op
+BenchmarkAllocationStringEncode/Bytes32768/Unbuffered/Reset-8   	 1000000	       505.2 ns/op	64868.13 MB/s	         0 readcalls/op	         2.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 5
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkAllocationSkip$/^(Message|String9|String10|Binary9|Binary10)$/^Unbuffered$/^(New|Reset)$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/String9/Unbuffered/New-8         	 4962499	        66.27 ns/op	 150.89 MB/s	         2.000 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/String9/Unbuffered/Reset-8       	 8157676	        44.10 ns/op	 226.75 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/New-8        	  219618	      1530 ns/op	   7.19 MB/s	         2.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/String10/Unbuffered/Reset-8      	 7922948	        45.38 ns/op	 242.38 MB/s	         2.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/New-8         	 4647894	        75.52 ns/op	 145.65 MB/s	         3.000 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/Binary9/Unbuffered/Reset-8       	 6707876	        53.74 ns/op	 204.71 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/New-8        	  216346	      1564 ns/op	   7.67 MB/s	         3.000 readcalls/op	         0 writecalls/op	   32888 B/op	       3 allocs/op
+BenchmarkAllocationSkip/Binary10/Unbuffered/Reset-8      	 6547318	        54.51 ns/op	 220.12 MB/s	         3.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/New-8         	 1229962	       292.4 ns/op	 194.95 MB/s	        25.00 readcalls/op	         0 writecalls/op	     120 B/op	       2 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8       	 1346875	       269.7 ns/op	 211.34 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Sample 5
+$ /private/tmp/messagepack-improvements-20261104/after.test -test.run=^$ -test.bench=^BenchmarkStreamPrimitives$/^(Encode|Decode)$/^Unbuffered$/^Reset$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	17275714	        20.80 ns/op	1442.47 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 4492156	        79.68 ns/op	 376.50 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+Validation
+==========
+$ env GOCACHE=/private/tmp/messagepack-go-cache go test ./...
+ok  github.com/itsmontoya/messagepack  1.301s
+$ env GOCACHE=/private/tmp/messagepack-go-cache go test -race ./...
+ok  github.com/itsmontoya/messagepack  13.014s
+$ env GOCACHE=/private/tmp/messagepack-go-cache go vet ./...
+exit status 0
+Full and race runs used authorized localhost access for HTTP tests.
+Formatting and diff checks passed.

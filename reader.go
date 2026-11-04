@@ -430,6 +430,10 @@ func (r *Reader) skipPayload(state *skipState, length uint64) (err error) {
 		return ErrLimitExceeded
 	}
 
+	if length <= uint64(len(r.scratch)) {
+		return r.readSkip(state, r.scratch[:int(length)])
+	}
+
 	for length > 0 {
 		var chunk = r.payloadBuffer()
 		if length < uint64(len(chunk)) {

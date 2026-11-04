@@ -425,6 +425,12 @@ zero-allocation promise or real file/socket throughput measurement. The
 [historical slice fuzz](docs/poc-fuzzing.md) and
 [allocation reports](docs/poc-benchmarks.md) preserve their separate evidence.
 
+The [allocation profiling report](docs/allocation-profiling.md) records fresh
+measurements after the November 4 Reader/Writer refactor, including small strings,
+hooks, Skip, allocation profiles, and isolated optimization experiments. It
+led to the applied short-string and Skip optimizations, recorded with
+[before and after timings](docs/allocation-improvements.md).
+
 Generic marshal/unmarshal, reflection, automatic
 struct mapping, struct tags, extensions/timestamps, code generation, map sorting,
 pooling, concurrency machinery, unsafe conversions, assembly, and speculative

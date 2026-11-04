@@ -608,6 +608,22 @@ func TestWriterZeroAllocations(t *testing.T) {
 	}
 }
 
+func TestWriterShortStringAllocations(t *testing.T) {
+	for _, value := range []string{"", "x", "12345678", "123456789"} {
+		t.Run(fmt.Sprintf("length_%d", len(value)), func(t *testing.T) {
+			allocations := testing.AllocsPerRun(1000, func() {
+				var w = NewWriter(io.Discard)
+				if err := w.EncodeString(value); err != nil {
+					t.Fatal(err)
+				}
+			})
+			if allocations > 2 {
+				t.Fatalf("fresh short string encoding allocated %g times, want at most two codec allocations", allocations)
+			}
+		})
+	}
+}
+
 func TestWriterPayloadWire(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -617,6 +633,9 @@ func TestWriterPayloadWire(t *testing.T) {
 	}{
 		{name: "empty", stringHeader: []byte{0xa0}, binaryHeader: []byte{0xc4, 0}},
 		{name: "one", length: 1, stringHeader: []byte{0xa1}, binaryHeader: []byte{0xc4, 1}},
+		{name: "8", length: 8, stringHeader: []byte{0xa8}, binaryHeader: []byte{0xc4, 8}},
+		{name: "9", length: 9, stringHeader: []byte{0xa9}, binaryHeader: []byte{0xc4, 9}},
+		{name: "10", length: 10, stringHeader: []byte{0xaa}, binaryHeader: []byte{0xc4, 10}},
 		{name: "31", length: 31, stringHeader: []byte{0xbf}, binaryHeader: []byte{0xc4, 31}},
 		{name: "32", length: 32, stringHeader: []byte{0xd9, 32}, binaryHeader: []byte{0xc4, 32}},
 		{name: "255", length: 255, stringHeader: []byte{0xd9, 0xff}, binaryHeader: []byte{0xc4, 0xff}},
@@ -947,6 +966,58 @@ func TestWriterFromWriteFailures(t *testing.T) {
 				t.Fatal("destination failure did not prevent future source/output I/O")
 			}
 		})
+	}
+}
+
+func TestWriterShortStringFailures(t *testing.T) {
+	var failure = errors.New("short string write failure")
+	tests := []struct {
+		name      string
+		failCall  int
+		accept    int
+		acceptAll bool
+		err       error
+		want      error
+	}{
+		{name: "header error", failCall: 1, err: failure, want: failure},
+		{name: "header short write", failCall: 1, want: io.ErrShortWrite},
+		{name: "payload error", failCall: 2, accept: 3, err: failure, want: failure},
+		{name: "payload short write", failCall: 2, accept: 3, want: io.ErrShortWrite},
+		{name: "complete payload with error", failCall: 2, acceptAll: true, err: failure, want: failure},
+	}
+	for _, length := range []int{9, 10} {
+		for _, tt := range tests {
+			t.Run(fmt.Sprintf("length_%d/%s", length, tt.name), func(t *testing.T) {
+				var (
+					value  = strings.Repeat("x", length)
+					writer = encoderPayloadWriter{failCall: tt.failCall, accept: tt.accept, acceptAll: tt.acceptAll, err: tt.err}
+					w      = NewWriter(&writer)
+					err    = w.EncodeString(value)
+					want   []byte
+				)
+
+				if !errors.Is(err, tt.want) || writer.writes != tt.failCall {
+					t.Fatalf("EncodeString = %v after %d writes, want %v after %d", err, writer.writes, tt.want, tt.failCall)
+				}
+
+				if tt.failCall == 2 {
+					want = append(want, 0xa0|byte(length))
+					if tt.acceptAll {
+						want = append(want, value...)
+					} else {
+						want = append(want, value[:tt.accept]...)
+					}
+				}
+
+				if !bytes.Equal(writer.data, want) {
+					t.Fatalf("accepted wire = %x, want %x", writer.data, want)
+				}
+
+				if laterErr := w.EncodeString(value); laterErr != err || writer.writes != tt.failCall {
+					t.Fatal("stored string failure did not prevent later I/O")
+				}
+			})
+		}
 	}
 }
 
