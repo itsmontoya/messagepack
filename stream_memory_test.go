@@ -58,7 +58,7 @@ func measureStreamTransferAllocation(t *testing.T, length uint64, encode bool, i
 		source  streamBenchmarkPayloadReader
 		sink    streamBenchmarkWriter
 		encoder = NewWriter(&sink)
-		decoder = NewDecoder(&source)
+		decoder = NewReader(&source)
 		before  runtime.MemStats
 		after   runtime.MemStats
 		run     func() (n uint64, err error)
@@ -97,8 +97,8 @@ func measureStreamTransferAllocation(t *testing.T, length uint64, encode bool, i
 			if reuse {
 				decoder.Reset(&source)
 			} else {
-				decoder = NewDecoder(&source)
-				streamBenchmarkDecoderSink = decoder
+				decoder = NewReader(&source)
+				streamBenchmarkReaderSink = decoder
 			}
 		}
 		if n, err = run(); err != nil || n != length {
@@ -123,7 +123,7 @@ func TestStreamRetainedWorkingMemory(t *testing.T) {
 				t.Run(size.name, func(t *testing.T) {
 					var (
 						encoders = make([]*Writer, cohort)
-						decoders = make([]*Decoder, cohort)
+						decoders = make([]*Reader, cohort)
 						source   streamBenchmarkPayloadReader
 						sink     streamBenchmarkWriter
 						before   runtime.MemStats
@@ -136,7 +136,7 @@ func TestStreamRetainedWorkingMemory(t *testing.T) {
 					runtime.ReadMemStats(&before)
 					for index := 0; index < cohort; index++ {
 						encoders[index] = NewWriter(&sink)
-						decoders[index] = NewDecoder(&source)
+						decoders[index] = NewReader(&source)
 						source.Reset(size.length, isString, false)
 						if isString {
 							n, err = encoders[index].EncodeStringFrom(size.length, &source)
@@ -157,10 +157,10 @@ func TestStreamRetainedWorkingMemory(t *testing.T) {
 						}
 						encoders[index].Reset(nil)
 						decoders[index].Reset(nil)
-						if cap(encoders[index].state.buffer) > payloadBufferSize || cap(decoders[index].buffer) > payloadBufferSize {
+						if cap(encoders[index].state.buffer) > payloadBufferSize || cap(decoders[index].state.buffer) > payloadBufferSize {
 							t.Fatal("codec scratch capacity grew beyond the transfer bound")
 						}
-						scratch += uint64(cap(encoders[index].state.buffer) + cap(decoders[index].buffer))
+						scratch += uint64(cap(encoders[index].state.buffer) + cap(decoders[index].state.buffer))
 					}
 					runtime.GC()
 					runtime.ReadMemStats(&after)
@@ -168,7 +168,7 @@ func TestStreamRetainedWorkingMemory(t *testing.T) {
 					runtime.KeepAlive(encoders)
 					runtime.KeepAlive(decoders)
 					delta := int64(after.HeapAlloc) - int64(before.HeapAlloc)
-					t.Logf("%d live Writer/Decoder pairs: scratch=%d B, post-GC heap delta=%d B (%d B/pair)", cohort, scratch, delta, delta/cohort)
+					t.Logf("%d live Writer/Reader pairs: scratch=%d B, post-GC heap delta=%d B (%d B/pair)", cohort, scratch, delta, delta/cohort)
 					// Heap deltas include process/runtime noise. Allow two times the
 					// bounded scratch plus 1 MiB; do not assert an exact live heap size.
 					budget := int64(cohort*4*payloadBufferSize + 1048576)
@@ -186,7 +186,7 @@ func TestStreamTransferScratchBounds(t *testing.T) {
 		source  streamBenchmarkPayloadReader
 		sink    streamBenchmarkWriter
 		encoder = NewWriter(&sink)
-		decoder = NewDecoder(&source)
+		decoder = NewReader(&source)
 		n       uint64
 		err     error
 	)
@@ -212,7 +212,7 @@ func TestStreamTransferScratchBounds(t *testing.T) {
 			if err != nil || n != size.length {
 				t.Fatalf("decode = %d, %v", n, err)
 			}
-			if cap(encoder.state.buffer) > payloadBufferSize || cap(decoder.buffer) > payloadBufferSize {
+			if cap(encoder.state.buffer) > payloadBufferSize || cap(decoder.state.buffer) > payloadBufferSize {
 				t.Fatal("unexpected retained scratch bounds")
 			}
 		}

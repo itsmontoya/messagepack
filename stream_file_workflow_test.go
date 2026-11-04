@@ -46,7 +46,7 @@ func encodeStreamingDataset(e *Writer, count uint32, length uint64) (err error) 
 	return err
 }
 
-func checkStreamingDataset(d *Decoder, count uint32, length uint64) (err error) {
+func checkStreamingDataset(d *Reader, count uint32, length uint64) (err error) {
 	var (
 		actual uint32
 		value  uint64
@@ -116,9 +116,9 @@ func TestStreamingTemporaryFileDataset(t *testing.T) {
 	})
 	var (
 		buffered = bufio.NewReaderSize(file, 4096)
-		d        = NewDecoder(buffered)
+		d        = NewReader(buffered)
 	)
-	if err = d.SetLimits(DecoderLimits{MaxPayloadBytes: 1}); err != nil {
+	if err = d.SetLimits(ReaderLimits{MaxPayloadBytes: 1}); err != nil {
 		t.Fatal(err)
 	}
 	if err = checkStreamingDataset(d, count, length); err != nil {

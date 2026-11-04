@@ -41,7 +41,7 @@ func checkStreamFuzzDecodeTransfer(t *testing.T, src, fragments []byte, settings
 			emptyBetween: int(settings[3]) % 102, dataError: settings[5]&1 != 0}
 		w = &streamFuzzWriter{fail: settings[6]%3 != 0,
 			failAt: int(binary.LittleEndian.Uint16(settings[7:9])) % (len(src) + 6)}
-		d        = NewDecoder(r)
+		d        = NewReader(r)
 		expected []byte
 		consumed int
 		want     error
@@ -57,7 +57,7 @@ func checkStreamFuzzDecodeTransfer(t *testing.T, src, fragments []byte, settings
 	if settings[6]%3 == 2 {
 		w.err = errStreamFuzzDestination
 	}
-	if err = d.SetLimits(DecoderLimits{MaxPayloadBytes: 1}); err != nil {
+	if err = d.SetLimits(ReaderLimits{MaxPayloadBytes: 1}); err != nil {
 		t.Fatal(err)
 	}
 	if isString {

@@ -33,16 +33,16 @@ func TestSkipLargePayloadPreflightAndFailures(t *testing.T) {
 			var (
 				payload = &encoderGeneratedReader{length: tt.available}
 				end     = &decoderTestReader{endErr: tt.end}
-				d       = NewDecoder(io.MultiReader(bytes.NewReader(header), payload, end))
+				d       = NewReader(io.MultiReader(bytes.NewReader(header), payload, end))
 			)
-			if err := d.SetLimits(DecoderLimits{MaxSkipBytes: tt.byteBudget}); err != nil {
+			if err := d.SetLimits(ReaderLimits{MaxSkipBytes: tt.byteBudget}); err != nil {
 				t.Fatal(err)
 			}
 			err := d.Skip()
 			if !errors.Is(err, tt.want) || payload.read != tt.read || payload.maxRequest > payloadBufferSize {
 				t.Fatalf("Skip() = %v, source bytes %d, max request %d", err, payload.read, payload.maxRequest)
 			}
-			if tt.want == ErrLimitExceeded && (d.buffer != nil || payload.reads != 0 || end.reads != 0) {
+			if tt.want == ErrLimitExceeded && (d.state.buffer != nil || payload.reads != 0 || end.reads != 0) {
 				t.Fatal("over-budget payload allocated scratch or accessed its source")
 			}
 			reads, endReads := payload.reads, end.reads

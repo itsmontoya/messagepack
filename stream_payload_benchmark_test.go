@@ -52,7 +52,7 @@ func benchmarkStreamTransfer(b *testing.B, length uint64, encode bool, isString 
 		readerBuffer *bufio.Reader
 		writerBuffer *bufio.Writer
 		encoder      *Writer
-		decoder      *Decoder
+		decoder      *Reader
 		n            uint64
 		err          error
 		headerSize   int
@@ -67,7 +67,7 @@ func benchmarkStreamTransfer(b *testing.B, length uint64, encode bool, isString 
 		writer = writerBuffer
 	}
 	encoder = NewWriter(writer)
-	decoder = NewDecoder(reader)
+	decoder = NewReader(reader)
 	if encode {
 		transfer = func() (n uint64, err error) { return encoder.EncodeBytesFrom(length, reader) }
 		if isString {
@@ -111,8 +111,8 @@ func benchmarkStreamTransfer(b *testing.B, length uint64, encode bool, isString 
 			if reuse {
 				decoder.Reset(reader)
 			} else {
-				decoder = NewDecoder(reader)
-				streamBenchmarkDecoderSink = decoder
+				decoder = NewReader(reader)
+				streamBenchmarkReaderSink = decoder
 			}
 		}
 		if n, err = transfer(); err != nil || n != length {
@@ -146,7 +146,7 @@ func BenchmarkStreamOwned(b *testing.B) {
 				b.Run(name, func(b *testing.B) {
 					var (
 						source     streamBenchmarkPayloadReader
-						decoder    = NewDecoder(&source)
+						decoder    = NewReader(&source)
 						err        error
 						headerSize int
 					)

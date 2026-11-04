@@ -3,7 +3,7 @@ package messagepack
 // decodeFlexibleStreamingApplicationMessage accepts six required fields in any order.
 // This example schema permits at most 16 entries, rejects every duplicate name,
 // and skips unknown supported values. The codec itself retains uint32 map counts.
-func decodeFlexibleStreamingApplicationMessage(d *Decoder) (message applicationMessage, err error) {
+func decodeFlexibleStreamingApplicationMessage(d *Reader) (message applicationMessage, err error) {
 	var (
 		count    uint32
 		seen     [16]string

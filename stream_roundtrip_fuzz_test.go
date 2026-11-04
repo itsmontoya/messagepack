@@ -44,8 +44,8 @@ func FuzzStreamRoundTrip(f *testing.F) {
 			t.Fatal("encoder reuse changed output or retained the old destination")
 		}
 		r := &streamFuzzReader{data: w.data, fragments: fragments, emptyBetween: 1, endErr: io.EOF, dataError: true}
-		d := NewDecoder(r)
-		if err := d.SetLimits(DecoderLimits{MaxPayloadBytes: 4096, MaxSkipDepth: 4, MaxSkipValues: 32, MaxSkipBytes: 20000}); err != nil {
+		d := NewReader(r)
+		if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 4096, MaxSkipDepth: 4, MaxSkipValues: 32, MaxSkipBytes: 20000}); err != nil {
 			t.Fatal(err)
 		}
 		checkStreamFuzzScalars(t, d, signed, unsigned, bits32, bits64)
@@ -111,7 +111,7 @@ func encodeStreamFuzzPayloads(t *testing.T, e *Writer, payload, fragments []byte
 	}
 }
 
-func checkStreamFuzzScalars(t *testing.T, d *Decoder, signed int64, unsigned uint64, bits32 uint32, bits64 uint64) {
+func checkStreamFuzzScalars(t *testing.T, d *Reader, signed int64, unsigned uint64, bits32 uint32, bits64 uint64) {
 	t.Helper()
 	if count, err := d.DecodeArrayHeader(); count != 9 || err != nil {
 		t.Fatalf("root count = (%d, %v)", count, err)
@@ -136,7 +136,7 @@ func checkStreamFuzzScalars(t *testing.T, d *Decoder, signed int64, unsigned uin
 	}
 }
 
-func checkStreamFuzzPayloads(t *testing.T, d *Decoder, r *streamFuzzReader, payload []byte, wireLength int) {
+func checkStreamFuzzPayloads(t *testing.T, d *Reader, r *streamFuzzReader, payload []byte, wireLength int) {
 	t.Helper()
 	ownedText, textErr := d.DecodeString()
 	ownedBytes, bytesErr := d.DecodeBytes()
@@ -184,7 +184,7 @@ func checkStreamFuzzPayloads(t *testing.T, d *Decoder, r *streamFuzzReader, payl
 		t.Fatalf("later owned result = (%x, %v)", later, err)
 	}
 	later[0] = 7
-	if ownedText != string(payload) || !bytes.Equal(ownedBytes, payload) || len(d.buffer) > 32768 {
+	if ownedText != string(payload) || !bytes.Equal(ownedBytes, payload) || len(d.state.buffer) > 32768 {
 		t.Fatal("owned results changed after later values, source mutation, scratch reuse, or Reset")
 	}
 }

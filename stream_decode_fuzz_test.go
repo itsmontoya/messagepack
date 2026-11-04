@@ -26,14 +26,14 @@ func FuzzStreamTypedDecode(f *testing.F) {
 			before = append([]byte(nil), src...)
 			r      = &streamFuzzReader{data: src, fragments: fragments, empty: int(empty) % 102,
 				emptyBetween: int(empty) % 3, endErr: io.EOF, dataError: true}
-			d     = NewDecoder(r)
+			d     = NewReader(r)
 			limit = uint64(capSeed)%4096 + 1
 		)
 		if mode%3 != 0 {
 			r.endErr = errStreamFuzzSource
 			r.dataError = mode%3 == 1
 		}
-		if err := d.SetLimits(DecoderLimits{MaxPayloadBytes: limit}); err != nil {
+		if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: limit}); err != nil {
 			t.Fatal(err)
 		}
 		n, want, got := checkStreamFuzzTyped(t, d, kind%10, src, limit)
@@ -57,7 +57,7 @@ func FuzzStreamTypedDecode(f *testing.F) {
 }
 
 // Each case keeps its actual typed value, avoiding an any/reflection value model.
-func checkStreamFuzzTyped(t *testing.T, d *Decoder, kind uint8, src []byte, limit uint64) (n int, want, got error) {
+func checkStreamFuzzTyped(t *testing.T, d *Reader, kind uint8, src []byte, limit uint64) (n int, want, got error) {
 	t.Helper()
 	switch kind {
 	case 0:

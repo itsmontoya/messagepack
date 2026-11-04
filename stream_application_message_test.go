@@ -50,7 +50,7 @@ func encodeStreamingApplicationSamples(e *Writer, samples [2]int64) (err error) 
 
 // decodeStreamingApplicationMessage owns its string/binary results and leaves the next root.
 // The schema requires six ordered fields; EOF after its root is incomplete input.
-func decodeStreamingApplicationMessage(d *Decoder) (message applicationMessage, err error) {
+func decodeStreamingApplicationMessage(d *Reader) (message applicationMessage, err error) {
 	var (
 		count uint32
 		key   string
@@ -91,7 +91,7 @@ func decodeStreamingApplicationMessage(d *Decoder) (message applicationMessage, 
 	return message, nil
 }
 
-func decodeStreamingApplicationSamples(d *Decoder) (samples [2]int64, err error) {
+func decodeStreamingApplicationSamples(d *Reader) (samples [2]int64, err error) {
 	var count uint32
 	count, err = d.DecodeArrayHeader()
 	if err != nil {

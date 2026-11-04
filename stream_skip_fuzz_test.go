@@ -29,11 +29,11 @@ func FuzzStreamSkip(f *testing.F) {
 		)
 		copy(settings[:], controls)
 		var (
-			limits = DecoderLimits{MaxPayloadBytes: 1, MaxSkipDepth: uint32(settings[8])%16 + 1,
+			limits = ReaderLimits{MaxPayloadBytes: 1, MaxSkipDepth: uint32(settings[8])%16 + 1,
 				MaxSkipBytes:  uint64(binary.LittleEndian.Uint16(settings[4:6]))%4096 + 1,
 				MaxSkipValues: uint64(binary.LittleEndian.Uint16(settings[6:8]))%4096 + 1}
 			plain       = bytes.NewReader(src)
-			baseline    = NewDecoder(plain)
+			baseline    = NewReader(plain)
 			values      uint32
 			deepest     uint32
 			baselineErr error
@@ -62,7 +62,7 @@ func FuzzStreamSkip(f *testing.F) {
 		if settings[2]%3 == 2 {
 			r.endErr = errStreamFuzzSource
 		}
-		d := NewDecoder(r)
+		d := NewReader(r)
 		if err := d.SetLimits(limits); err != nil {
 			t.Fatal(err)
 		}

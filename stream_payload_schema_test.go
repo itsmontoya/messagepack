@@ -34,7 +34,7 @@ func encodeStreamingPayloadMessage(e *Writer, length uint64, src io.Reader) (err
 
 // decodeStreamingPayloadMessage retains small fields and sends data directly to dst.
 // A failed message can already have delivered a payload prefix to dst.
-func decodeStreamingPayloadMessage(d *Decoder, dst io.Writer) (message applicationMessage, n uint64, err error) {
+func decodeStreamingPayloadMessage(d *Reader, dst io.Writer) (message applicationMessage, n uint64, err error) {
 	var (
 		count uint32
 		key   string

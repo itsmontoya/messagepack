@@ -8,7 +8,7 @@ var (
 	ErrTruncated = errors.New("messagepack: truncated input")
 	// ErrInvalidFormat indicates the reserved MessagePack tag 0xc1.
 	ErrInvalidFormat = errors.New("messagepack: invalid format")
-	// ErrUnsupportedType indicates an extension tag or a value not implementing Encodee.
+	// ErrUnsupportedType indicates an extension tag or a value lacking the required codec hook.
 	ErrUnsupportedType = errors.New("messagepack: unsupported type")
 	// ErrTypeMismatch indicates a supported wire family rejected by the requested reader.
 	ErrTypeMismatch = errors.New("messagepack: type mismatch")
@@ -16,7 +16,7 @@ var (
 	ErrOverflow = errors.New("messagepack: overflow")
 	// ErrUninitialized indicates a stream codec without an attached reader or writer.
 	ErrUninitialized = errors.New("messagepack: uninitialized stream")
-	// ErrClosed indicates a codec that has been closed.
+	// ErrClosed indicates an Encoder or Decoder that has been closed.
 	ErrClosed = errors.New("messagepack: closed codec")
 	// ErrInvalidArgument indicates invalid limits or a required nil transfer interface.
 	ErrInvalidArgument = errors.New("messagepack: invalid argument")

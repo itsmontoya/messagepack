@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func ExampleDecoder_httpResponse() {
+func ExampleReader_httpResponse() {
 	const length = 1024*1024 + 7
 	var (
 		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
@@ -38,8 +38,8 @@ func ExampleDecoder_httpResponse() {
 		return
 	}
 	// Decode directly from the body. The caller owns context, limits, and closure.
-	d := NewDecoder(response.Body)
-	err = d.SetLimits(DecoderLimits{MaxPayloadBytes: 16})
+	d := NewReader(response.Body)
+	err = d.SetLimits(ReaderLimits{MaxPayloadBytes: 16})
 	if err == nil {
 		// The strict six-field helper uses DecodeBytesTo for data; small fields are owned.
 		message, n, err = decodeStreamingPayloadMessage(d, &sink)
@@ -84,9 +84,9 @@ func ExampleWriter_file() {
 	}
 	var (
 		buffered = bufio.NewReader(file)
-		d        = NewDecoder(buffered)
+		d        = NewReader(buffered)
 	)
-	err = d.SetLimits(DecoderLimits{MaxPayloadBytes: 1})
+	err = d.SetLimits(ReaderLimits{MaxPayloadBytes: 1})
 	if err == nil {
 		err = checkStreamingDataset(d, count, length)
 	}
@@ -109,11 +109,11 @@ func ExampleWriter_file() {
 	// checked 100000 integers and 8388615 binary bytes
 }
 
-func ExampleDecoder_messageSequence() {
+func ExampleReader_messageSequence() {
 	var (
 		// Each small literal is one complete six-field application message.
 		reader = io.MultiReader(bytes.NewReader(applicationMessageFixture()), bytes.NewReader(applicationMessageFixture()))
-		d      = NewDecoder(bufio.NewReader(reader))
+		d      = NewReader(bufio.NewReader(reader))
 		count  int
 	)
 	for {
@@ -136,10 +136,10 @@ func ExampleDecoder_messageSequence() {
 	// complete messages: 2
 }
 
-func ExampleDecoder_exactlyOneMessage() {
+func ExampleReader_exactlyOneMessage() {
 	// Only a finite body or externally bounded frame permits this trailing check.
 	buffered := bufio.NewReader(bytes.NewReader(flexibleStreamingApplicationFixture()))
-	message, err := decodeFlexibleStreamingApplicationMessage(NewDecoder(buffered))
+	message, err := decodeFlexibleStreamingApplicationMessage(NewReader(buffered))
 	if err != nil {
 		fmt.Println("decode:", err)
 		return

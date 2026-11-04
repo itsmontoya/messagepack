@@ -63,9 +63,9 @@ func TestSkipSupportedValues(t *testing.T) {
 				var (
 					wire = append(append([]byte(nil), tt.wire...), 0xc3)
 					r    = &decoderTestReader{data: wire, maxRead: fragment, endErr: io.EOF}
-					d    = NewDecoder(r)
+					d    = NewReader(r)
 				)
-				if err := d.SetLimits(DecoderLimits{MaxPayloadBytes: 1}); err != nil {
+				if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 1}); err != nil {
 					t.Fatal(err)
 				}
 				if err := d.Skip(); err != nil || r.position != len(tt.wire) {
@@ -106,16 +106,16 @@ func TestSkipGeneratedPayloadBoundaries(t *testing.T) {
 			var (
 				payload = &encoderGeneratedReader{length: tt.length}
 				next    = bytes.NewReader([]byte{0xc3})
-				d       = NewDecoder(io.MultiReader(bytes.NewReader(tt.header), payload, next))
+				d       = NewReader(io.MultiReader(bytes.NewReader(tt.header), payload, next))
 			)
-			if err := d.SetLimits(DecoderLimits{MaxPayloadBytes: 1, MaxSkipBytes: uint64(len(tt.header)) + tt.length}); err != nil {
+			if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 1, MaxSkipBytes: uint64(len(tt.header)) + tt.length}); err != nil {
 				t.Fatal(err)
 			}
 			if err := d.Skip(); err != nil || payload.read != tt.length || next.Len() != 1 {
 				t.Fatalf("Skip() = %v, generated %d bytes, next bytes %d", err, payload.read, next.Len())
 			}
-			if payload.maxRequest > payloadBufferSize || len(d.buffer) != payloadBufferSize {
-				t.Fatalf("payload request %d, scratch %d", payload.maxRequest, len(d.buffer))
+			if payload.maxRequest > payloadBufferSize || len(d.state.buffer) != payloadBufferSize {
+				t.Fatalf("payload request %d, scratch %d", payload.maxRequest, len(d.state.buffer))
 			}
 			if value, err := d.DecodeBool(); err != nil || !value {
 				t.Fatalf("following value = (%v, %v)", value, err)
@@ -144,15 +144,15 @@ func TestSkipGeneratedContainerBoundaries(t *testing.T) {
 			var (
 				children = &skipRepeatingReader{value: 0xc0, remaining: tt.children}
 				next     = bytes.NewReader([]byte{0xc3})
-				d        = NewDecoder(io.MultiReader(bytes.NewReader(tt.header), children, next))
+				d        = NewReader(io.MultiReader(bytes.NewReader(tt.header), children, next))
 			)
-			if err := d.SetLimits(DecoderLimits{MaxSkipValues: tt.children + 1, MaxSkipBytes: uint64(len(tt.header)) + tt.children}); err != nil {
+			if err := d.SetLimits(ReaderLimits{MaxSkipValues: tt.children + 1, MaxSkipBytes: uint64(len(tt.header)) + tt.children}); err != nil {
 				t.Fatal(err)
 			}
 			if err := d.Skip(); err != nil || children.read != tt.children || next.Len() != 1 {
 				t.Fatalf("Skip() = %v, children %d, next bytes %d", err, children.read, next.Len())
 			}
-			if children.maxRequest != 1 || d.buffer != nil {
+			if children.maxRequest != 1 || d.state.buffer != nil {
 				t.Fatal("Skip requested or buffered the container as a whole")
 			}
 			if value, err := d.DecodeBool(); err != nil || !value {
@@ -180,7 +180,7 @@ func TestSkipTruncation(t *testing.T) {
 			t.Run(fmt.Sprintf("%x/length_%d", wire, length), func(t *testing.T) {
 				var (
 					r    = &decoderTestReader{data: wire[:length], maxRead: 1, endErr: io.EOF}
-					d    = NewDecoder(r)
+					d    = NewReader(r)
 					want = io.ErrUnexpectedEOF
 					err  = d.Skip()
 				)
@@ -207,46 +207,46 @@ func TestSkipLimits(t *testing.T) {
 	tests := []struct {
 		name     string
 		wire     []byte
-		limits   DecoderLimits
+		limits   ReaderLimits
 		consumed int
 		want     error
 	}{
-		{name: "scalar exact", wire: []byte{0xc0}, limits: DecoderLimits{MaxSkipValues: 1, MaxSkipBytes: 1}, consumed: 1},
-		{name: "empty container exact", wire: []byte{0x90}, limits: DecoderLimits{MaxSkipDepth: 1, MaxSkipValues: 1, MaxSkipBytes: 1}, consumed: 1},
-		{name: "array values exact", wire: []byte{0x91, 0xc0}, limits: DecoderLimits{MaxSkipValues: 2}, consumed: 2},
-		{name: "array values over", wire: []byte{0x91, 0xc0}, limits: DecoderLimits{MaxSkipValues: 1}, consumed: 1, want: ErrLimitExceeded},
-		{name: "map values exact", wire: []byte{0x81, 0xc0, 0xc3}, limits: DecoderLimits{MaxSkipValues: 3}, consumed: 3},
-		{name: "map counts both key and value", wire: []byte{0x81, 0xc0, 0xc3}, limits: DecoderLimits{MaxSkipValues: 2}, consumed: 1, want: ErrLimitExceeded},
-		{name: "ancestor sibling values exact", wire: []byte{0x92, 0x91, 0xc0, 0xc0}, limits: DecoderLimits{MaxSkipValues: 4}, consumed: 4},
-		{name: "ancestor sibling values over", wire: []byte{0x92, 0x91, 0xc0, 0xc0}, limits: DecoderLimits{MaxSkipValues: 3}, consumed: 2, want: ErrLimitExceeded},
-		{name: "ancestor map values over", wire: []byte{0x92, 0x81, 0xc0, 0xc0, 0xc0}, limits: DecoderLimits{MaxSkipValues: 4}, consumed: 2, want: ErrLimitExceeded},
-		{name: "integer bytes exact", wire: []byte{0xcf, 0, 0, 0, 0, 0, 0, 0, 7}, limits: DecoderLimits{MaxSkipBytes: 9}, consumed: 9},
-		{name: "integer bytes over", wire: []byte{0xcf, 0, 0, 0, 0, 0, 0, 0, 7}, limits: DecoderLimits{MaxSkipBytes: 8}, consumed: 1, want: ErrLimitExceeded},
-		{name: "payload bytes exact", wire: []byte{0xdb, 0, 0, 0, 3, 0, 1, 2}, limits: DecoderLimits{MaxSkipBytes: 8}, consumed: 8},
-		{name: "payload bytes over", wire: []byte{0xdb, 0, 0, 0, 3, 0, 1, 2}, limits: DecoderLimits{MaxSkipBytes: 7}, consumed: 5, want: ErrLimitExceeded},
-		{name: "fixed payload bytes over", wire: []byte{0xa2, 0, 1}, limits: DecoderLimits{MaxSkipBytes: 2}, consumed: 1, want: ErrLimitExceeded},
-		{name: "child tag bytes exact", wire: []byte{0x91, 0xc0}, limits: DecoderLimits{MaxSkipBytes: 2}, consumed: 2},
-		{name: "child tag bytes over", wire: []byte{0x91, 0xc0}, limits: DecoderLimits{MaxSkipBytes: 1}, consumed: 1, want: ErrLimitExceeded},
-		{name: "ancestor tag bytes over", wire: []byte{0x92, 0x92, 0xc0, 0xc0, 0xc0}, limits: DecoderLimits{MaxSkipBytes: 4}, consumed: 2, want: ErrLimitExceeded},
-		{name: "header budget precedes missing header", wire: []byte{0xda}, limits: DecoderLimits{MaxSkipBytes: 2}, consumed: 1, want: ErrLimitExceeded},
-		{name: "header budget permits detecting truncation", wire: []byte{0xda}, limits: DecoderLimits{MaxSkipBytes: 3}, consumed: 1, want: io.ErrUnexpectedEOF},
-		{name: "body budget precedes missing body", wire: []byte{0xcb}, limits: DecoderLimits{MaxSkipBytes: 8}, consumed: 1, want: ErrLimitExceeded},
-		{name: "work budget precedes missing child", wire: []byte{0x91}, limits: DecoderLimits{MaxSkipValues: 1}, consumed: 1, want: ErrLimitExceeded},
-		{name: "work budget permits detecting missing child", wire: []byte{0x91}, limits: DecoderLimits{MaxSkipValues: 2}, consumed: 1, want: io.ErrUnexpectedEOF},
+		{name: "scalar exact", wire: []byte{0xc0}, limits: ReaderLimits{MaxSkipValues: 1, MaxSkipBytes: 1}, consumed: 1},
+		{name: "empty container exact", wire: []byte{0x90}, limits: ReaderLimits{MaxSkipDepth: 1, MaxSkipValues: 1, MaxSkipBytes: 1}, consumed: 1},
+		{name: "array values exact", wire: []byte{0x91, 0xc0}, limits: ReaderLimits{MaxSkipValues: 2}, consumed: 2},
+		{name: "array values over", wire: []byte{0x91, 0xc0}, limits: ReaderLimits{MaxSkipValues: 1}, consumed: 1, want: ErrLimitExceeded},
+		{name: "map values exact", wire: []byte{0x81, 0xc0, 0xc3}, limits: ReaderLimits{MaxSkipValues: 3}, consumed: 3},
+		{name: "map counts both key and value", wire: []byte{0x81, 0xc0, 0xc3}, limits: ReaderLimits{MaxSkipValues: 2}, consumed: 1, want: ErrLimitExceeded},
+		{name: "ancestor sibling values exact", wire: []byte{0x92, 0x91, 0xc0, 0xc0}, limits: ReaderLimits{MaxSkipValues: 4}, consumed: 4},
+		{name: "ancestor sibling values over", wire: []byte{0x92, 0x91, 0xc0, 0xc0}, limits: ReaderLimits{MaxSkipValues: 3}, consumed: 2, want: ErrLimitExceeded},
+		{name: "ancestor map values over", wire: []byte{0x92, 0x81, 0xc0, 0xc0, 0xc0}, limits: ReaderLimits{MaxSkipValues: 4}, consumed: 2, want: ErrLimitExceeded},
+		{name: "integer bytes exact", wire: []byte{0xcf, 0, 0, 0, 0, 0, 0, 0, 7}, limits: ReaderLimits{MaxSkipBytes: 9}, consumed: 9},
+		{name: "integer bytes over", wire: []byte{0xcf, 0, 0, 0, 0, 0, 0, 0, 7}, limits: ReaderLimits{MaxSkipBytes: 8}, consumed: 1, want: ErrLimitExceeded},
+		{name: "payload bytes exact", wire: []byte{0xdb, 0, 0, 0, 3, 0, 1, 2}, limits: ReaderLimits{MaxSkipBytes: 8}, consumed: 8},
+		{name: "payload bytes over", wire: []byte{0xdb, 0, 0, 0, 3, 0, 1, 2}, limits: ReaderLimits{MaxSkipBytes: 7}, consumed: 5, want: ErrLimitExceeded},
+		{name: "fixed payload bytes over", wire: []byte{0xa2, 0, 1}, limits: ReaderLimits{MaxSkipBytes: 2}, consumed: 1, want: ErrLimitExceeded},
+		{name: "child tag bytes exact", wire: []byte{0x91, 0xc0}, limits: ReaderLimits{MaxSkipBytes: 2}, consumed: 2},
+		{name: "child tag bytes over", wire: []byte{0x91, 0xc0}, limits: ReaderLimits{MaxSkipBytes: 1}, consumed: 1, want: ErrLimitExceeded},
+		{name: "ancestor tag bytes over", wire: []byte{0x92, 0x92, 0xc0, 0xc0, 0xc0}, limits: ReaderLimits{MaxSkipBytes: 4}, consumed: 2, want: ErrLimitExceeded},
+		{name: "header budget precedes missing header", wire: []byte{0xda}, limits: ReaderLimits{MaxSkipBytes: 2}, consumed: 1, want: ErrLimitExceeded},
+		{name: "header budget permits detecting truncation", wire: []byte{0xda}, limits: ReaderLimits{MaxSkipBytes: 3}, consumed: 1, want: io.ErrUnexpectedEOF},
+		{name: "body budget precedes missing body", wire: []byte{0xcb}, limits: ReaderLimits{MaxSkipBytes: 8}, consumed: 1, want: ErrLimitExceeded},
+		{name: "work budget precedes missing child", wire: []byte{0x91}, limits: ReaderLimits{MaxSkipValues: 1}, consumed: 1, want: ErrLimitExceeded},
+		{name: "work budget permits detecting missing child", wire: []byte{0x91}, limits: ReaderLimits{MaxSkipValues: 2}, consumed: 1, want: io.ErrUnexpectedEOF},
 		{name: "maximum array default values", wire: []byte{0xdd, 0xff, 0xff, 0xff, 0xff}, consumed: 5, want: ErrLimitExceeded},
 		{name: "maximum map default values", wire: []byte{0xdf, 0xff, 0xff, 0xff, 0xff}, consumed: 5, want: ErrLimitExceeded},
-		{name: "maximum map uses wide child count", wire: []byte{0xdf, 0xff, 0xff, 0xff, 0xff}, limits: DecoderLimits{MaxSkipValues: 4294967296, MaxSkipBytes: math.MaxUint64}, consumed: 5, want: ErrLimitExceeded},
-		{name: "maximum array minimum byte work", wire: []byte{0xdd, 0xff, 0xff, 0xff, 0xff}, limits: DecoderLimits{MaxSkipValues: math.MaxUint64, MaxSkipBytes: 5}, consumed: 5, want: ErrLimitExceeded},
+		{name: "maximum map uses wide child count", wire: []byte{0xdf, 0xff, 0xff, 0xff, 0xff}, limits: ReaderLimits{MaxSkipValues: 4294967296, MaxSkipBytes: math.MaxUint64}, consumed: 5, want: ErrLimitExceeded},
+		{name: "maximum array minimum byte work", wire: []byte{0xdd, 0xff, 0xff, 0xff, 0xff}, limits: ReaderLimits{MaxSkipValues: math.MaxUint64, MaxSkipBytes: 5}, consumed: 5, want: ErrLimitExceeded},
 		{name: "maximum string length budget", wire: []byte{0xdb, 0xff, 0xff, 0xff, 0xff}, consumed: 5, want: ErrLimitExceeded},
 		{name: "maximum binary length budget", wire: []byte{0xc6, 0xff, 0xff, 0xff, 0xff}, consumed: 5, want: ErrLimitExceeded},
-		{name: "maximum map maximal budgets", wire: []byte{0xdf, 0xff, 0xff, 0xff, 0xff}, limits: DecoderLimits{MaxSkipValues: math.MaxUint64, MaxSkipBytes: math.MaxUint64}, consumed: 5, want: io.ErrUnexpectedEOF},
-		{name: "maximum array maximal budgets", wire: []byte{0xdd, 0xff, 0xff, 0xff, 0xff}, limits: DecoderLimits{MaxSkipValues: math.MaxUint64, MaxSkipBytes: math.MaxUint64}, consumed: 5, want: io.ErrUnexpectedEOF},
+		{name: "maximum map maximal budgets", wire: []byte{0xdf, 0xff, 0xff, 0xff, 0xff}, limits: ReaderLimits{MaxSkipValues: math.MaxUint64, MaxSkipBytes: math.MaxUint64}, consumed: 5, want: io.ErrUnexpectedEOF},
+		{name: "maximum array maximal budgets", wire: []byte{0xdd, 0xff, 0xff, 0xff, 0xff}, limits: ReaderLimits{MaxSkipValues: math.MaxUint64, MaxSkipBytes: math.MaxUint64}, consumed: 5, want: io.ErrUnexpectedEOF},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
 				r = &decoderTestReader{data: tt.wire, maxRead: 1}
-				d = NewDecoder(r)
+				d = NewReader(r)
 			)
 			if err := d.SetLimits(tt.limits); err != nil {
 				t.Fatal(err)
@@ -281,8 +281,8 @@ func TestSkipDepthLimits(t *testing.T) {
 					containers--
 				}
 				wire = append(bytes.Repeat([]byte{0x91}, int(containers)), end)
-				d := NewDecoder(bytes.NewReader(wire))
-				if err := d.SetLimits(DecoderLimits{MaxSkipDepth: depth}); err != nil {
+				d := NewReader(bytes.NewReader(wire))
+				if err := d.SetLimits(ReaderLimits{MaxSkipDepth: depth}); err != nil {
 					t.Fatal(err)
 				}
 				if err := d.Skip(); err != nil {
@@ -299,12 +299,12 @@ func TestSkipDepthLimits(t *testing.T) {
 	}
 }
 
-func requireSkipFailure(t *testing.T, d *Decoder, want error) {
+func requireSkipFailure(t *testing.T, d *Reader, want error) {
 	t.Helper()
 	if err := d.Skip(); err != want {
 		t.Fatalf("later Skip() = %v, want identical %v", err, want)
 	}
-	requireDecoderScalarFailure(t, d, want)
+	requireReaderScalarFailure(t, d, want)
 	if n, err := d.DecodeBytesTo(nil); n != 0 || err != want {
 		t.Fatalf("later invalid transfer = (%d, %v), want stored failure", n, err)
 	}
@@ -341,7 +341,7 @@ func TestSkipClassificationAndSourceErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
 				r   = &decoderTestReader{data: tt.wire, endErr: tt.end}
-				d   = NewDecoder(r)
+				d   = NewReader(r)
 				err = d.Skip()
 			)
 			if !errors.Is(err, tt.want) {
@@ -363,13 +363,13 @@ func TestSkipClassificationAndSourceErrors(t *testing.T) {
 }
 
 func TestSkipEOFAndLifecycle(t *testing.T) {
-	var unattached Decoder
-	if err := unattached.Skip(); err != ErrUninitialized || unattached.err != nil {
-		t.Fatalf("zero Skip() = %v, stored error %v", err, unattached.err)
+	var unattached Reader
+	if err := unattached.Skip(); err != ErrUninitialized || unattached.state != nil {
+		t.Fatalf("zero Skip() = %v, state %+v", err, unattached.state)
 	}
 	for _, wire := range [][]byte{{0xc0}, {0x91, 0xc0}, {0x81, 0xc0, 0x90}, {0xc4, 1, 0xff}} {
 		r := &decoderTestReader{data: wire, maxRead: 1, endErr: io.EOF}
-		d := NewDecoder(r)
+		d := NewReader(r)
 		if err := d.Skip(); err != nil {
 			t.Fatalf("complete data with EOF = %v", err)
 		}
@@ -389,7 +389,7 @@ func TestSkipEOFAndLifecycle(t *testing.T) {
 		}
 	}
 	var typedNil *decoderTestReader
-	if err := NewDecoder(typedNil).Skip(); err != nil {
+	if err := NewReader(typedNil).Skip(); err != nil {
 		t.Fatalf("typed-nil reader's ordinary method failed: %v", err)
 	}
 }
@@ -397,9 +397,9 @@ func TestSkipEOFAndLifecycle(t *testing.T) {
 func TestSkipBudgetsRestartAndReset(t *testing.T) {
 	var (
 		r = &decoderTestReader{data: []byte{0x91, 0xc0, 0x91, 0xc0, 0xc3}}
-		d = NewDecoder(r)
+		d = NewReader(r)
 	)
-	if err := d.SetLimits(DecoderLimits{MaxSkipDepth: 1, MaxSkipValues: 2, MaxSkipBytes: 2}); err != nil {
+	if err := d.SetLimits(ReaderLimits{MaxSkipDepth: 1, MaxSkipValues: 2, MaxSkipBytes: 2}); err != nil {
 		t.Fatal(err)
 	}
 	for index := 0; index < 2; index++ {
@@ -415,13 +415,13 @@ func TestSkipBudgetsRestartAndReset(t *testing.T) {
 	if failure != ErrLimitExceeded {
 		t.Fatalf("depth failure = %v", failure)
 	}
-	if err := d.SetLimits(DecoderLimits{MaxSkipDepth: 2}); err != nil {
+	if err := d.SetLimits(ReaderLimits{MaxSkipDepth: 2}); err != nil {
 		t.Fatal(err)
 	}
 	requireSkipFailure(t, d, failure)
 	d.Reset(bytes.NewReader([]byte{0x91, 0x90}))
-	if err := d.Skip(); err != nil || d.limits.MaxSkipDepth != 2 {
-		t.Fatalf("reset with new limits = %v, depth %d", err, d.limits.MaxSkipDepth)
+	if err := d.Skip(); err != nil || d.state.limits.MaxSkipDepth != 2 {
+		t.Fatalf("reset with new limits = %v, depth %d", err, d.state.limits.MaxSkipDepth)
 	}
 }
 
@@ -442,7 +442,7 @@ func TestSkipZeroProgress(t *testing.T) {
 			var (
 				r = &decoderTestReader{data: []byte{0xcd, 0, 1}, maxRead: 1,
 					initialEmpty: tt.initialEmpty, emptyBetween: tt.emptyBetween}
-				d   = NewDecoder(r)
+				d   = NewReader(r)
 				err = d.Skip()
 			)
 			if !errors.Is(err, tt.want) {

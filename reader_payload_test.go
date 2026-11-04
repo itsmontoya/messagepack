@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestDecoderPayloadWire(t *testing.T) {
+func TestReaderPayloadWire(t *testing.T) {
 	tests := []struct {
 		name         string
 		length       int
@@ -31,22 +31,22 @@ func TestDecoderPayloadWire(t *testing.T) {
 		families := []struct {
 			name   string
 			header []byte
-			owned  func(d *Decoder) (out []byte, err error)
-			copy   func(d *Decoder, dst io.Writer) (n uint64, err error)
+			owned  func(d *Reader) (out []byte, err error)
+			copy   func(d *Reader, dst io.Writer) (n uint64, err error)
 		}{
-			{name: "string", header: tt.stringHeader, owned: func(d *Decoder) (out []byte, err error) {
+			{name: "string", header: tt.stringHeader, owned: func(d *Reader) (out []byte, err error) {
 				var text string
 				text, err = d.DecodeString()
 				return []byte(text), err
-			}, copy: (*Decoder).DecodeStringTo},
-			{name: "binary", header: tt.binaryHeader, owned: (*Decoder).DecodeBytes, copy: (*Decoder).DecodeBytesTo},
+			}, copy: (*Reader).DecodeStringTo},
+			{name: "binary", header: tt.binaryHeader, owned: (*Reader).DecodeBytes, copy: (*Reader).DecodeBytesTo},
 		}
 		for _, family := range families {
 			t.Run(tt.name+"/"+family.name, func(t *testing.T) {
 				var (
 					wire = append(append(append([]byte(nil), family.header...), value...), 0xc3)
 					r    = &decoderTestReader{data: wire, maxRead: 7}
-					d    = NewDecoder(r)
+					d    = NewReader(r)
 				)
 				owned, err := family.owned(d)
 				if err != nil || owned == nil || !bytes.Equal(owned, value) || r.position != len(wire)-1 {
@@ -75,7 +75,7 @@ func TestDecoderPayloadWire(t *testing.T) {
 	}
 }
 
-func TestDecoderPayloadWiderHeadersAndRawBytes(t *testing.T) {
+func TestReaderPayloadWiderHeadersAndRawBytes(t *testing.T) {
 	tests := []struct {
 		name     string
 		wire     []byte
@@ -99,7 +99,7 @@ func TestDecoderPayloadWiderHeadersAndRawBytes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
 				r     = &decoderTestReader{data: tt.wire, maxRead: 1, endErr: io.EOF}
-				d     = NewDecoder(r)
+				d     = NewReader(r)
 				owned []byte
 				err   error
 			)
@@ -135,7 +135,7 @@ func TestDecoderPayloadWiderHeadersAndRawBytes(t *testing.T) {
 	}
 }
 
-func TestDecoderPayloadTruncation(t *testing.T) {
+func TestReaderPayloadTruncation(t *testing.T) {
 	tests := []struct {
 		wire     []byte
 		header   int
@@ -154,7 +154,7 @@ func TestDecoderPayloadTruncation(t *testing.T) {
 			t.Run(fmt.Sprintf("tag_%x/length_%d", tt.wire[0], length), func(t *testing.T) {
 				var (
 					r     = &decoderTestReader{data: tt.wire[:length], maxRead: 1}
-					d     = NewDecoder(r)
+					d     = NewReader(r)
 					want  = io.ErrUnexpectedEOF
 					owned []byte
 					err   error
@@ -174,7 +174,7 @@ func TestDecoderPayloadTruncation(t *testing.T) {
 				if owned != nil || !errors.Is(err, want) || errors.Is(err, ErrTruncated) || r.position != length {
 					t.Fatalf("owned truncation = (%x, %v), consumed %d", owned, err, r.position)
 				}
-				requireDecoderPayloadFailure(t, d, err)
+				requireReaderPayloadFailure(t, d, err)
 				r = &decoderTestReader{data: tt.wire[:length], maxRead: 1}
 				d.Reset(r)
 				var (
@@ -194,7 +194,7 @@ func TestDecoderPayloadTruncation(t *testing.T) {
 					t.Fatalf("transfer truncation = (%d, %v), bytes %d, consumed %d", n, err, dst.Len(), r.position)
 				}
 				reads := r.reads
-				requireDecoderPayloadFailure(t, d, err)
+				requireReaderPayloadFailure(t, d, err)
 				if r.reads != reads {
 					t.Fatal("sticky payload failure performed more reads")
 				}
@@ -203,7 +203,7 @@ func TestDecoderPayloadTruncation(t *testing.T) {
 	}
 }
 
-func requireDecoderPayloadFailure(t *testing.T, d *Decoder, want error) {
+func requireReaderPayloadFailure(t *testing.T, d *Reader, want error) {
 	t.Helper()
 	text, textErr := d.DecodeString()
 	if text != "" || textErr != want {
@@ -218,23 +218,23 @@ func requireDecoderPayloadFailure(t *testing.T, d *Decoder, want error) {
 			t.Fatalf("nil transfer after failure = (%d, %v)", n, err)
 		}
 	}
-	requireDecoderScalarFailure(t, d, want)
+	requireReaderScalarFailure(t, d, want)
 }
 
-func TestDecoderPayloadLimits(t *testing.T) {
+func TestReaderPayloadLimits(t *testing.T) {
 	for _, header := range [][]byte{{0xdb, 0xff, 0xff, 0xff, 0xff}, {0xc6, 0xff, 0xff, 0xff, 0xff}} {
 		r := &decoderTestReader{data: append(append([]byte(nil), header...), 0x78)}
-		d := NewDecoder(r)
+		d := NewReader(r)
 		var err error
 		if header[0] == 0xdb {
 			_, err = d.DecodeString()
 		} else {
 			_, err = d.DecodeBytes()
 		}
-		if err != ErrLimitExceeded || r.position != len(header) || d.buffer != nil {
-			t.Fatalf("hostile length = %v, consumed %d, buffer %d", err, r.position, len(d.buffer))
+		if err != ErrLimitExceeded || r.position != len(header) || d.state.buffer != nil {
+			t.Fatalf("hostile length = %v, consumed %d, buffer %d", err, r.position, len(d.state.buffer))
 		}
-		requireDecoderPayloadFailure(t, d, err)
+		requireReaderPayloadFailure(t, d, err)
 	}
 	for _, length := range []byte{1, 2, 3} {
 		for _, isString := range []bool{true, false} {
@@ -246,8 +246,8 @@ func TestDecoderPayloadLimits(t *testing.T) {
 			}
 			wire = append(wire, bytes.Repeat([]byte{0x78}, int(length))...)
 			r := &decoderTestReader{data: wire}
-			d := NewDecoder(r)
-			if err := d.SetLimits(DecoderLimits{MaxPayloadBytes: 2}); err != nil {
+			d := NewReader(r)
+			if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 2}); err != nil {
 				t.Fatal(err)
 			}
 			var err error
@@ -269,14 +269,14 @@ func TestDecoderPayloadLimits(t *testing.T) {
 	}
 }
 
-func TestDecoderOwnedPayloadIntOverflow(t *testing.T) {
+func TestReaderOwnedPayloadIntOverflow(t *testing.T) {
 	if strconv.IntSize != 32 {
 		t.Skip("uint32 payload lengths fit int on this platform; 32-bit execution required")
 	}
 	for _, tag := range []byte{0xdb, 0xc6} {
 		r := &decoderTestReader{data: []byte{tag, 0x80, 0, 0, 0, 0x78}}
-		d := NewDecoder(r)
-		if err := d.SetLimits(DecoderLimits{MaxPayloadBytes: math.MaxUint32}); err != nil {
+		d := NewReader(r)
+		if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: math.MaxUint32}); err != nil {
 			t.Fatal(err)
 		}
 		var err error
@@ -291,10 +291,10 @@ func TestDecoderOwnedPayloadIntOverflow(t *testing.T) {
 	}
 }
 
-func TestDecoderPayloadOwnership(t *testing.T) {
+func TestReaderPayloadOwnership(t *testing.T) {
 	var (
 		wire = []byte{0xa3, 'a', 'b', 'c', 0xc4, 3, 1, 2, 3, 0xa1, 'z', 0xc4, 1, 9}
-		d    = NewDecoder(bytes.NewReader(wire))
+		d    = NewReader(bytes.NewReader(wire))
 	)
 	text, textErr := d.DecodeString()
 	value, bytesErr := d.DecodeBytes()

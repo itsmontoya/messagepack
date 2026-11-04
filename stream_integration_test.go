@@ -29,7 +29,7 @@ func TestStreamingApplicationMessageWireAndInteroperability(t *testing.T) {
 	}
 	for _, maxRead := range []int{0, 1, 3} {
 		r := &decoderTestReader{data: fixture, maxRead: maxRead}
-		d := NewDecoder(r)
+		d := NewReader(r)
 		decoded, decodeErr := decodeStreamingApplicationMessage(d)
 		if decodeErr != nil || !reflect.DeepEqual(decoded, message) || r.position != len(fixture) {
 			t.Fatalf("stream read with fragment %d = (%+v, %v), position %d", maxRead, decoded, decodeErr, r.position)
@@ -42,7 +42,7 @@ func TestStreamingApplicationMessageSequenceAndOwnership(t *testing.T) {
 		fixture = applicationMessageFixture()
 		wire    = append(append([]byte(nil), fixture...), fixture...)
 		r       = &decoderTestReader{data: wire, maxRead: 1, endErr: io.EOF}
-		d       = NewDecoder(r)
+		d       = NewReader(r)
 		first   applicationMessage
 		second  applicationMessage
 		err     error
@@ -77,7 +77,7 @@ func TestStreamingApplicationMessageTruncation(t *testing.T) {
 		t.Run(fmt.Sprintf("length_%d", length), func(t *testing.T) {
 			var (
 				r       = &decoderTestReader{data: fixture[:length], maxRead: 1}
-				d       = NewDecoder(r)
+				d       = NewReader(r)
 				message applicationMessage
 				err     error
 				want    = io.ErrUnexpectedEOF
@@ -122,7 +122,7 @@ func TestStreamingApplicationMessageInvalidSchema(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			message, err := decodeStreamingApplicationMessage(NewDecoder(bytes.NewReader(tt.wire)))
+			message, err := decodeStreamingApplicationMessage(NewReader(bytes.NewReader(tt.wire)))
 			if !errors.Is(err, tt.want) || !reflect.DeepEqual(message, applicationMessage{}) {
 				t.Fatalf("invalid schema = (%+v, %v), want zero and %v", message, err, tt.want)
 			}
@@ -154,7 +154,7 @@ func TestStreamNestedContainers(t *testing.T) {
 	if !bytes.Equal(writer.Bytes(), wire) {
 		t.Fatalf("nested container bytes = %x, want %x", writer.Bytes(), wire)
 	}
-	d := NewDecoder(bytes.NewReader(wire))
+	d := NewReader(bytes.NewReader(wire))
 	if count, err := d.DecodeArrayHeader(); count != 2 || err != nil {
 		t.Fatalf("outer array = (%d, %v)", count, err)
 	}
@@ -187,7 +187,7 @@ func TestStreamGeneratedArrayIsIncremental(t *testing.T) {
 		writer = &streamArrayWriter{count: count}
 		e      = NewWriter(writer)
 		r      = newStreamArrayReader(count)
-		d      = NewDecoder(r)
+		d      = NewReader(r)
 		total  uint64
 	)
 	if err := e.EncodeArrayHeader(count); err != nil {
@@ -215,11 +215,11 @@ func TestStreamGeneratedArrayIsIncremental(t *testing.T) {
 		}
 		total += value
 		if index == 0 && r.next != 1 {
-			t.Fatal("Decoder waited for ungenerated elements before returning the first")
+			t.Fatal("Reader waited for ungenerated elements before returning the first")
 		}
 	}
-	if total != uint64(count)*(uint64(count)-1)/2 || r.bytes != writer.bytes || r.maxRequest > 8 || d.buffer != nil {
-		t.Fatalf("incremental total %d, wire bytes %d/%d, request %d, buffer %d", total, r.bytes, writer.bytes, r.maxRequest, len(d.buffer))
+	if total != uint64(count)*(uint64(count)-1)/2 || r.bytes != writer.bytes || r.maxRequest > 8 || d.state.buffer != nil {
+		t.Fatalf("incremental total %d, wire bytes %d/%d, request %d, buffer %d", total, r.bytes, writer.bytes, r.maxRequest, len(d.state.buffer))
 	}
 	if err := d.DecodeNil(); !errors.Is(err, io.EOF) {
 		t.Fatalf("generated array end = %v", err)

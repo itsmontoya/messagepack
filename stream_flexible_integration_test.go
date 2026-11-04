@@ -16,7 +16,7 @@ func TestFlexibleStreamingApplicationMessage(t *testing.T) {
 				var (
 					wire = append(append([]byte(nil), fixture...), 0xc3)
 					r    = &decoderTestReader{data: wire, maxRead: fragment}
-					d    = NewDecoder(r)
+					d    = NewReader(r)
 					want = applicationMessage{ID: 7, Name: "Ada", Active: true, Score: 1.5,
 						Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
 				)
@@ -30,7 +30,7 @@ func TestFlexibleStreamingApplicationMessage(t *testing.T) {
 			})
 		}
 	}
-	_, strictErr := decodeStreamingApplicationMessage(NewDecoder(bytes.NewReader(flexibleStreamingApplicationFixture())))
+	_, strictErr := decodeStreamingApplicationMessage(NewReader(bytes.NewReader(flexibleStreamingApplicationFixture())))
 	if strictErr != errApplicationSchema {
 		t.Fatalf("strict schema changed its policy: %v", strictErr)
 	}
@@ -62,7 +62,7 @@ func TestFlexibleStreamingApplicationInvalidSchema(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			message, err := decodeFlexibleStreamingApplicationMessage(NewDecoder(bytes.NewReader(tt.wire)))
+			message, err := decodeFlexibleStreamingApplicationMessage(NewReader(bytes.NewReader(tt.wire)))
 			if !errors.Is(err, tt.want) || !reflect.DeepEqual(message, applicationMessage{}) {
 				t.Fatalf("invalid flexible schema = (%+v, %v), want zero and %v", message, err, tt.want)
 			}
@@ -78,7 +78,7 @@ func TestFlexibleStreamingApplicationSixteenFieldLimit(t *testing.T) {
 	for index := byte(0); index < 10; index++ {
 		wire = append(wire, 0xa2, 'x', '0'+index, 0xc0)
 	}
-	message, err := decodeFlexibleStreamingApplicationMessage(NewDecoder(bytes.NewReader(wire)))
+	message, err := decodeFlexibleStreamingApplicationMessage(NewReader(bytes.NewReader(wire)))
 	if err != nil || message.ID != 7 || message.Name != "Ada" {
 		t.Fatalf("sixteen-field schema = (%+v, %v)", message, err)
 	}
@@ -90,7 +90,7 @@ func TestFlexibleStreamingApplicationTruncation(t *testing.T) {
 		t.Run(fmt.Sprintf("length_%d", length), func(t *testing.T) {
 			var (
 				want = io.ErrUnexpectedEOF
-				d    = NewDecoder(bytes.NewReader(fixture[:length]))
+				d    = NewReader(bytes.NewReader(fixture[:length]))
 			)
 			if length == 0 {
 				want = io.EOF

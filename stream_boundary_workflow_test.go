@@ -13,7 +13,7 @@ import (
 
 // decodeExactlyOneStreamingMessage requires a finite body or externally bounded frame.
 func decodeExactlyOneStreamingMessage(buffered *bufio.Reader) (message applicationMessage, err error) {
-	message, err = decodeStreamingApplicationMessage(NewDecoder(buffered))
+	message, err = decodeStreamingApplicationMessage(NewReader(buffered))
 	if err != nil {
 		return applicationMessage{}, err
 	}
@@ -56,7 +56,7 @@ func TestStreamingExactlyOneFrame(t *testing.T) {
 			if _, err = io.Copy(io.Discard, frame); err != nil {
 				t.Fatalf("discard finite frame remainder: %v", err)
 			}
-			if value, nextErr := NewDecoder(connection).DecodeBool(); nextErr != nil || !value {
+			if value, nextErr := NewReader(connection).DecodeBool(); nextErr != nil || !value {
 				t.Fatalf("next frame sentinel = (%v, %v)", value, nextErr)
 			}
 		})
@@ -89,7 +89,7 @@ func TestStreamingCallerOwnedBuffering(t *testing.T) {
 	}
 	var (
 		input = bufio.NewReaderSize(bytes.NewReader(file.data), 256)
-		d     = NewDecoder(input)
+		d     = NewReader(input)
 		tail  [4]byte
 	)
 	if _, err := decodeStreamingApplicationMessage(d); err != nil {
@@ -165,7 +165,7 @@ func TestStreamingPipeMessageSequence(t *testing.T) {
 	})
 	var (
 		buffered = bufio.NewReader(reader)
-		d        = NewDecoder(buffered)
+		d        = NewReader(buffered)
 	)
 	first, firstErr := decodeStreamingApplicationMessage(d)
 	if firstErr != nil || first.ID != 7 {

@@ -57,7 +57,7 @@ func streamFuzzSeeds() (seeds [][]byte) {
 	return seeds
 }
 
-// streamFuzzPayloadHeader does not materialize a body or use Decoder internals.
+// streamFuzzPayloadHeader does not materialize a body or use Reader internals.
 func streamFuzzPayloadHeader(src []byte, isString bool) (length uint64, header int, err error) {
 	if len(src) == 0 {
 		return 0, 0, ErrTruncated
@@ -114,14 +114,14 @@ func requireStreamFuzzError(t *testing.T, got, want error) {
 	}
 }
 
-func requireStreamFuzzTerminal(t *testing.T, d *Decoder, r *streamFuzzReader, failure error) {
+func requireStreamFuzzTerminal(t *testing.T, d *Reader, r *streamFuzzReader, failure error) {
 	t.Helper()
 	var (
 		reads  = r.reads
 		writer streamFuzzWriter
-		limits = d.limits
+		limits = d.state.limits
 	)
-	requireDecoderPayloadFailure(t, d, failure)
+	requireReaderPayloadFailure(t, d, failure)
 	requireStreamHeaderFailure(t, d, failure)
 	requireSkipFailure(t, d, failure)
 	if n, err := d.DecodeStringTo(&writer); n != 0 || err != failure {
@@ -130,19 +130,19 @@ func requireStreamFuzzTerminal(t *testing.T, d *Decoder, r *streamFuzzReader, fa
 	if err := d.SetLimits(limits); err != nil {
 		t.Fatal(err)
 	}
-	if err := d.SetLimits(DecoderLimits{MaxSkipDepth: 257}); err != ErrInvalidArgument {
+	if err := d.SetLimits(ReaderLimits{MaxSkipDepth: 257}); err != ErrInvalidArgument {
 		t.Fatal("invalid SetLimits did not preserve its direct sentinel")
 	}
 	if err := d.Skip(); err != failure || r.reads != reads || writer.writes != 0 {
 		t.Fatal("terminal operation or SetLimits changed failure or performed I/O")
 	}
 	d.Reset(nil)
-	if err := d.Skip(); err != ErrUninitialized || r.reads != reads || d.limits != limits {
+	if err := d.Skip(); err != ErrUninitialized || r.reads != reads || d.state.limits != limits {
 		t.Fatal("nil Reset performed I/O or lost configured limits")
 	}
 	fresh := &streamFuzzReader{data: []byte{0xc3}, endErr: io.EOF, dataError: true}
 	d.Reset(fresh)
-	if fresh.reads != 0 || d.limits != limits {
+	if fresh.reads != 0 || d.state.limits != limits {
 		t.Fatal("Reset read or changed limits")
 	}
 	if value, err := d.DecodeBool(); !value || err != nil {
@@ -154,12 +154,12 @@ func requireStreamFuzzTerminal(t *testing.T, d *Decoder, r *streamFuzzReader, fa
 	}
 }
 
-func requireStreamFuzzInput(t *testing.T, src, before []byte, r *streamFuzzReader, d *Decoder) {
+func requireStreamFuzzInput(t *testing.T, src, before []byte, r *streamFuzzReader, d *Reader) {
 	t.Helper()
 	if !bytes.Equal(src, before) || r.position < 0 || r.position > len(src) {
 		t.Fatal("decoder mutated input or consumed outside the available prefix")
 	}
-	if len(d.buffer) > 32768 || r.reads > (len(src)+1)*101+102 {
+	if len(d.state.buffer) > 32768 || r.reads > (len(src)+1)*101+102 {
 		t.Fatal("decoder exceeded bounded scratch or scheduled read work")
 	}
 }

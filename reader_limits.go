@@ -8,9 +8,9 @@ const (
 	defaultMaxSkipBytes    = 67108864
 )
 
-// DecoderLimits bounds owned payload results and the work of each Skip call.
+// ReaderLimits bounds owned payload results and the work of each Skip call.
 // A zero field selects its finite default; no field can disable its limit.
-type DecoderLimits struct {
+type ReaderLimits struct {
 	// MaxPayloadBytes caps each owned string/binary result; the default is 16 MiB.
 	MaxPayloadBytes uint64
 	// MaxSkipDepth caps nested container levels; the default is 64, maximum 256.
@@ -21,9 +21,9 @@ type DecoderLimits struct {
 	MaxSkipBytes uint64
 }
 
-func (l DecoderLimits) normalized() (out DecoderLimits, err error) {
+func (l ReaderLimits) normalized() (out ReaderLimits, err error) {
 	if l.MaxPayloadBytes > 4294967295 || l.MaxSkipDepth > maximumSkipDepth {
-		return DecoderLimits{}, ErrInvalidArgument
+		return ReaderLimits{}, ErrInvalidArgument
 	}
 	out = l
 	if out.MaxPayloadBytes == 0 {

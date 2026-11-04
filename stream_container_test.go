@@ -43,8 +43,8 @@ func TestStreamContainerHeaders(t *testing.T) {
 					t.Fatalf("encoded header = (%x, %v), want %x", writer.Bytes(), err, wire)
 				}
 				r := &decoderTestReader{data: append(append([]byte(nil), wire...), 0xc3), maxRead: 1}
-				d := NewDecoder(r)
-				if err = d.SetLimits(DecoderLimits{MaxPayloadBytes: 1, MaxSkipDepth: 1, MaxSkipValues: 1, MaxSkipBytes: 1}); err != nil {
+				d := NewReader(r)
+				if err = d.SetLimits(ReaderLimits{MaxPayloadBytes: 1, MaxSkipDepth: 1, MaxSkipValues: 1, MaxSkipBytes: 1}); err != nil {
 					t.Fatal(err)
 				}
 				if isMap {
@@ -85,7 +85,7 @@ func TestStreamContainerHeaderOnlyAndWiderForms(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
 				r     = &decoderTestReader{data: tt.wire, endErr: io.EOF}
-				d     = NewDecoder(r)
+				d     = NewReader(r)
 				count uint32
 				err   error
 			)
@@ -94,8 +94,8 @@ func TestStreamContainerHeaderOnlyAndWiderForms(t *testing.T) {
 			} else {
 				count, err = d.DecodeArrayHeader()
 			}
-			if err != nil || count != tt.count || r.position != len(tt.wire) || d.buffer != nil {
-				t.Fatalf("header-only read = (%d, %v), consumed %d, buffer %d", count, err, r.position, len(d.buffer))
+			if err != nil || count != tt.count || r.position != len(tt.wire) || d.state.buffer != nil {
+				t.Fatalf("header-only read = (%d, %v), consumed %d, buffer %d", count, err, r.position, len(d.state.buffer))
 			}
 			reads := r.reads
 			if err = d.DecodeNil(); !errors.Is(err, io.EOF) || r.reads != reads {
@@ -116,7 +116,7 @@ func TestStreamContainerTruncationAndClassification(t *testing.T) {
 				t.Run(fmt.Sprintf("map_%t/tag_%x/length_%d", isMap, wire[0], length), func(t *testing.T) {
 					var (
 						r     = &decoderTestReader{data: wire[:length], maxRead: 1}
-						d     = NewDecoder(r)
+						d     = NewReader(r)
 						count uint32
 						err   error
 						want  = io.ErrUnexpectedEOF
@@ -146,7 +146,7 @@ func TestStreamContainerTruncationAndClassification(t *testing.T) {
 			}
 			var (
 				r     = &decoderTestReader{data: []byte{tag, 0xc3}}
-				d     = NewDecoder(r)
+				d     = NewReader(r)
 				count uint32
 				err   error
 				want  = readTypeError(tag)
@@ -163,14 +163,14 @@ func TestStreamContainerTruncationAndClassification(t *testing.T) {
 	}
 }
 
-func requireStreamHeaderFailure(t *testing.T, d *Decoder, want error) {
+func requireStreamHeaderFailure(t *testing.T, d *Reader, want error) {
 	t.Helper()
 	array, arrayErr := d.DecodeArrayHeader()
 	pairs, pairsErr := d.DecodeMapHeader()
 	if array != 0 || pairs != 0 || arrayErr != want || pairsErr != want {
 		t.Fatalf("stored header error = (%d, %v), (%d, %v), want %v", array, arrayErr, pairs, pairsErr, want)
 	}
-	requireDecoderScalarFailure(t, d, want)
+	requireReaderScalarFailure(t, d, want)
 }
 
 func TestStreamContainerHeaderIOFailures(t *testing.T) {
@@ -183,7 +183,7 @@ func TestStreamContainerHeaderIOFailures(t *testing.T) {
 		for _, length := range []int{0, 1, 3, 5} {
 			var (
 				r     = &decoderTestReader{data: wire[:length], endErr: failure}
-				d     = NewDecoder(r)
+				d     = NewReader(r)
 				count uint32
 				err   error
 			)
@@ -235,7 +235,7 @@ func TestStreamContainerHeaderIOFailures(t *testing.T) {
 func TestStreamContainerHeaderInitializationAndReset(t *testing.T) {
 	var (
 		e Writer
-		d Decoder
+		d Reader
 		w bytes.Buffer
 	)
 	if e.EncodeArrayHeader(0) != ErrUninitialized || e.EncodeMapHeader(0) != ErrUninitialized {
@@ -244,7 +244,7 @@ func TestStreamContainerHeaderInitializationAndReset(t *testing.T) {
 	for _, decode := range []func() (count uint32, err error){d.DecodeArrayHeader, d.DecodeMapHeader} {
 		count, err := decode()
 		if count != 0 || err != ErrUninitialized {
-			t.Fatalf("unattached Decoder header = (%d, %v)", count, err)
+			t.Fatalf("unattached Reader header = (%d, %v)", count, err)
 		}
 	}
 	e.Reset(&w)
@@ -258,6 +258,6 @@ func TestStreamContainerHeaderInitializationAndReset(t *testing.T) {
 	array, arrayErr := d.DecodeArrayHeader()
 	pairs, pairsErr := d.DecodeMapHeader()
 	if array != 0 || pairs != 0 || arrayErr != nil || pairsErr != nil {
-		t.Fatalf("reset Decoder headers = (%d, %v), (%d, %v)", array, arrayErr, pairs, pairsErr)
+		t.Fatalf("reset Reader headers = (%d, %v), (%d, %v)", array, arrayErr, pairs, pairsErr)
 	}
 }

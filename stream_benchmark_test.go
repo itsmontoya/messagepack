@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	streamBenchmarkWriterSink  *Writer
-	streamBenchmarkDecoderSink *Decoder
+	streamBenchmarkWriterSink *Writer
+	streamBenchmarkReaderSink *Reader
 )
 
 func BenchmarkStreamPrimitives(b *testing.B) {
@@ -39,7 +39,7 @@ func BenchmarkStreamMessage(b *testing.B) {
 		})
 	})
 	b.Run("Decode", func(b *testing.B) {
-		benchmarkStreamRecordDecode(b, len(source.data), &source, source.Reset, &source.reads, func(d *Decoder) (err error) {
+		benchmarkStreamRecordDecode(b, len(source.data), &source, source.Reset, &source.reads, func(d *Reader) (err error) {
 			benchmarkMessageSink, err = decodeStreamingApplicationMessage(d)
 			return err
 		})
@@ -108,7 +108,7 @@ func BenchmarkStreamContainer(b *testing.B) {
 				})
 			})
 			b.Run("Decode", func(b *testing.B) {
-				benchmarkStreamRecordDecode(b, size, &source, source.Reset, &source.reads, func(d *Decoder) (err error) {
+				benchmarkStreamRecordDecode(b, size, &source, source.Reset, &source.reads, func(d *Reader) (err error) {
 					var (
 						actual uint32
 						value  uint64
@@ -194,7 +194,7 @@ func benchmarkStreamRecordEncode(b *testing.B, size int, encode func(e *Writer) 
 	}
 }
 
-func benchmarkStreamRecordDecode(b *testing.B, size int, source io.Reader, resetSource func(), reads *uint64, decode func(d *Decoder) (err error)) {
+func benchmarkStreamRecordDecode(b *testing.B, size int, source io.Reader, resetSource func(), reads *uint64, decode func(d *Reader) (err error)) {
 	b.Helper()
 	for _, buffered := range []bool{false, true} {
 		for _, reuse := range []bool{false, true} {
@@ -202,7 +202,7 @@ func benchmarkStreamRecordDecode(b *testing.B, size int, source io.Reader, reset
 				var (
 					reader  = source
 					buffer  *bufio.Reader
-					decoder *Decoder
+					decoder *Reader
 					err     error
 				)
 				if buffered {
@@ -210,7 +210,7 @@ func benchmarkStreamRecordDecode(b *testing.B, size int, source io.Reader, reset
 					reader = buffer
 				}
 				if reuse {
-					decoder = NewDecoder(reader)
+					decoder = NewReader(reader)
 				}
 				*reads = 0
 				b.ReportAllocs()
@@ -224,8 +224,8 @@ func benchmarkStreamRecordDecode(b *testing.B, size int, source io.Reader, reset
 					if reuse {
 						decoder.Reset(reader)
 					} else {
-						decoder = NewDecoder(reader)
-						streamBenchmarkDecoderSink = decoder
+						decoder = NewReader(reader)
+						streamBenchmarkReaderSink = decoder
 					}
 					if err = decode(decoder); err != nil {
 						b.Fatal(err)
@@ -276,7 +276,7 @@ func encodeStreamBenchmarkPrimitives(e *Writer) (err error) {
 	return e.EncodeFloat64(1.5)
 }
 
-func decodeStreamBenchmarkPrimitives(d *Decoder) (err error) {
+func decodeStreamBenchmarkPrimitives(d *Reader) (err error) {
 	if err = d.DecodeNil(); err != nil {
 		return err
 	}

@@ -22,6 +22,17 @@ func (m applicationMessage) EncodeMessagePack(w Writer) (err error) {
 	return encodeStreamingApplicationMessage(&w, m)
 }
 
+// DecodeMessagePack replaces the message only after its strict schema is complete.
+func (m *applicationMessage) DecodeMessagePack(r Reader) (err error) {
+	var value applicationMessage
+	value, err = decodeStreamingApplicationMessage(&r)
+	if err != nil {
+		return err
+	}
+	*m = value
+	return nil
+}
+
 // readApplicationMessage requires exactly these six fields in this order.
 // Unknown, duplicate, or reordered fields fail; unknown-field skipping is deferred.
 // Payload borrows src, while Name is owned. Success may leave another message.

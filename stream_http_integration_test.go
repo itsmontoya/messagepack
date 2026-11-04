@@ -60,8 +60,8 @@ func TestStreamingHTTPIncrementalPayload(t *testing.T) {
 				t.Fatal(responseErr)
 			}
 			body = &streamOwnedBody{body: response.Body}
-			d := NewDecoder(body)
-			if err := d.SetLimits(DecoderLimits{MaxPayloadBytes: 16}); err != nil {
+			d := NewReader(body)
+			if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 16}); err != nil {
 				t.Fatal(err)
 			}
 			if mode == "destination failure" {
@@ -161,7 +161,7 @@ func TestStreamingHTTPTruncatedResponse(t *testing.T) {
 			cancel()
 			t.Fatal(responseErr)
 		}
-		_, err = decodeStreamingApplicationMessage(NewDecoder(response.Body))
+		_, err = decodeStreamingApplicationMessage(NewReader(response.Body))
 		closeErr := response.Body.Close()
 		cancel()
 		if !errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF) || closeErr != nil {
@@ -197,7 +197,7 @@ func TestStreamingHTTPTruncatedPayload(t *testing.T) {
 	if responseErr != nil {
 		t.Fatal(responseErr)
 	}
-	n, decodeErr := NewDecoder(response.Body).DecodeBytesTo(&sink)
+	n, decodeErr := NewReader(response.Body).DecodeBytesTo(&sink)
 	closeErr := response.Body.Close()
 	if !errors.Is(decodeErr, io.ErrUnexpectedEOF) || n != actual || sink.bytes != actual || closeErr != nil {
 		t.Fatalf("truncated HTTP payload = (%d, %v), sink %d, close %v", n, decodeErr, sink.bytes, closeErr)
