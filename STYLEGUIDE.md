@@ -467,6 +467,15 @@ i++
 
 # Tests
 
+* Keep unit tests for each type in its matching `<type>_test.go` file.
+  Reader tests, including payloads, limits, Skip, lifecycle, and allocation checks,
+  belong in `reader_test.go`; Writer tests belong in `writer_test.go`.
+* Keep type-specific assertion helpers with the tests they support.
+* Put unit tests that exercise Reader and Writer together in `reader_writer_test.go`.
+  Application schemas and HTTP, file, and pipe workflows may use focused integration files.
+* Keep each test fixture type, its methods, and tests of the fixture itself in that
+  type's own test file.
+* Examples, fuzz targets, and benchmarks may use dedicated files for their purpose.
 * Prefer table-driven tests.
 * Keep setup explicit.
 * Avoid clever test abstractions.

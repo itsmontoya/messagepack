@@ -66,8 +66,9 @@ For each task:
   the slice wire, conversion, ownership, and error compatibility baseline.
   Failed slice reads consume zero bytes; arbitrary readers cannot provide that
   rollback guarantee.
-- Per-family tests, `read_fuzz_test.go`, `roundtrip_fuzz_test.go`,
-  `allocation_test.go`, and `benchmark_test.go` cover the slice codec.
+- `reader_test.go` and `writer_test.go` cover the typed codecs, including payloads,
+  limits, lifecycle, and allocation reuse. `reader_writer_test.go` contains paired
+  wire checks and shared resource bounds. Fuzz targets and benchmarks use dedicated files.
   `application_message_test.go`, `integration_test.go`, and `example_test.go`
   demonstrate a six-field map with a nested array and a binary payload.
 - Streaming tests and [executable examples](stream_example_test.go) cover typed

@@ -3,6 +3,7 @@ package messagepack
 import (
 	"bytes"
 	"io"
+	"testing"
 )
 
 // streamBenchmarkArrayReader fills requests incrementally using a reusable Writer.
@@ -59,4 +60,31 @@ func (r *streamBenchmarkArrayReader) Read(dst []byte) (n int, err error) {
 		n += size
 	}
 	return n, nil
+}
+
+func TestStreamBenchmarkArraySource(t *testing.T) {
+	for _, chunkSize := range []int{1, 8} {
+		var (
+			source = streamBenchmarkArrayReader{count: 3}
+			actual []byte
+			buffer [8]byte
+			n      int
+			err    error
+		)
+		source.Reset()
+		for {
+			n, err = source.Read(buffer[:chunkSize])
+			actual = append(actual, buffer[:n]...)
+			if err == io.EOF {
+				break
+			}
+
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		if !bytes.Equal(actual, []byte{0x93, 0, 1, 2}) {
+			t.Fatalf("chunk %d: wire %x, want 93000102", chunkSize, actual)
+		}
+	}
 }
