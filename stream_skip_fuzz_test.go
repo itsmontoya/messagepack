@@ -112,7 +112,7 @@ func FuzzStreamSkip(f *testing.F) {
 // iterative stack and outstanding-sibling accounting. It never builds a tree.
 func streamFuzzValueSize(src []byte, depth uint32, values, deepest *uint32) (n int, err error) {
 	if len(src) == 0 {
-		return 0, ErrTruncated
+		return 0, errFuzzTruncated
 	}
 	if depth > 32 || *values == streamFuzzInputLimit {
 		return 0, ErrLimitExceeded
@@ -126,42 +126,62 @@ func streamFuzzValueSize(src []byte, depth uint32, values, deepest *uint32) (n i
 	switch {
 	case tag <= 0x7f || tag >= 0xe0 || tag == 0xc0 || tag == 0xc2 || tag == 0xc3:
 		return 1, nil
-	case tag == 0xcc || tag == 0xcd || tag == 0xce || tag == 0xcf:
-		_, n, err = ReadUint64(src)
-		return n, err
-	case tag >= 0xd0 && tag <= 0xd3:
-		_, n, err = ReadInt64(src)
-		return n, err
-	case tag == 0xca:
-		_, n, err = ReadFloat32(src)
-		return n, err
-	case tag == 0xcb:
-		_, n, err = ReadFloat64(src)
-		return n, err
-	case tag >= 0xa0 && tag <= 0xbf || tag >= 0xd9 && tag <= 0xdb:
-		_, n, err = ReadStringBytes(src)
-		return n, err
-	case tag >= 0xc4 && tag <= 0xc6:
-		_, n, err = ReadBytes(src)
-		return n, err
-	case tag >= 0x90 && tag <= 0x9f || tag == 0xdc || tag == 0xdd:
-		count, n, err = ReadArrayHeader(src)
+	case tag == 0xcc || tag == 0xd0:
+		n = 2
+	case tag == 0xcd || tag == 0xd1:
+		n = 3
+	case tag == 0xce || tag == 0xd2 || tag == 0xca:
+		n = 5
+	case tag == 0xcf || tag == 0xd3 || tag == 0xcb:
+		n = 9
+	case tag >= 0xa0 && tag <= 0xbf || tag >= 0xd9 && tag <= 0xdb || tag >= 0xc4 && tag <= 0xc6:
+		var length uint64
+		length, n, err = streamFuzzPayloadHeader(src, tag >= 0xa0 && tag <= 0xbf || tag >= 0xd9 && tag <= 0xdb)
+		if err != nil {
+			return 0, err
+		}
+		if length > uint64(len(src)-n) {
+			return 0, errFuzzTruncated
+		}
+		return n + int(length), nil
+	case tag >= 0x80 && tag <= 0x9f:
+		n, count = 1, uint32(tag&15)
 		children = uint64(count)
-	case tag >= 0x80 && tag <= 0x8f || tag == 0xde || tag == 0xdf:
-		count, n, err = ReadMapHeader(src)
-		children = uint64(count) * 2
+		if tag < 0x90 {
+			children *= 2
+		}
+	case tag == 0xdc || tag == 0xde || tag == 0xdd || tag == 0xdf:
+		n = 5
+		if tag == 0xdc || tag == 0xde {
+			n = 3
+		}
+		if len(src) < n {
+			return 0, errFuzzTruncated
+		}
+		if n == 3 {
+			count = uint32(binary.BigEndian.Uint16(src[1:3]))
+		} else {
+			count = binary.BigEndian.Uint32(src[1:5])
+		}
+		children = uint64(count)
+		if tag == 0xde || tag == 0xdf {
+			children *= 2
+		}
 	default:
 		return 0, readTypeError(tag)
 	}
-	if err != nil {
-		return 0, err
+	if len(src) < n {
+		return 0, errFuzzTruncated
+	}
+	if children == 0 && !(tag >= 0x80 && tag <= 0x9f || tag >= 0xdc && tag <= 0xdf) {
+		return n, nil
 	}
 	depth++
 	if depth > *deepest {
 		*deepest = depth
 	}
 	if children > uint64(len(src)-n) {
-		return 0, ErrTruncated
+		return 0, errFuzzTruncated
 	}
 	for child := uint64(0); child < children; child++ {
 		var size int

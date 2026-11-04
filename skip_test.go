@@ -187,7 +187,7 @@ func TestSkipTruncation(t *testing.T) {
 				if length == 0 {
 					want = io.EOF
 				}
-				if !errors.Is(err, want) || errors.Is(err, ErrTruncated) || err == want || r.position != length {
+				if !errors.Is(err, want) || errors.Is(err, errFuzzTruncated) || err == want || r.position != length {
 					t.Fatalf("Skip() = %v, consumed %d, want wrapped %v after %d", err, r.position, want, length)
 				}
 				if length > 0 && errors.Is(err, io.EOF) {

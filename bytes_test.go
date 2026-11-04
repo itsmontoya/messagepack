@@ -42,18 +42,20 @@ func TestBytesWireFixtures(t *testing.T) {
 				view   []byte
 				n      int
 			)
-			view, n, err = ReadBytes(src)
+			sourceBytes := bytes.NewReader(src)
+			view, err = NewReader(sourceBytes).DecodeBytes()
+			n = len(src) - sourceBytes.Len()
 			if err != nil || !bytes.Equal(view, tt.value) || n != len(wire) || cap(view) != len(view) {
-				t.Fatalf("ReadBytes() = (%x, %d, %v), cap %d", view, n, err, cap(view))
+				t.Fatalf("DecodeBytes() = (%x, %d, %v), cap %d", view, n, err, cap(view))
 			}
 			if !bytes.Equal(src, before) || src[n] != 0xc3 {
-				t.Fatal("ReadBytes modified input or consumed trailing value")
+				t.Fatal("DecodeBytes modified input or consumed trailing value")
 			}
 		})
 	}
 }
 
-func TestReadBytesWiderHeaders(t *testing.T) {
+func TestReaderBytesWiderHeadersFixtures(t *testing.T) {
 	type testcase struct {
 		name string
 		src  []byte
@@ -72,23 +74,25 @@ func TestReadBytesWiderHeaders(t *testing.T) {
 				n    int
 				err  error
 			)
-			view, n, err = ReadBytes(tt.src)
+			sourceBytes := bytes.NewReader(tt.src)
+			view, err = NewReader(sourceBytes).DecodeBytes()
+			n = len(tt.src) - sourceBytes.Len()
 			if err != nil || !bytes.Equal(view, tt.want) || n != len(tt.src) || cap(view) != len(view) {
-				t.Fatalf("ReadBytes(%x) = (%x, %d, %v), cap %d", tt.src, view, n, err, cap(view))
+				t.Fatalf("DecodeBytes(%x) = (%x, %d, %v), cap %d", tt.src, view, n, err, cap(view))
 			}
 		})
 	}
 }
 
-func TestReadBytesErrors(t *testing.T) {
+func TestReaderBytesErrorsFixtures(t *testing.T) {
 	type testcase struct {
 		name string
 		src  []byte
 		err  error
 	}
 	tests := []testcase{
-		{name: "nil input", err: ErrTruncated},
-		{name: "empty input", src: []byte{}, err: ErrTruncated},
+		{name: "nil input", err: errFuzzTruncated},
+		{name: "empty input", src: []byte{}, err: errFuzzTruncated},
 		{name: "reserved", src: []byte{0xc1}, err: ErrInvalidFormat},
 		{name: "ext8", src: []byte{0xc7}, err: ErrUnsupportedType},
 		{name: "ext16", src: []byte{0xc8}, err: ErrUnsupportedType},
@@ -110,9 +114,9 @@ func TestReadBytesErrors(t *testing.T) {
 		{name: "incomplete array", src: []byte{0xdd}, err: ErrTypeMismatch},
 		{name: "map", src: []byte{0x80}, err: ErrTypeMismatch},
 		{name: "incomplete map", src: []byte{0xde}, err: ErrTypeMismatch},
-		{name: "huge below max int32", src: []byte{0xc6, 0x7f, 0xff, 0xff, 0xff, 0x78}, err: ErrTruncated},
-		{name: "huge above max int32", src: []byte{0xc6, 0x80, 0x00, 0x00, 0x00, 0x78}, err: ErrTruncated},
-		{name: "maximum wire length", src: []byte{0xc6, 0xff, 0xff, 0xff, 0xff, 0x78}, err: ErrTruncated},
+		{name: "huge below max int32", src: []byte{0xc6, 0x7f, 0xff, 0xff, 0xff, 0x78}, err: ErrLimitExceeded},
+		{name: "huge above max int32", src: []byte{0xc6, 0x80, 0x00, 0x00, 0x00, 0x78}, err: ErrLimitExceeded},
+		{name: "maximum wire length", src: []byte{0xc6, 0xff, 0xff, 0xff, 0xff, 0x78}, err: ErrLimitExceeded},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -122,18 +126,20 @@ func TestReadBytesErrors(t *testing.T) {
 				n      int
 				err    error
 			)
-			view, n, err = ReadBytes(tt.src)
-			if view != nil || n != 0 || !errors.Is(err, tt.err) {
-				t.Fatalf("ReadBytes(%x) = (%x, %d, %v), want nil, 0, %v", tt.src, view, n, err, tt.err)
+			sourceBytes := bytes.NewReader(tt.src)
+			view, err = NewReader(sourceBytes).DecodeBytes()
+			n = len(tt.src) - sourceBytes.Len()
+			if view != nil || !errors.Is(err, streamFuzzError(tt.err, len(tt.src))) {
+				t.Fatalf("DecodeBytes(%x) = (%x, %d, %v), want nil, 0, %v", tt.src, view, n, err, tt.err)
 			}
 			if !bytes.Equal(tt.src, before) {
-				t.Fatal("ReadBytes modified input")
+				t.Fatal("DecodeBytes modified input")
 			}
 		})
 	}
 }
 
-func TestReadBytesTruncated(t *testing.T) {
+func TestReaderBytesTruncatedFixtures(t *testing.T) {
 	tests := [][]byte{
 		{0xc4, 0x02, 0x78, 0x79},
 		{0xc5, 0x00, 0x02, 0x78, 0x79},
@@ -149,40 +155,37 @@ func TestReadBytesTruncated(t *testing.T) {
 					n      int
 					err    error
 				)
-				view, n, err = ReadBytes(src)
-				if view != nil || n != 0 || !errors.Is(err, ErrTruncated) {
-					t.Fatalf("ReadBytes(%x) = (%x, %d, %v)", src, view, n, err)
+				sourceBytes := bytes.NewReader(src)
+				view, err = NewReader(sourceBytes).DecodeBytes()
+				n = len(src) - sourceBytes.Len()
+				if view != nil || !errors.Is(err, streamFuzzError(errFuzzTruncated, len(src))) {
+					t.Fatalf("DecodeBytes(%x) = (%x, %d, %v)", src, view, n, err)
 				}
 				if !bytes.Equal(wire, before) {
-					t.Fatal("ReadBytes modified source backing storage")
+					t.Fatal("DecodeBytes modified source backing storage")
 				}
 			})
 		}
 	}
 }
 
-func TestBytesOwnership(t *testing.T) {
+func TestReadererBytesOwnershipFixtureFixtures(t *testing.T) {
 	var (
-		src  = []byte{0xc4, 0x03, 0x61, 0x62, 0x63, 0xc3}
-		view []byte
-		n    int
-		err  error
+		src        = []byte{0xc4, 3, 'a', 'b', 'c'}
+		r          = NewReader(bytes.NewReader(src))
+		owned, err = r.DecodeBytes()
 	)
-	view, n, err = ReadBytes(src)
-	if err != nil || n != 5 || cap(view) != 3 || &view[0] != &src[2] {
-		t.Fatalf("ReadBytes() did not return a capped borrowed view: (%x, %d, %v)", view, n, err)
+	if err != nil || string(owned) != "abc" {
+		t.Fatalf("DecodeBytes() = (%x, %v)", owned, err)
 	}
-	src[2] = 0x7a
-	if string(view) != "zbc" {
-		t.Fatalf("source mutation did not change view: %q", view)
+	src[2] = 'z'
+	r.Reset(bytes.NewReader([]byte{0xc4, 1, 'x'}))
+	if _, err = r.DecodeBytes(); err != nil || string(owned) != "abc" {
+		t.Fatalf("owned bytes changed after source mutation and Reset: %x, %v", owned, err)
 	}
-	view[1] = 0x79
-	if src[3] != 0x79 {
-		t.Fatal("view mutation did not change source")
-	}
-	view = append(view, 0x21)
-	if string(view) != "zyc!" || src[5] != 0xc3 {
-		t.Fatal("appending to view overwrote trailing encoded value")
+	owned[1] = 'y'
+	if src[3] != 'b' {
+		t.Fatal("owned payload mutation changed source storage")
 	}
 }
 

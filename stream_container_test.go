@@ -129,7 +129,7 @@ func TestStreamContainerTruncationAndClassification(t *testing.T) {
 					} else {
 						count, err = d.DecodeArrayHeader()
 					}
-					if count != 0 || !errors.Is(err, want) || errors.Is(err, ErrTruncated) || r.position != length {
+					if count != 0 || !errors.Is(err, want) || errors.Is(err, errFuzzTruncated) || r.position != length {
 						t.Fatalf("truncated header = (%d, %v), position %d", count, err, r.position)
 					}
 					reads := r.reads

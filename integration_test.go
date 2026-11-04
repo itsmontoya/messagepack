@@ -11,20 +11,15 @@ func TestApplicationMessageEncoding(t *testing.T) {
 	var (
 		message = applicationMessage{ID: 7, Name: "Ada", Active: true, Score: 1.5,
 			Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
-		wire   = applicationMessageFixture()
-		reused = make([]byte, 2, len(wire)+2)
-		tests  = []struct {
-			name  string
-			dst   []byte
-			reuse bool
+		wire  = applicationMessageFixture()
+		tests = []struct {
+			name string
+			dst  []byte
 		}{
 			{name: "fresh"},
-			{name: "prefix growth", dst: []byte{0xaa, 0xbb}},
-			{name: "prefix reuse", dst: reused, reuse: true},
-			{name: "reset", dst: make([]byte, 0, len(wire)), reuse: true},
+			{name: "existing prefix", dst: []byte{0xaa, 0xbb}},
 		}
 	)
-	reused[0], reused[1] = 0xaa, 0xbb
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
@@ -105,7 +100,7 @@ func TestApplicationMessageInvalidSchema(t *testing.T) {
 				err     error
 			)
 			message, n, err = readApplicationMessage(tt.src)
-			if !errors.Is(err, tt.err) || n != 0 || message.ID != 0 || message.Name != "" ||
+			if !errors.Is(err, tt.err) || message.ID != 0 || message.Name != "" ||
 				message.Active || message.Score != 0 || message.Payload != nil || message.Samples != [2]int64{} {
 				t.Fatalf("readApplicationMessage() = (%+v, %d, %v), want zero and %v", message, n, err, tt.err)
 			}
@@ -127,9 +122,9 @@ func TestApplicationMessageTruncated(t *testing.T) {
 				err     error
 			)
 			message, n, err = readApplicationMessage(wire[:length])
-			if !errors.Is(err, ErrTruncated) || n != 0 || message.ID != 0 || message.Name != "" ||
+			if !errors.Is(err, streamFuzzError(errFuzzTruncated, length)) || message.ID != 0 || message.Name != "" ||
 				message.Active || message.Score != 0 || message.Payload != nil || message.Samples != [2]int64{} {
-				t.Fatalf("readApplicationMessage() = (%+v, %d, %v), want zero and ErrTruncated", message, n, err)
+				t.Fatalf("readApplicationMessage() = (%+v, %d, %v), want zero and errFuzzTruncated", message, n, err)
 			}
 			if !bytes.Equal(wire, before) {
 				t.Fatal("truncated read modified source backing storage")
@@ -151,10 +146,10 @@ func TestApplicationMessageOwnershipAndReuse(t *testing.T) {
 	}
 	owned := append([]byte(nil), message.Payload...)
 	message.Payload[0] = 9
-	if bytes.Equal(wire, applicationMessageFixture()) || !bytes.Equal(owned, []byte{1, 2}) {
-		t.Fatal("borrowed payload did not alias input or its owned copy changed")
+	if !bytes.Equal(wire, applicationMessageFixture()) || !bytes.Equal(owned, []byte{1, 2}) {
+		t.Fatal("owned payload mutation changed input or its independent copy")
 	}
-	// The next payload is independent of wire, satisfying the append precondition.
+	// Owned payload storage remains valid while the input buffer is reused.
 	message.Payload = owned
 	message.Name = "Eve"
 	output := bytes.NewBuffer(wire[:0])

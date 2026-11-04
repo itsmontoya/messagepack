@@ -39,19 +39,21 @@ func TestMapHeaderWire(t *testing.T) {
 					n      int
 					err    error
 				)
-				count, n, err = ReadMapHeader(src)
+				sourceMapHeader := bytes.NewReader(src)
+				count, err = NewReader(sourceMapHeader).DecodeMapHeader()
+				n = len(src) - sourceMapHeader.Len()
 				if err != nil || count != tt.count || n != len(tt.wire) {
-					t.Fatalf("ReadMapHeader(%x) = (%d, %d, %v), want (%d, %d, nil)", src, count, n, err, tt.count, len(tt.wire))
+					t.Fatalf("DecodeMapHeader(%x) = (%d, %d, %v), want (%d, %d, nil)", src, count, n, err, tt.count, len(tt.wire))
 				}
 				if !bytes.Equal(src, before) {
-					t.Fatal("ReadMapHeader modified input")
+					t.Fatal("DecodeMapHeader modified input")
 				}
 			}
 		})
 	}
 }
 
-func TestReadMapHeaderWider(t *testing.T) {
+func TestReaderMapHeaderWiderFixtures(t *testing.T) {
 	type testcase struct {
 		name  string
 		wire  []byte
@@ -72,26 +74,28 @@ func TestReadMapHeaderWider(t *testing.T) {
 				n      int
 				err    error
 			)
-			count, n, err = ReadMapHeader(tt.wire)
+			sourceMapHeader := bytes.NewReader(tt.wire)
+			count, err = NewReader(sourceMapHeader).DecodeMapHeader()
+			n = len(tt.wire) - sourceMapHeader.Len()
 			if err != nil || count != tt.count || n != len(tt.wire) {
-				t.Fatalf("ReadMapHeader(%x) = (%d, %d, %v)", tt.wire, count, n, err)
+				t.Fatalf("DecodeMapHeader(%x) = (%d, %d, %v)", tt.wire, count, n, err)
 			}
 			if !bytes.Equal(tt.wire, before) {
-				t.Fatal("ReadMapHeader modified input")
+				t.Fatal("DecodeMapHeader modified input")
 			}
 		})
 	}
 }
 
-func TestReadMapHeaderErrors(t *testing.T) {
+func TestReaderMapHeaderErrorsFixtures(t *testing.T) {
 	type testcase struct {
 		name string
 		src  []byte
 		err  error
 	}
 	tests := []testcase{
-		{name: "nil input", err: ErrTruncated},
-		{name: "empty input", src: []byte{}, err: ErrTruncated},
+		{name: "nil input", err: errFuzzTruncated},
+		{name: "empty input", src: []byte{}, err: errFuzzTruncated},
 		{name: "reserved", src: []byte{0xc1}, err: ErrInvalidFormat},
 		{name: "ext8", src: []byte{0xc7}, err: ErrUnsupportedType},
 		{name: "ext16", src: []byte{0xc8}, err: ErrUnsupportedType},
@@ -123,18 +127,20 @@ func TestReadMapHeaderErrors(t *testing.T) {
 				n      int
 				err    error
 			)
-			count, n, err = ReadMapHeader(tt.src)
-			if count != 0 || n != 0 || !errors.Is(err, tt.err) {
-				t.Fatalf("ReadMapHeader(%x) = (%d, %d, %v), want (0, 0, %v)", tt.src, count, n, err, tt.err)
+			sourceMapHeader := bytes.NewReader(tt.src)
+			count, err = NewReader(sourceMapHeader).DecodeMapHeader()
+			n = len(tt.src) - sourceMapHeader.Len()
+			if count != 0 || !errors.Is(err, streamFuzzError(tt.err, len(tt.src))) {
+				t.Fatalf("DecodeMapHeader(%x) = (%d, %d, %v), want (0, 0, %v)", tt.src, count, n, err, tt.err)
 			}
 			if !bytes.Equal(tt.src, before) {
-				t.Fatal("ReadMapHeader modified input")
+				t.Fatal("DecodeMapHeader modified input")
 			}
 		})
 	}
 }
 
-func TestReadMapHeaderTruncated(t *testing.T) {
+func TestReaderMapHeaderTruncatedFixtures(t *testing.T) {
 	tests := [][]byte{
 		{0xde, 0xff, 0xff},
 		{0xdf, 0xff, 0xff, 0xff, 0xff},
@@ -148,19 +154,21 @@ func TestReadMapHeaderTruncated(t *testing.T) {
 					n      int
 					err    error
 				)
-				count, n, err = ReadMapHeader(wire[:length])
-				if count != 0 || n != 0 || !errors.Is(err, ErrTruncated) {
-					t.Fatalf("ReadMapHeader(%x) = (%d, %d, %v)", wire[:length], count, n, err)
+				sourceMapHeader := bytes.NewReader(wire[:length])
+				count, err = NewReader(sourceMapHeader).DecodeMapHeader()
+				n = len(wire[:length]) - sourceMapHeader.Len()
+				if count != 0 || !errors.Is(err, streamFuzzError(errFuzzTruncated, length)) {
+					t.Fatalf("DecodeMapHeader(%x) = (%d, %d, %v)", wire[:length], count, n, err)
 				}
 				if !bytes.Equal(wire, before) {
-					t.Fatal("ReadMapHeader modified source backing storage")
+					t.Fatal("DecodeMapHeader modified source backing storage")
 				}
 			})
 		}
 	}
 }
 
-func TestReadMapHeaderDoesNotValidateChildren(t *testing.T) {
+func TestReaderMapHeaderDoesNotValidateChildrenFixtures(t *testing.T) {
 	for _, src := range [][]byte{{0x81}, {0x81, 0xc1}} {
 		var (
 			before = append([]byte(nil), src...)
@@ -168,18 +176,22 @@ func TestReadMapHeaderDoesNotValidateChildren(t *testing.T) {
 			n      int
 			childN int
 			err    error
-			want   = ErrTruncated
+			want   = errFuzzTruncated
 		)
-		count, n, err = ReadMapHeader(src)
+		sourceMapHeader := bytes.NewReader(src)
+		count, err = NewReader(sourceMapHeader).DecodeMapHeader()
+		n = len(src) - sourceMapHeader.Len()
 		if err != nil || count != 1 || n != 1 {
-			t.Fatalf("ReadMapHeader(%x) = (%d, %d, %v)", src, count, n, err)
+			t.Fatalf("DecodeMapHeader(%x) = (%d, %d, %v)", src, count, n, err)
 		}
 		if len(src) > n {
 			want = ErrInvalidFormat
 		}
-		childN, err = ReadNil(src[n:])
-		if childN != 0 || !errors.Is(err, want) {
-			t.Fatalf("ReadNil(child) = (%d, %v), want (0, %v)", childN, err, want)
+		sourceNil := bytes.NewReader(src[n:])
+		err = NewReader(sourceNil).DecodeNil()
+		childN = len(src[n:]) - sourceNil.Len()
+		if !errors.Is(err, streamFuzzError(want, len(src[n:]))) {
+			t.Fatalf("DecodeNil(child) = (%d, %v), want (0, %v)", childN, err, want)
 		}
 		if !bytes.Equal(src, before) {
 			t.Fatal("header or child read modified input")

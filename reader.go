@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 )
 
 // NewReader attaches a Reader to src without read-ahead or taking ownership.
@@ -59,22 +60,32 @@ func (r *Reader) SetLimits(limits ReaderLimits) (err error) {
 
 // DecodeNil accepts only a nil value, preserving its distinction from empty payloads.
 func (r *Reader) DecodeNil() (err error) {
-	_, err = r.readTag("decode nil")
+	var tag byte
+	tag, err = r.readTag("decode nil")
 	if err != nil {
 		return err
 	}
-	_, err = ReadNil(r.scratch[:1])
-	return r.fail(err)
+	if tag != 0xc0 {
+		return r.fail(readTypeError(tag))
+	}
+	return nil
 }
 
 // DecodeBool accepts only a boolean; failures return false and may consume input.
 func (r *Reader) DecodeBool() (value bool, err error) {
-	_, err = r.readTag("decode bool")
+	var tag byte
+	tag, err = r.readTag("decode bool")
 	if err != nil {
 		return false, err
 	}
-	value, _, err = ReadBool(r.scratch[:1])
-	return value, r.fail(err)
+	switch tag {
+	case 0xc2:
+		return false, nil
+	case 0xc3:
+		return true, nil
+	default:
+		return false, r.fail(readTypeError(tag))
+	}
 }
 
 // DecodeInt64 accepts any integer encoding whose value fits int64.
@@ -85,8 +96,38 @@ func (r *Reader) DecodeInt64() (value int64, err error) {
 	if err != nil {
 		return 0, err
 	}
-	value, _, err = ReadInt64(wire)
-	return value, r.fail(err)
+	return r.decodeInt64(wire)
+}
+
+func (r *Reader) decodeInt64(wire []byte) (value int64, err error) {
+	if wire[0] <= 0x7f {
+		return int64(wire[0]), nil
+	}
+	if wire[0] >= 0xe0 {
+		return int64(int8(wire[0])), nil
+	}
+	switch wire[0] {
+	case 0xcc:
+		return int64(wire[1]), nil
+	case 0xcd:
+		return int64(binary.BigEndian.Uint16(wire[1:3])), nil
+	case 0xce:
+		return int64(binary.BigEndian.Uint32(wire[1:5])), nil
+	case 0xcf:
+		unsigned := binary.BigEndian.Uint64(wire[1:9])
+		if unsigned > math.MaxInt64 {
+			return 0, r.fail(ErrOverflow)
+		}
+		return int64(unsigned), nil
+	case 0xd0:
+		return int64(int8(wire[1])), nil
+	case 0xd1:
+		return int64(int16(binary.BigEndian.Uint16(wire[1:3]))), nil
+	case 0xd2:
+		return int64(int32(binary.BigEndian.Uint32(wire[1:5]))), nil
+	default:
+		return int64(binary.BigEndian.Uint64(wire[1:9])), nil
+	}
 }
 
 // DecodeUint64 accepts any nonnegative integer encoding whose value fits uint64.
@@ -97,8 +138,18 @@ func (r *Reader) DecodeUint64() (value uint64, err error) {
 	if err != nil {
 		return 0, err
 	}
-	value, _, err = ReadUint64(wire)
-	return value, r.fail(err)
+	if wire[0] == 0xcf {
+		return binary.BigEndian.Uint64(wire[1:9]), nil
+	}
+	var signed int64
+	signed, err = r.decodeInt64(wire)
+	if err != nil {
+		return 0, err
+	}
+	if signed < 0 {
+		return 0, r.fail(ErrOverflow)
+	}
+	return uint64(signed), nil
 }
 
 // DecodeFloat32 accepts float32 encodings and preserves their bits.
@@ -115,8 +166,7 @@ func (r *Reader) DecodeFloat32() (value float32, err error) {
 	if err = r.readScalarBody("decode float32", 5); err != nil {
 		return 0, err
 	}
-	value, _, err = ReadFloat32(r.scratch[:5])
-	return value, r.fail(err)
+	return math.Float32frombits(binary.BigEndian.Uint32(r.scratch[1:5])), nil
 }
 
 // DecodeFloat64 preserves float64 bits or widens float32 with Go's conversion.
@@ -141,8 +191,10 @@ func (r *Reader) DecodeFloat64() (value float64, err error) {
 	if err = r.readScalarBody("decode float64", size); err != nil {
 		return 0, err
 	}
-	value, _, err = ReadFloat64(r.scratch[:size])
-	return value, r.fail(err)
+	if tag == 0xca {
+		return float64(math.Float32frombits(binary.BigEndian.Uint32(r.scratch[1:5]))), nil
+	}
+	return math.Float64frombits(binary.BigEndian.Uint64(r.scratch[1:9])), nil
 }
 
 // DecodeArrayHeader consumes only a header and returns its element count.
@@ -178,12 +230,14 @@ func (r *Reader) readContainerHeader(operation string, isMap bool) (count uint32
 	if err = r.readScalarBody(operation, size); err != nil {
 		return 0, err
 	}
-	if isMap {
-		count, _, err = ReadMapHeader(r.scratch[:size])
-	} else {
-		count, _, err = ReadArrayHeader(r.scratch[:size])
+	switch size {
+	case 1:
+		return uint32(tag & 0x0f), nil
+	case 3:
+		return uint32(binary.BigEndian.Uint16(r.scratch[1:3])), nil
+	default:
+		return binary.BigEndian.Uint32(r.scratch[1:5]), nil
 	}
-	return count, r.fail(err)
 }
 
 // DecodeString returns owned, byte-preserving contents within MaxPayloadBytes.

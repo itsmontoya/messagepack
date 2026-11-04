@@ -154,7 +154,7 @@ func TestReaderPayloadSourceErrors(t *testing.T) {
 						t.Fatalf("failed owned binary = %x", value)
 					}
 				}
-				if !errors.Is(err, tt.want) || errors.Is(err, ErrTruncated) {
+				if !errors.Is(err, tt.want) || errors.Is(err, errFuzzTruncated) {
 					t.Fatalf("owned source error = %v, want %v", err, tt.want)
 				}
 				r = &decoderTestReader{data: wire, endErr: tt.end}

@@ -171,7 +171,7 @@ func TestReaderPayloadTruncation(t *testing.T) {
 				} else {
 					owned, err = d.DecodeBytes()
 				}
-				if owned != nil || !errors.Is(err, want) || errors.Is(err, ErrTruncated) || r.position != length {
+				if owned != nil || !errors.Is(err, want) || errors.Is(err, errFuzzTruncated) || r.position != length {
 					t.Fatalf("owned truncation = (%x, %v), consumed %d", owned, err, r.position)
 				}
 				requireReaderPayloadFailure(t, d, err)
@@ -190,7 +190,7 @@ func TestReaderPayloadTruncation(t *testing.T) {
 				} else {
 					n, err = d.DecodeBytesTo(&dst)
 				}
-				if n != uint64(wantN) || dst.Len() != wantN || !errors.Is(err, want) || errors.Is(err, ErrTruncated) || r.position != length {
+				if n != uint64(wantN) || dst.Len() != wantN || !errors.Is(err, want) || errors.Is(err, errFuzzTruncated) || r.position != length {
 					t.Fatalf("transfer truncation = (%d, %v), bytes %d, consumed %d", n, err, dst.Len(), r.position)
 				}
 				reads := r.reads

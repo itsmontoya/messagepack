@@ -36,7 +36,13 @@ func FuzzStreamTypedDecode(f *testing.F) {
 		if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: limit}); err != nil {
 			t.Fatal(err)
 		}
-		n, want, got := checkStreamFuzzTyped(t, d, kind%10, src, limit)
+		plain := bytes.NewReader(src)
+		baseline := NewReader(plain)
+		if err := baseline.SetLimits(ReaderLimits{MaxPayloadBytes: limit}); err != nil {
+			t.Fatal(err)
+		}
+		want, got := checkStreamFuzzTyped(t, d, baseline, kind%10)
+		n := len(src) - plain.Len()
 		want = streamFuzzError(want, len(src))
 		if r.noProgress {
 			want = io.ErrNoProgress
@@ -48,7 +54,7 @@ func FuzzStreamTypedDecode(f *testing.F) {
 		requireStreamFuzzInput(t, src, before, r, d)
 		if got == nil {
 			if r.position != n || n <= 0 || n > len(src) {
-				t.Fatalf("typed success consumed %d bytes, slice consumed %d of %d", r.position, n, len(src))
+				t.Fatalf("typed success consumed %d bytes, contiguous Reader consumed %d of %d", r.position, n, len(src))
 			}
 			return
 		}
@@ -57,90 +63,78 @@ func FuzzStreamTypedDecode(f *testing.F) {
 }
 
 // Each case keeps its actual typed value, avoiding an any/reflection value model.
-func checkStreamFuzzTyped(t *testing.T, d *Reader, kind uint8, src []byte, limit uint64) (n int, want, got error) {
+func checkStreamFuzzTyped(t *testing.T, d, baseline *Reader, kind uint8) (want, got error) {
 	t.Helper()
 	switch kind {
 	case 0:
-		n, want = ReadNil(src)
+		want = baseline.DecodeNil()
 		got = d.DecodeNil()
 	case 1:
 		var value, expected bool
-		expected, n, want = ReadBool(src)
+		expected, want = baseline.DecodeBool()
 		value, got = d.DecodeBool()
 		if got == nil && value != expected || got != nil && value {
-			t.Fatalf("bool result = %v, slice %v, error %v", value, expected, got)
+			t.Fatalf("bool result = %v, contiguous %v, error %v", value, expected, got)
 		}
 	case 2:
 		var value, expected int64
-		expected, n, want = ReadInt64(src)
+		expected, want = baseline.DecodeInt64()
 		value, got = d.DecodeInt64()
 		if got == nil && value != expected || got != nil && value != 0 {
-			t.Fatalf("int64 result = %d, slice %d, error %v", value, expected, got)
+			t.Fatalf("int64 result = %d, contiguous %d, error %v", value, expected, got)
 		}
 	case 3:
 		var value, expected uint64
-		expected, n, want = ReadUint64(src)
+		expected, want = baseline.DecodeUint64()
 		value, got = d.DecodeUint64()
 		if got == nil && value != expected || got != nil && value != 0 {
-			t.Fatalf("uint64 result = %d, slice %d, error %v", value, expected, got)
+			t.Fatalf("uint64 result = %d, contiguous %d, error %v", value, expected, got)
 		}
 	case 4:
 		var value, expected float32
-		expected, n, want = ReadFloat32(src)
+		expected, want = baseline.DecodeFloat32()
 		value, got = d.DecodeFloat32()
 		if got == nil && math.Float32bits(value) != math.Float32bits(expected) || got != nil && math.Float32bits(value) != 0 {
-			t.Fatalf("float32 result bits = %x, slice %x, error %v", math.Float32bits(value), math.Float32bits(expected), got)
+			t.Fatalf("float32 result bits = %x, contiguous %x, error %v", math.Float32bits(value), math.Float32bits(expected), got)
 		}
 	case 5:
 		var value, expected float64
-		expected, n, want = ReadFloat64(src)
+		expected, want = baseline.DecodeFloat64()
 		value, got = d.DecodeFloat64()
-		if got == nil && math.IsNaN(value) && math.IsNaN(expected) && len(src) > 0 && src[0] == 0xca {
+		if got == nil && math.IsNaN(value) && math.IsNaN(expected) && baseline.scratch[0] == 0xca {
 			break // The contract leaves widened float32 NaN payload bits unspecified.
 		}
 		if got == nil && math.Float64bits(value) != math.Float64bits(expected) || got != nil && math.Float64bits(value) != 0 {
-			t.Fatalf("float64 result bits = %x, slice %x, error %v", math.Float64bits(value), math.Float64bits(expected), got)
+			t.Fatalf("float64 result bits = %x, contiguous %x, error %v", math.Float64bits(value), math.Float64bits(expected), got)
 		}
 	case 6:
 		var value, expected string
-		expected, n, want = ReadString(src)
-		want = streamFuzzOwnedError(src, true, limit, want)
+		expected, want = baseline.DecodeString()
 		value, got = d.DecodeString()
 		if got == nil && value != expected || got != nil && value != "" {
-			t.Fatalf("string result differs from slice or is nonzero on failure: %v", got)
+			t.Fatalf("string result differs from contiguous input or is nonzero on failure: %v", got)
 		}
 	case 7:
 		var value, expected []byte
-		expected, n, want = ReadBytes(src)
-		want = streamFuzzOwnedError(src, false, limit, want)
+		expected, want = baseline.DecodeBytes()
 		value, got = d.DecodeBytes()
 		if got == nil && (value == nil || !bytes.Equal(value, expected)) || got != nil && value != nil {
-			t.Fatalf("binary result differs from slice or is nonzero on failure: %v", got)
+			t.Fatalf("binary result differs from contiguous input or is nonzero on failure: %v", got)
 		}
 	case 8:
 		var value, expected uint32
-		expected, n, want = ReadArrayHeader(src)
+		expected, want = baseline.DecodeArrayHeader()
 		value, got = d.DecodeArrayHeader()
 		if got == nil && value != expected || got != nil && value != 0 {
-			t.Fatalf("array count = %d, slice %d, error %v", value, expected, got)
+			t.Fatalf("array count = %d, contiguous %d, error %v", value, expected, got)
 		}
 	case 9:
 		var value, expected uint32
-		expected, n, want = ReadMapHeader(src)
+		expected, want = baseline.DecodeMapHeader()
 		value, got = d.DecodeMapHeader()
 		if got == nil && value != expected || got != nil && value != 0 {
-			t.Fatalf("map count = %d, slice %d, error %v", value, expected, got)
+			t.Fatalf("map count = %d, contiguous %d, error %v", value, expected, got)
 		}
 	}
-	return n, want, got
-}
-
-func streamFuzzOwnedError(src []byte, isString bool, limit uint64, sliceErr error) (err error) {
-	length, _, headerErr := streamFuzzPayloadHeader(src, isString)
-	if headerErr == nil && length > limit {
-		// A complete hostile header hits the allocation policy before a missing
-		// body can cause stream EOF; slice reads instead report ErrTruncated.
-		return ErrLimitExceeded
-	}
-	return sliceErr
+	return want, got
 }

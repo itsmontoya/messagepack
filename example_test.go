@@ -28,7 +28,7 @@ func Example() {
 	}
 	fmt.Printf("%d %s %t %.1f %x %v\n", decoded.ID, decoded.Name, decoded.Active,
 		decoded.Score, decoded.Payload, decoded.Samples)
-	// Copy borrowed payloads before reusing the encoded source storage.
+	// Owned payloads remain independent when the encoded source storage is reused.
 	ownedPayload := append([]byte(nil), decoded.Payload...)
 	message.Payload = ownedPayload
 	output.Reset()

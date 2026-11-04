@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestReadNil(t *testing.T) {
+func TestReaderNilFixtures(t *testing.T) {
 	type testcase struct {
 		name string
 		src  []byte
@@ -17,8 +17,8 @@ func TestReadNil(t *testing.T) {
 		{name: "nil", src: []byte{0xc0}, n: 1},
 		{name: "trailing value", src: []byte{0xc0, 0xc3}, n: 1},
 		{name: "trailing invalid tag", src: []byte{0xc0, 0xc1}, n: 1},
-		{name: "nil input", err: ErrTruncated},
-		{name: "empty input", src: []byte{}, err: ErrTruncated},
+		{name: "nil input", err: errFuzzTruncated},
+		{name: "empty input", src: []byte{}, err: errFuzzTruncated},
 		{name: "reserved", src: []byte{0xc1}, err: ErrInvalidFormat},
 		{name: "ext8", src: []byte{0xc7}, err: ErrUnsupportedType},
 		{name: "ext16", src: []byte{0xc8}, err: ErrUnsupportedType},
@@ -51,12 +51,14 @@ func TestReadNil(t *testing.T) {
 				n      int
 				err    error
 			)
-			n, err = ReadNil(tt.src)
-			if n != tt.n || !errors.Is(err, tt.err) {
-				t.Fatalf("ReadNil(%x) = (%d, %v), want (%d, %v)", tt.src, n, err, tt.n, tt.err)
+			sourceNil := bytes.NewReader(tt.src)
+			err = NewReader(sourceNil).DecodeNil()
+			n = len(tt.src) - sourceNil.Len()
+			if err == nil && n != tt.n || !errors.Is(err, streamFuzzError(tt.err, len(tt.src))) {
+				t.Fatalf("DecodeNil(%x) = (%d, %v), want (%d, %v)", tt.src, n, err, tt.n, tt.err)
 			}
 			if !bytes.Equal(tt.src, before) {
-				t.Fatal("ReadNil() modified source bytes")
+				t.Fatal("DecodeNil() modified source bytes")
 			}
 		})
 	}

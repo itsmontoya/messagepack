@@ -1,6 +1,9 @@
 package messagepack
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 // streamArrayWriter validates one generated scalar per write without retaining values.
 type streamArrayWriter struct {
@@ -9,16 +12,24 @@ type streamArrayWriter struct {
 	bytes      uint64
 	writes     int
 	maxRequest int
+	input      bytes.Reader
+	reader     *Reader
 }
 
 func (w *streamArrayWriter) Write(src []byte) (n int, err error) {
+	w.input.Reset(src)
+	if w.reader == nil {
+		w.reader = NewReader(&w.input)
+	}
+	w.reader.Reset(&w.input)
 	w.writes++
 	if len(src) > w.maxRequest {
 		w.maxRequest = len(src)
 	}
 	if w.writes == 1 {
 		var count uint32
-		count, n, err = ReadArrayHeader(src)
+		count, err = w.reader.DecodeArrayHeader()
+		n = len(src) - w.input.Len()
 		if err != nil {
 			return 0, err
 		}
@@ -29,7 +40,8 @@ func (w *streamArrayWriter) Write(src []byte) (n int, err error) {
 		return n, nil
 	}
 	var value uint64
-	value, n, err = ReadUint64(src)
+	value, err = w.reader.DecodeUint64()
+	n = len(src) - w.input.Len()
 	if err != nil {
 		return 0, err
 	}

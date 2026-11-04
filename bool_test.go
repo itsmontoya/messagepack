@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestReadBool(t *testing.T) {
+func TestReaderBoolFixtures(t *testing.T) {
 	type testcase struct {
 		name  string
 		src   []byte
@@ -20,8 +20,8 @@ func TestReadBool(t *testing.T) {
 		{name: "false trailing true", src: []byte{0xc2, 0xc3}, n: 1},
 		{name: "true trailing false", src: []byte{0xc3, 0xc2}, value: true, n: 1},
 		{name: "trailing invalid tag", src: []byte{0xc3, 0xc1}, value: true, n: 1},
-		{name: "nil input", err: ErrTruncated},
-		{name: "empty input", src: []byte{}, err: ErrTruncated},
+		{name: "nil input", err: errFuzzTruncated},
+		{name: "empty input", src: []byte{}, err: errFuzzTruncated},
 		{name: "reserved", src: []byte{0xc1}, err: ErrInvalidFormat},
 		{name: "ext8", src: []byte{0xc7}, err: ErrUnsupportedType},
 		{name: "ext16", src: []byte{0xc8}, err: ErrUnsupportedType},
@@ -54,12 +54,14 @@ func TestReadBool(t *testing.T) {
 				n      int
 				err    error
 			)
-			value, n, err = ReadBool(tt.src)
-			if value != tt.value || n != tt.n || !errors.Is(err, tt.err) {
-				t.Fatalf("ReadBool(%x) = (%t, %d, %v), want (%t, %d, %v)", tt.src, value, n, err, tt.value, tt.n, tt.err)
+			sourceBool := bytes.NewReader(tt.src)
+			value, err = NewReader(sourceBool).DecodeBool()
+			n = len(tt.src) - sourceBool.Len()
+			if value != tt.value || err == nil && n != tt.n || !errors.Is(err, streamFuzzError(tt.err, len(tt.src))) {
+				t.Fatalf("DecodeBool(%x) = (%t, %d, %v), want (%t, %d, %v)", tt.src, value, n, err, tt.value, tt.n, tt.err)
 			}
 			if !bytes.Equal(tt.src, before) {
-				t.Fatal("ReadBool() modified source bytes")
+				t.Fatal("DecodeBool() modified source bytes")
 			}
 		})
 	}

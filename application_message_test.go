@@ -1,6 +1,9 @@
 package messagepack
 
-import "errors"
+import (
+	"bytes"
+	"errors"
+)
 
 var (
 	errApplicationSchema   = errors.New("example: unexpected field or container count")
@@ -33,81 +36,11 @@ func (m *applicationMessage) DecodeMessagePack(r Reader) (err error) {
 	return nil
 }
 
-// readApplicationMessage requires exactly these six fields in this order.
-// Unknown, duplicate, or reordered fields fail; unknown-field skipping is deferred.
-// Payload borrows src, while Name is owned. Success may leave another message.
+// readApplicationMessage reads one schema value and reports consumed stream bytes.
 func readApplicationMessage(src []byte) (message applicationMessage, n int, err error) {
-	var (
-		count uint32
-		step  int
-	)
-	count, n, err = ReadMapHeader(src)
-	if err != nil {
-		return applicationMessage{}, 0, err
-	}
-	if count != 6 {
-		return applicationMessage{}, 0, errApplicationSchema
-	}
-	for _, key := range []string{"id", "name", "active", "score", "data", "samples"} {
-		step, err = readApplicationKey(src[n:], key)
-		if err != nil {
-			return applicationMessage{}, 0, err
-		}
-		n += step
-		switch key {
-		case "id":
-			message.ID, step, err = ReadUint64(src[n:])
-		case "name":
-			message.Name, step, err = ReadString(src[n:])
-		case "active":
-			message.Active, step, err = ReadBool(src[n:])
-		case "score":
-			message.Score, step, err = ReadFloat64(src[n:])
-		case "data":
-			message.Payload, step, err = ReadBytes(src[n:])
-		case "samples":
-			message.Samples, step, err = readApplicationSamples(src[n:])
-		}
-		if err != nil {
-			return applicationMessage{}, 0, err
-		}
-		n += step
-	}
-	return message, n, nil
-}
-
-func readApplicationKey(src []byte, expected string) (n int, err error) {
-	var key []byte
-	key, n, err = ReadStringBytes(src)
-	if err != nil {
-		return 0, err
-	}
-	if string(key) != expected {
-		return 0, errApplicationSchema
-	}
-	return n, nil
-}
-
-func readApplicationSamples(src []byte) (samples [2]int64, n int, err error) {
-	var (
-		count uint32
-		step  int
-	)
-	count, n, err = ReadArrayHeader(src)
-	if err != nil {
-		return [2]int64{}, 0, err
-	}
-	if count != 2 {
-		return [2]int64{}, 0, errApplicationSchema
-	}
-	for index := range samples {
-		samples[index], step, err = ReadInt64(src[n:])
-		if err != nil {
-			return [2]int64{}, 0, err
-		}
-		n += step
-	}
-	return samples, n, nil
+	input := bytes.NewReader(src)
+	err = NewDecoder(input).Decode(&message)
+	return message, len(src) - input.Len(), err
 }
 
 func readCompleteApplicationMessage(src []byte) (message applicationMessage, err error) {

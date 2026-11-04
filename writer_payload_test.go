@@ -154,7 +154,7 @@ func TestWriterFromSourceBoundaries(t *testing.T) {
 					if later := e.EncodeBool(true); later != err || source.reads != reads || writer.writes != writes {
 						t.Fatal("source failure did not stop later I/O")
 					}
-					if errors.Is(err, io.EOF) || errors.Is(err, ErrTruncated) || !strings.Contains(err.Error(), "source") {
+					if errors.Is(err, io.EOF) || errors.Is(err, errFuzzTruncated) || !strings.Contains(err.Error(), "source") {
 						t.Fatalf("source EOF has wrong identity or context: %v", err)
 					}
 				}

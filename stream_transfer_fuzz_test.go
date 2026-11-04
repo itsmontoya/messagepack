@@ -60,11 +60,19 @@ func checkStreamFuzzDecodeTransfer(t *testing.T, src, fragments []byte, settings
 	if err = d.SetLimits(ReaderLimits{MaxPayloadBytes: 1}); err != nil {
 		t.Fatal(err)
 	}
+	length, header, headerErr := streamFuzzPayloadHeader(src, isString)
+	want = headerErr
+	if headerErr == nil {
+		if length > uint64(len(src)-header) {
+			want = errFuzzTruncated
+		} else {
+			consumed = header + int(length)
+			expected = src[header:consumed]
+		}
+	}
 	if isString {
-		expected, consumed, want = ReadStringBytes(src)
 		n, err = d.DecodeStringTo(w)
 	} else {
-		expected, consumed, want = ReadBytes(src)
 		n, err = d.DecodeBytesTo(w)
 	}
 	want = streamFuzzError(want, len(src))
@@ -82,7 +90,6 @@ func checkStreamFuzzDecodeTransfer(t *testing.T, src, fragments []byte, settings
 	}
 	requireStreamFuzzError(t, err, want)
 	requireStreamFuzzInput(t, src, before, r, d)
-	length, header, headerErr := streamFuzzPayloadHeader(src, isString)
 	if n != uint64(len(w.data)) || n > uint64(len(src)) {
 		t.Fatalf("transfer accepted count = %d, stored %d bytes", n, len(w.data))
 	}

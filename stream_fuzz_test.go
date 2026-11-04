@@ -11,11 +11,12 @@ import (
 const streamFuzzInputLimit = 4096
 
 var (
+	errFuzzTruncated         = errors.New("test: truncated wire fixture")
 	errStreamFuzzSource      = errors.New("stream fuzz source failure")
 	errStreamFuzzDestination = errors.New("stream fuzz destination failure")
 )
 
-// streamFuzzSeeds uses literal bytes independently of the append primitives.
+// streamFuzzSeeds uses literal bytes independently of Reader and Writer.
 func streamFuzzSeeds() (seeds [][]byte) {
 	seeds = [][]byte{
 		{}, {0xc0}, {0xc2}, {0xc3}, {0x00}, {0x7f}, {0xe0}, {0xff},
@@ -54,13 +55,16 @@ func streamFuzzSeeds() (seeds [][]byte) {
 	for _, tag := range []byte{0xc1, 0xc7, 0xc8, 0xc9, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8} {
 		seeds = append(seeds, []byte{tag}, []byte{0x91, tag})
 	}
+	for tag := 0; tag <= 255; tag++ {
+		seeds = append(seeds, []byte{byte(tag)})
+	}
 	return seeds
 }
 
 // streamFuzzPayloadHeader does not materialize a body or use Reader internals.
 func streamFuzzPayloadHeader(src []byte, isString bool) (length uint64, header int, err error) {
 	if len(src) == 0 {
-		return 0, 0, ErrTruncated
+		return 0, 0, errFuzzTruncated
 	}
 	tag := src[0]
 	switch {
@@ -76,7 +80,7 @@ func streamFuzzPayloadHeader(src []byte, isString bool) (length uint64, header i
 		return 0, 0, readTypeError(tag)
 	}
 	if len(src) < header {
-		return 0, 0, ErrTruncated
+		return 0, 0, errFuzzTruncated
 	}
 	switch header {
 	case 2:
@@ -90,7 +94,13 @@ func streamFuzzPayloadHeader(src []byte, isString bool) (length uint64, header i
 }
 
 func streamFuzzError(err error, inputLength int) (out error) {
-	if err != ErrTruncated {
+	if errors.Is(err, io.ErrUnexpectedEOF) {
+		return io.ErrUnexpectedEOF
+	}
+	if errors.Is(err, io.EOF) {
+		return io.EOF
+	}
+	if err != errFuzzTruncated {
 		return err
 	}
 	if inputLength == 0 {
@@ -101,8 +111,8 @@ func streamFuzzError(err error, inputLength int) (out error) {
 
 func requireStreamFuzzError(t *testing.T, got, want error) {
 	t.Helper()
-	if !errors.Is(got, want) || errors.Is(got, ErrTruncated) {
-		t.Fatalf("stream error = %v, want %v without slice ErrTruncated", got, want)
+	if !errors.Is(got, want) {
+		t.Fatalf("stream error = %v, want %v", got, want)
 	}
 	if want == io.ErrUnexpectedEOF && errors.Is(got, io.EOF) {
 		t.Fatal("incomplete stream value also matches clean EOF")

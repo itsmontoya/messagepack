@@ -3,9 +3,6 @@ package messagepack
 import "errors"
 
 var (
-	// ErrTruncated indicates empty or incomplete expected input in the slice API.
-	// Stream decoders use io.EOF or io.ErrUnexpectedEOF instead.
-	ErrTruncated = errors.New("messagepack: truncated input")
 	// ErrInvalidFormat indicates the reserved MessagePack tag 0xc1.
 	ErrInvalidFormat = errors.New("messagepack: invalid format")
 	// ErrUnsupportedType indicates an extension tag or a value lacking the required codec hook.
