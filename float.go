@@ -5,18 +5,6 @@ import (
 	"math"
 )
 
-// AppendFloat32 appends value as float32, preserving its bits and dst's prefix.
-// It reuses available capacity; growth may allocate.
-func AppendFloat32(dst []byte, value float32) (out []byte) {
-	return binary.BigEndian.AppendUint32(append(dst, 0xca), math.Float32bits(value))
-}
-
-// AppendFloat64 appends value as float64, preserving its bits and dst's prefix.
-// It reuses available capacity; growth may allocate.
-func AppendFloat64(dst []byte, value float64) (out []byte) {
-	return binary.BigEndian.AppendUint64(append(dst, 0xcb), math.Float64bits(value))
-}
-
 // ReadFloat32 consumes only float32 encodings and preserves their bits.
 // It leaves src unchanged; failures return zero and consume no bytes.
 func ReadFloat32(src []byte) (value float32, n int, err error) {

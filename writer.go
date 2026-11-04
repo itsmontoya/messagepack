@@ -1,9 +1,11 @@
 package messagepack
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 )
 
 const payloadBufferSize = 32768
@@ -34,52 +36,138 @@ func (w *Writer) Reset(dst io.Writer) {
 
 // EncodeNil writes a nil value, preserving the distinction from empty payloads.
 func (w *Writer) EncodeNil() (err error) {
-	_, err = w.write("encode nil", AppendNil(w.scratch[:0]))
+	w.scratch[0] = 0xc0
+	_, err = w.write("encode nil", w.scratch[:1])
 	return err
 }
 
 // EncodeBool writes value without buffering output for later operations.
 func (w *Writer) EncodeBool(value bool) (err error) {
-	_, err = w.write("encode bool", AppendBool(w.scratch[:0], value))
+	w.scratch[0] = 0xc2
+	if value {
+		w.scratch[0] = 0xc3
+	}
+	_, err = w.write("encode bool", w.scratch[:1])
 	return err
 }
 
 // EncodeInt64 writes the smallest integer representation of value.
 // Nonnegative values encode identically to EncodeUint64.
 func (w *Writer) EncodeInt64(value int64) (err error) {
-	_, err = w.write("encode int64", AppendInt64(w.scratch[:0], value))
+	if value >= 0 {
+		return w.encodeUint64("encode int64", uint64(value))
+	}
+	var size int
+	switch {
+	case value >= -32:
+		w.scratch[0] = byte(value)
+		size = 1
+	case value >= -128:
+		w.scratch[0], w.scratch[1] = 0xd0, byte(value)
+		size = 2
+	case value >= -32768:
+		w.scratch[0] = 0xd1
+		binary.BigEndian.PutUint16(w.scratch[1:3], uint16(value))
+		size = 3
+	case value >= -2147483648:
+		w.scratch[0] = 0xd2
+		binary.BigEndian.PutUint32(w.scratch[1:5], uint32(value))
+		size = 5
+	default:
+		w.scratch[0] = 0xd3
+		binary.BigEndian.PutUint64(w.scratch[1:9], uint64(value))
+		size = 9
+	}
+	_, err = w.write("encode int64", w.scratch[:size])
 	return err
 }
 
 // EncodeUint64 writes the smallest integer representation of value.
 func (w *Writer) EncodeUint64(value uint64) (err error) {
-	_, err = w.write("encode uint64", AppendUint64(w.scratch[:0], value))
+	return w.encodeUint64("encode uint64", value)
+}
+
+func (w *Writer) encodeUint64(operation string, value uint64) (err error) {
+	var size int
+	switch {
+	case value <= 127:
+		w.scratch[0] = byte(value)
+		size = 1
+	case value <= 255:
+		w.scratch[0], w.scratch[1] = 0xcc, byte(value)
+		size = 2
+	case value <= 65535:
+		w.scratch[0] = 0xcd
+		binary.BigEndian.PutUint16(w.scratch[1:3], uint16(value))
+		size = 3
+	case value <= 4294967295:
+		w.scratch[0] = 0xce
+		binary.BigEndian.PutUint32(w.scratch[1:5], uint32(value))
+		size = 5
+	default:
+		w.scratch[0] = 0xcf
+		binary.BigEndian.PutUint64(w.scratch[1:9], value)
+		size = 9
+	}
+	_, err = w.write(operation, w.scratch[:size])
 	return err
 }
 
 // EncodeFloat32 preserves value's float32 width and bits, including NaN payloads.
 func (w *Writer) EncodeFloat32(value float32) (err error) {
-	_, err = w.write("encode float32", AppendFloat32(w.scratch[:0], value))
+	w.scratch[0] = 0xca
+	binary.BigEndian.PutUint32(w.scratch[1:5], math.Float32bits(value))
+	_, err = w.write("encode float32", w.scratch[:5])
 	return err
 }
 
 // EncodeFloat64 preserves value's float64 width and bits, including NaN payloads.
 func (w *Writer) EncodeFloat64(value float64) (err error) {
-	_, err = w.write("encode float64", AppendFloat64(w.scratch[:0], value))
+	w.scratch[0] = 0xcb
+	binary.BigEndian.PutUint64(w.scratch[1:9], math.Float64bits(value))
+	_, err = w.write("encode float64", w.scratch[:9])
 	return err
 }
 
 // EncodeArrayHeader writes only the header for count elements.
 // Callers encode the children explicitly; this method does not validate them.
 func (w *Writer) EncodeArrayHeader(count uint32) (err error) {
-	_, err = w.write("encode array header", AppendArrayHeader(w.scratch[:0], count))
+	var size int
+	switch {
+	case count <= 15:
+		w.scratch[0] = 0x90 | byte(count)
+		size = 1
+	case count <= 65535:
+		w.scratch[0] = 0xdc
+		binary.BigEndian.PutUint16(w.scratch[1:3], uint16(count))
+		size = 3
+	default:
+		w.scratch[0] = 0xdd
+		binary.BigEndian.PutUint32(w.scratch[1:5], count)
+		size = 5
+	}
+	_, err = w.write("encode array header", w.scratch[:size])
 	return err
 }
 
 // EncodeMapHeader writes only the header for count key/value pairs.
 // Callers encode both the keys and values explicitly.
 func (w *Writer) EncodeMapHeader(count uint32) (err error) {
-	_, err = w.write("encode map header", AppendMapHeader(w.scratch[:0], count))
+	var size int
+	switch {
+	case count <= 15:
+		w.scratch[0] = 0x80 | byte(count)
+		size = 1
+	case count <= 65535:
+		w.scratch[0] = 0xde
+		binary.BigEndian.PutUint16(w.scratch[1:3], uint16(count))
+		size = 3
+	default:
+		w.scratch[0] = 0xdf
+		binary.BigEndian.PutUint32(w.scratch[1:5], count)
+		size = 5
+	}
+	_, err = w.write("encode map header", w.scratch[:size])
 	return err
 }
 
@@ -138,16 +226,43 @@ func (w *Writer) writePayloadHeader(operation string, length uint64, isString bo
 	if err = w.ready(); err != nil {
 		return err
 	}
-	var header []byte
+	if length > 4294967295 {
+		return ErrOverflow
+	}
+	var size int
 	if isString {
-		header, err = appendStringHeader(w.scratch[:0], length)
+		switch {
+		case length <= 31:
+			w.scratch[0] = 0xa0 | byte(length)
+			size = 1
+		case length <= 255:
+			w.scratch[0], w.scratch[1] = 0xd9, byte(length)
+			size = 2
+		case length <= 65535:
+			w.scratch[0] = 0xda
+			binary.BigEndian.PutUint16(w.scratch[1:3], uint16(length))
+			size = 3
+		default:
+			w.scratch[0] = 0xdb
+			binary.BigEndian.PutUint32(w.scratch[1:5], uint32(length))
+			size = 5
+		}
 	} else {
-		header, err = appendBytesHeader(w.scratch[:0], length)
+		switch {
+		case length <= 255:
+			w.scratch[0], w.scratch[1] = 0xc4, byte(length)
+			size = 2
+		case length <= 65535:
+			w.scratch[0] = 0xc5
+			binary.BigEndian.PutUint16(w.scratch[1:3], uint16(length))
+			size = 3
+		default:
+			w.scratch[0] = 0xc6
+			binary.BigEndian.PutUint32(w.scratch[1:5], uint32(length))
+			size = 5
+		}
 	}
-	if err != nil {
-		return err
-	}
-	_, err = w.write(operation, header)
+	_, err = w.write(operation, w.scratch[:size])
 	return err
 }
 

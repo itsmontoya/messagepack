@@ -50,13 +50,19 @@ func BenchmarkStreamContainer(b *testing.B) {
 	for _, count := range []uint32{1024, 65536} {
 		b.Run(fmt.Sprintf("Elements%d", count), func(b *testing.B) {
 			var (
-				source  = streamBenchmarkArrayReader{count: count}
-				scratch [9]byte
-				size    = len(AppendArrayHeader(scratch[:0], count))
+				source = streamBenchmarkArrayReader{count: count}
+				sizing streamBenchmarkWriter
+				w      = NewWriter(&sizing)
 			)
-			for index := uint64(0); index < uint64(count); index++ {
-				size += len(AppendUint64(scratch[:0], index))
+			if err := w.EncodeArrayHeader(count); err != nil {
+				b.Fatal(err)
 			}
+			for index := uint64(0); index < uint64(count); index++ {
+				if err := w.EncodeUint64(index); err != nil {
+					b.Fatal(err)
+				}
+			}
+			size := int(sizing.bytes)
 			b.Run("Generator", func(b *testing.B) {
 				var (
 					buffer = make([]byte, payloadBufferSize)

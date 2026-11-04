@@ -2,7 +2,6 @@ package messagepack
 
 import (
 	"bytes"
-	"math"
 	"strings"
 	"testing"
 )
@@ -19,24 +18,6 @@ var (
 	benchmarkCountSink   int
 	benchmarkMessageSink applicationMessage
 )
-
-func BenchmarkAppendPrimitives(b *testing.B) {
-	tests := []struct {
-		name string
-		size int
-		run  func(dst []byte) (out []byte, err error)
-	}{
-		{name: "Nil", size: 1, run: func(dst []byte) (out []byte, err error) { return AppendNil(dst), nil }},
-		{name: "Bool", size: 1, run: func(dst []byte) (out []byte, err error) { return AppendBool(dst, true), nil }},
-		{name: "Int64", size: 5, run: func(dst []byte) (out []byte, err error) { return AppendInt64(dst, -32769), nil }},
-		{name: "Uint64", size: 9, run: func(dst []byte) (out []byte, err error) { return AppendUint64(dst, math.MaxUint64), nil }},
-		{name: "Float32", size: 5, run: func(dst []byte) (out []byte, err error) { return AppendFloat32(dst, 1.5), nil }},
-		{name: "Float64", size: 9, run: func(dst []byte) (out []byte, err error) { return AppendFloat64(dst, 1.5), nil }},
-	}
-	for _, tt := range tests {
-		b.Run(tt.name, func(b *testing.B) { benchmarkAppends(b, tt.size, tt.run) })
-	}
-}
 
 func BenchmarkReadPrimitives(b *testing.B) {
 	var (
@@ -88,16 +69,6 @@ func BenchmarkHeaders(b *testing.B) {
 		arrayWire = []byte{0xdd, 0x00, 0x01, 0x00, 0x00}
 		mapWire   = []byte{0xdf, 0x00, 0x01, 0x00, 0x00}
 	)
-	b.Run("AppendArray", func(b *testing.B) {
-		benchmarkAppends(b, len(arrayWire), func(dst []byte) (out []byte, err error) {
-			return AppendArrayHeader(dst, 65536), nil
-		})
-	})
-	b.Run("AppendMap", func(b *testing.B) {
-		benchmarkAppends(b, len(mapWire), func(dst []byte) (out []byte, err error) {
-			return AppendMapHeader(dst, 65536), nil
-		})
-	})
 	b.Run("ReadArray", func(b *testing.B) {
 		benchmarkReads(b, len(arrayWire), func() (n int, err error) {
 			benchmarkHeaderSink, n, err = ReadArrayHeader(arrayWire)
@@ -123,30 +94,24 @@ func BenchmarkPayloads(b *testing.B) {
 	for _, tt := range tests {
 		b.Run(tt.name, func(b *testing.B) {
 			var (
-				textValue  = strings.Repeat("x", tt.size)
-				byteValue  = bytes.Repeat([]byte{0x78}, tt.size)
-				stringWire []byte
-				binaryWire []byte
-				setupErr   error
+				textValue    = strings.Repeat("x", tt.size)
+				byteValue    = bytes.Repeat([]byte{0x78}, tt.size)
+				stringOutput bytes.Buffer
+				binaryOutput bytes.Buffer
+				setupErr     error
 			)
-			stringWire, setupErr = AppendString(nil, textValue)
+			setupErr = NewWriter(&stringOutput).EncodeString(textValue)
 			if setupErr != nil {
 				b.Fatal(setupErr)
 			}
-			binaryWire, setupErr = AppendBytes(nil, byteValue)
+			setupErr = NewWriter(&binaryOutput).EncodeBytes(byteValue)
 			if setupErr != nil {
 				b.Fatal(setupErr)
 			}
-			b.Run("AppendString", func(b *testing.B) {
-				benchmarkAppends(b, len(stringWire), func(dst []byte) (out []byte, err error) {
-					return AppendString(dst, textValue)
-				})
-			})
-			b.Run("AppendBytes", func(b *testing.B) {
-				benchmarkAppends(b, len(binaryWire), func(dst []byte) (out []byte, err error) {
-					return AppendBytes(dst, byteValue)
-				})
-			})
+			var (
+				stringWire = stringOutput.Bytes()
+				binaryWire = binaryOutput.Bytes()
+			)
 			b.Run("ReadStringOwned", func(b *testing.B) {
 				benchmarkReads(b, len(stringWire), func() (n int, err error) {
 					benchmarkStringSink, n, err = ReadString(stringWire)
@@ -171,47 +136,14 @@ func BenchmarkPayloads(b *testing.B) {
 
 func BenchmarkApplicationMessage(b *testing.B) {
 	var (
-		wire    = applicationMessageFixture()
-		message = applicationMessage{ID: 7, Name: "Ada", Active: true, Score: 1.5,
-			Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
+		wire = applicationMessageFixture()
 	)
-	b.Run("Append", func(b *testing.B) {
-		benchmarkAppends(b, len(wire), message.appendTo)
-	})
 	b.Run("Read", func(b *testing.B) {
 		benchmarkReads(b, len(wire), func() (n int, err error) {
 			benchmarkMessageSink, n, err = readApplicationMessage(wire)
 			return n, err
 		})
 	})
-}
-
-func benchmarkAppends(b *testing.B, size int, appendValue func(dst []byte) (out []byte, err error)) {
-	b.Helper()
-	for _, reuse := range []bool{false, true} {
-		name := "Fresh"
-		if reuse {
-			name = "Reused"
-		}
-		b.Run(name, func(b *testing.B) {
-			var (
-				dst []byte
-				err error
-			)
-			if reuse {
-				dst = make([]byte, 0, size)
-			}
-			b.ReportAllocs()
-			b.SetBytes(int64(size))
-			b.ResetTimer()
-			for index := 0; index < b.N; index++ {
-				benchmarkBytesSink, err = appendValue(dst[:0])
-				if err != nil {
-					b.Fatal(err)
-				}
-			}
-		})
-	}
 }
 
 func benchmarkReads(b *testing.B, size int, readValue func() (n int, err error)) {

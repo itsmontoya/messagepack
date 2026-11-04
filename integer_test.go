@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestAppendInt64(t *testing.T) {
+func TestWriterInt64WireFixtures(t *testing.T) {
 	type testcase struct {
 		name  string
 		value int64
@@ -40,41 +40,18 @@ func TestAppendInt64(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
-				reused    = make([]byte, 2, len(tt.want)+2)
-				scenarios = []struct {
-					name  string
-					dst   []byte
-					reuse bool
-				}{
-					{name: "fresh"},
-					{name: "prefix with growth", dst: []byte{0xaa, 0xbb}},
-					{name: "prefix with capacity", dst: reused, reuse: true},
-					{name: "reset buffer", dst: make([]byte, 0, len(tt.want)), reuse: true},
-				}
+				output bytes.Buffer
+				w      = NewWriter(&output)
+				err    = w.EncodeInt64(tt.value)
 			)
-			reused[0], reused[1] = 0xaa, 0xbb
-			for _, scenario := range scenarios {
-				t.Run(scenario.name, func(t *testing.T) {
-					var (
-						want = append(append([]byte(nil), scenario.dst...), tt.want...)
-						out  = AppendInt64(scenario.dst, tt.value)
-					)
-					if !bytes.Equal(out, want) {
-						t.Fatalf("AppendInt64(%d) = %x, want %x", tt.value, out, want)
-					}
-					if scenario.reuse && &out[0] != &scenario.dst[:cap(scenario.dst)][0] {
-						t.Fatal("AppendInt64() did not reuse available destination capacity")
-					}
-				})
-			}
-			if tt.value >= 0 && !bytes.Equal(AppendInt64(nil, tt.value), AppendUint64(nil, uint64(tt.value))) {
-				t.Fatal("nonnegative signed and unsigned encodings differ")
+			if err != nil || !bytes.Equal(output.Bytes(), tt.want) {
+				t.Fatalf("EncodeInt64(%d) = (%x, %v), want %x", tt.value, output.Bytes(), err, tt.want)
 			}
 		})
 	}
 }
 
-func TestAppendUint64(t *testing.T) {
+func TestWriterUint64WireFixtures(t *testing.T) {
 	type testcase struct {
 		name  string
 		value uint64
@@ -98,32 +75,12 @@ func TestAppendUint64(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
-				reused    = make([]byte, 2, len(tt.want)+2)
-				scenarios = []struct {
-					name  string
-					dst   []byte
-					reuse bool
-				}{
-					{name: "fresh"},
-					{name: "prefix with growth", dst: []byte{0xaa, 0xbb}},
-					{name: "prefix with capacity", dst: reused, reuse: true},
-					{name: "reset buffer", dst: make([]byte, 0, len(tt.want)), reuse: true},
-				}
+				output bytes.Buffer
+				w      = NewWriter(&output)
+				err    = w.EncodeUint64(tt.value)
 			)
-			reused[0], reused[1] = 0xaa, 0xbb
-			for _, scenario := range scenarios {
-				t.Run(scenario.name, func(t *testing.T) {
-					var (
-						want = append(append([]byte(nil), scenario.dst...), tt.want...)
-						out  = AppendUint64(scenario.dst, tt.value)
-					)
-					if !bytes.Equal(out, want) {
-						t.Fatalf("AppendUint64(%d) = %x, want %x", tt.value, out, want)
-					}
-					if scenario.reuse && &out[0] != &scenario.dst[:cap(scenario.dst)][0] {
-						t.Fatal("AppendUint64() did not reuse available destination capacity")
-					}
-				})
+			if err != nil || !bytes.Equal(output.Bytes(), tt.want) {
+				t.Fatalf("EncodeUint64(%d) = (%x, %v), want %x", tt.value, output.Bytes(), err, tt.want)
 			}
 		})
 	}

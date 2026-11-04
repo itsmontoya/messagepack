@@ -1,6 +1,9 @@
 package messagepack
 
-import "io"
+import (
+	"bytes"
+	"io"
+)
 
 // streamBenchmarkPayloadReader generates x bytes and an optional wire header.
 // Reset preserves cumulative call counts for benchmark reporting.
@@ -10,6 +13,8 @@ type streamBenchmarkPayloadReader struct {
 	reads    uint64
 	header   [5]byte
 	pending  []byte
+	buffer   bytes.Buffer
+	writer   *Writer
 }
 
 func (r *streamBenchmarkPayloadReader) Reset(length uint64, isString bool, encoded bool) {
@@ -19,16 +24,15 @@ func (r *streamBenchmarkPayloadReader) Reset(length uint64, isString bool, encod
 	if !encoded {
 		return
 	}
-	// All harness sizes fit uint32; production header helpers are wire oracles.
-	var err error
-	if isString {
-		r.pending, err = appendStringHeader(r.header[:0], length)
-	} else {
-		r.pending, err = appendBytesHeader(r.header[:0], length)
+	if r.writer == nil {
+		r.buffer = *bytes.NewBuffer(r.header[:0])
+		r.writer = NewWriter(&r.buffer)
 	}
-	if err != nil {
+	r.buffer.Reset()
+	if err := r.writer.writePayloadHeader("benchmark header", length, isString); err != nil {
 		panic(err)
 	}
+	r.pending = r.buffer.Bytes()
 }
 
 func (r *streamBenchmarkPayloadReader) Read(dst []byte) (n int, err error) {

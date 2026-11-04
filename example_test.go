@@ -1,38 +1,42 @@
 package messagepack
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 func Example() {
 	var (
 		message = applicationMessage{ID: 7, Name: "Ada", Active: true, Score: 1.5,
 			Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
-		dst     = make([]byte, 0, 128)
-		backing = &dst[:cap(dst)][0]
+		output  = bytes.NewBuffer(make([]byte, 0, 128))
+		e       = NewEncoder(output)
 		decoded applicationMessage
 		err     error
 	)
-	dst, err = message.appendTo(dst)
-	if err != nil {
+	if err = e.Encode(message); err != nil {
 		fmt.Println("encode:", err)
 		return
 	}
+	backing := &output.Bytes()[0]
 	// The fixed-schema decoder validates every field name and both container counts.
 	// Requiring full consumption rejects unwanted trailing values.
-	decoded, err = readCompleteApplicationMessage(dst)
+	decoded, err = readCompleteApplicationMessage(output.Bytes())
 	if err != nil {
 		fmt.Println("decode:", err)
 		return
 	}
 	fmt.Printf("%d %s %t %.1f %x %v\n", decoded.ID, decoded.Name, decoded.Active,
 		decoded.Score, decoded.Payload, decoded.Samples)
-	// Copy the borrowed payload before reusing its encoded source storage.
+	// Copy borrowed payloads before reusing the encoded source storage.
 	ownedPayload := append([]byte(nil), decoded.Payload...)
-	dst, err = message.appendTo(dst[:0])
-	if err != nil {
+	message.Payload = ownedPayload
+	output.Reset()
+	if err = e.Encode(message); err != nil {
 		fmt.Println("reuse:", err)
 		return
 	}
-	fmt.Printf("reused: %t, copied payload: %x\n", &dst[0] == backing, ownedPayload)
+	fmt.Printf("reused: %t, copied payload: %x\n", &output.Bytes()[0] == backing, ownedPayload)
 	// Output:
 	// 7 Ada true 1.5 0102 [-1 2]
 	// reused: true, copied payload: 0102
@@ -42,22 +46,22 @@ func Example_concatenatedMessages() {
 	var (
 		message = applicationMessage{ID: 7, Name: "Ada", Active: true, Score: 1.5,
 			Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
-		wire    []byte
+		output  bytes.Buffer
+		e       = NewEncoder(&output)
 		decoded applicationMessage
 		n       int
 		err     error
 	)
-	wire, err = message.appendTo(wire)
-	if err != nil {
+	if err = e.Encode(message); err != nil {
 		fmt.Println("first encode:", err)
 		return
 	}
 	message.ID = 8
-	wire, err = message.appendTo(wire)
-	if err != nil {
+	if err = e.Encode(message); err != nil {
 		fmt.Println("second encode:", err)
 		return
 	}
+	wire := output.Bytes()
 	for index := 0; index < 2; index++ {
 		decoded, n, err = readApplicationMessage(wire)
 		if err != nil {

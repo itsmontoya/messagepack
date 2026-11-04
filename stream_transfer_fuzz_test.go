@@ -154,10 +154,20 @@ func checkStreamFuzzEncodeTransfer(t *testing.T, src, fragments []byte, settings
 		}
 		return
 	}
+	// Construct the expected header independently of Writer's scratch encoding.
+	tags := [3]byte{0xc4, 0xc5, 0xc6}
 	if isString {
-		header, _ = appendStringHeader(nil, length)
-	} else {
-		header, _ = appendBytesHeader(nil, length)
+		tags = [3]byte{0xd9, 0xda, 0xdb}
+	}
+	switch {
+	case isString && length <= 31:
+		header = []byte{0xa0 | byte(length)}
+	case length <= 255:
+		header = []byte{tags[0], byte(length)}
+	case length <= 65535:
+		header = binary.BigEndian.AppendUint16([]byte{tags[1]}, uint16(length))
+	default:
+		header = binary.BigEndian.AppendUint32([]byte{tags[2]}, uint32(length))
 	}
 	if length > uint64(len(src)) {
 		want = io.ErrUnexpectedEOF

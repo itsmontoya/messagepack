@@ -28,16 +28,13 @@ func TestApplicationMessageEncoding(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
-				want = append(append([]byte(nil), tt.dst...), wire...)
-				out  []byte
-				err  error
+				want   = append(append([]byte(nil), tt.dst...), wire...)
+				output = bytes.NewBuffer(tt.dst)
+				err    error
 			)
-			out, err = message.appendTo(tt.dst)
-			if err != nil || !bytes.Equal(out, want) {
-				t.Fatalf("appendTo() = (%x, %v), want %x", out, err, want)
-			}
-			if tt.reuse && &out[0] != &tt.dst[:cap(tt.dst)][0] {
-				t.Fatal("message encoding did not reuse available capacity")
+			err = NewEncoder(output).Encode(message)
+			if err != nil || !bytes.Equal(output.Bytes(), want) {
+				t.Fatalf("Encode() = (%x, %v), want %x", output.Bytes(), err, want)
 			}
 		})
 	}
@@ -160,7 +157,9 @@ func TestApplicationMessageOwnershipAndReuse(t *testing.T) {
 	// The next payload is independent of wire, satisfying the append precondition.
 	message.Payload = owned
 	message.Name = "Eve"
-	out, err = message.appendTo(wire[:0])
+	output := bytes.NewBuffer(wire[:0])
+	err = NewEncoder(output).Encode(message)
+	out = output.Bytes()
 	if err != nil || &out[0] != &wire[0] {
 		t.Fatalf("reuse failed: %v", err)
 	}

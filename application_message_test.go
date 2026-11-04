@@ -17,35 +17,9 @@ type applicationMessage struct {
 	Samples [2]int64
 }
 
-func (m applicationMessage) appendTo(dst []byte) (out []byte, err error) {
-	out = AppendMapHeader(dst, 6)
-	for _, key := range []string{"id", "name", "active", "score", "data", "samples"} {
-		out, err = AppendString(out, key)
-		if err != nil {
-			return out, err
-		}
-		switch key {
-		case "id":
-			out = AppendUint64(out, m.ID)
-		case "name":
-			out, err = AppendString(out, m.Name)
-		case "active":
-			out = AppendBool(out, m.Active)
-		case "score":
-			out = AppendFloat64(out, m.Score)
-		case "data":
-			out, err = AppendBytes(out, m.Payload)
-		case "samples":
-			out = AppendArrayHeader(out, 2)
-			for _, sample := range m.Samples {
-				out = AppendInt64(out, sample)
-			}
-		}
-		if err != nil {
-			return out, err
-		}
-	}
-	return out, nil
+// EncodeMessagePack writes the same explicit schema used by the streaming examples.
+func (m applicationMessage) EncodeMessagePack(w Writer) (err error) {
+	return encodeStreamingApplicationMessage(&w, m)
 }
 
 // readApplicationMessage requires exactly these six fields in this order.

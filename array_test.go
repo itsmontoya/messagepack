@@ -25,32 +25,11 @@ func TestArrayHeaderWire(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
-				reused    = make([]byte, 2, len(tt.wire)+2)
-				scenarios = []struct {
-					name  string
-					dst   []byte
-					reuse bool
-				}{
-					{name: "fresh"},
-					{name: "prefix growth", dst: []byte{0xaa, 0xbb}},
-					{name: "prefix reuse", dst: reused, reuse: true},
-					{name: "reset", dst: make([]byte, 0, len(tt.wire)), reuse: true},
-				}
+				output    bytes.Buffer
+				encodeErr = NewWriter(&output).EncodeArrayHeader(tt.count)
 			)
-			reused[0], reused[1] = 0xaa, 0xbb
-			for _, scenario := range scenarios {
-				t.Run(scenario.name, func(t *testing.T) {
-					var (
-						want = append(append([]byte(nil), scenario.dst...), tt.wire...)
-						out  = AppendArrayHeader(scenario.dst, tt.count)
-					)
-					if !bytes.Equal(out, want) {
-						t.Fatalf("AppendArrayHeader(%d) = %x, want %x", tt.count, out, want)
-					}
-					if scenario.reuse && &out[0] != &scenario.dst[:cap(scenario.dst)][0] {
-						t.Fatal("AppendArrayHeader did not reuse destination capacity")
-					}
-				})
+			if encodeErr != nil || !bytes.Equal(output.Bytes(), tt.wire) {
+				t.Fatalf("EncodeArrayHeader(%d) = (%x, %v), want %x", tt.count, output.Bytes(), encodeErr, tt.wire)
 			}
 			for _, trailing := range [][]byte{nil, {0xc3, 0xc1}} {
 				var (

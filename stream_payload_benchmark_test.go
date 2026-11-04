@@ -55,18 +55,11 @@ func benchmarkStreamTransfer(b *testing.B, length uint64, encode bool, isString 
 		decoder      *Decoder
 		n            uint64
 		err          error
-		header       [5]byte
-		wireHeader   []byte
+		headerSize   int
 		transfer     func() (n uint64, err error)
 	)
-	if isString {
-		wireHeader, err = appendStringHeader(header[:0], length)
-	} else {
-		wireHeader, err = appendBytesHeader(header[:0], length)
-	}
-	if err != nil {
-		b.Fatal(err)
-	}
+	source.Reset(length, isString, true)
+	headerSize = len(source.pending)
 	if buffered {
 		readerBuffer = bufio.NewReaderSize(reader, 4096)
 		writerBuffer = bufio.NewWriterSize(writer, 4096)
@@ -100,7 +93,7 @@ func benchmarkStreamTransfer(b *testing.B, length uint64, encode bool, isString 
 	source.reads = 0
 	sink = streamBenchmarkWriter{}
 	b.ReportAllocs()
-	b.SetBytes(int64(length) + int64(len(wireHeader)))
+	b.SetBytes(int64(length) + int64(headerSize))
 	b.ResetTimer()
 	for index := 0; index < b.N; index++ {
 		source.Reset(length, isString, !encode)
@@ -134,7 +127,7 @@ func benchmarkStreamTransfer(b *testing.B, length uint64, encode bool, isString 
 	b.StopTimer()
 	expected := uint64(b.N) * length
 	if encode {
-		expected += uint64(b.N) * uint64(len(wireHeader))
+		expected += uint64(b.N) * uint64(headerSize)
 	}
 	if sink.bytes != expected || source.position != length || len(source.pending) != 0 {
 		b.Fatalf("transfer boundary: wrote %d, want %d; source position %d", sink.bytes, expected, source.position)
@@ -152,22 +145,15 @@ func BenchmarkStreamOwned(b *testing.B) {
 				}
 				b.Run(name, func(b *testing.B) {
 					var (
-						source  streamBenchmarkPayloadReader
-						decoder = NewDecoder(&source)
-						err     error
-						header  [5]byte
-						wire    []byte
+						source     streamBenchmarkPayloadReader
+						decoder    = NewDecoder(&source)
+						err        error
+						headerSize int
 					)
-					if isString {
-						wire, err = appendStringHeader(header[:0], size.length)
-					} else {
-						wire, err = appendBytesHeader(header[:0], size.length)
-					}
-					if err != nil {
-						b.Fatal(err)
-					}
+					source.Reset(size.length, isString, true)
+					headerSize = len(source.pending)
 					b.ReportAllocs()
-					b.SetBytes(int64(size.length) + int64(len(wire)))
+					b.SetBytes(int64(size.length) + int64(headerSize))
 					b.ResetTimer()
 					for index := 0; index < b.N; index++ {
 						source.Reset(size.length, isString, true)

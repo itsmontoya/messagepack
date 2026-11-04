@@ -33,32 +33,11 @@ func TestFloat32Wire(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
 				input     = math.Float32frombits(tt.bits)
-				reused    = make([]byte, 2, len(tt.wire)+2)
-				scenarios = []struct {
-					name  string
-					dst   []byte
-					reuse bool
-				}{
-					{name: "fresh"},
-					{name: "prefix with growth", dst: []byte{0xaa, 0xbb}},
-					{name: "prefix with capacity", dst: reused, reuse: true},
-					{name: "reset buffer", dst: make([]byte, 0, len(tt.wire)), reuse: true},
-				}
+				output    bytes.Buffer
+				encodeErr = NewWriter(&output).EncodeFloat32(input)
 			)
-			reused[0], reused[1] = 0xaa, 0xbb
-			for _, scenario := range scenarios {
-				t.Run(scenario.name, func(t *testing.T) {
-					var (
-						want = append(append([]byte(nil), scenario.dst...), tt.wire...)
-						out  = AppendFloat32(scenario.dst, input)
-					)
-					if !bytes.Equal(out, want) {
-						t.Fatalf("AppendFloat32(bits %08x) = %x, want %x", tt.bits, out, want)
-					}
-					if scenario.reuse && &out[0] != &scenario.dst[:cap(scenario.dst)][0] {
-						t.Fatal("AppendFloat32() did not reuse available capacity")
-					}
-				})
+			if encodeErr != nil || !bytes.Equal(output.Bytes(), tt.wire) {
+				t.Fatalf("EncodeFloat32(bits %x) = (%x, %v), want %x", tt.bits, output.Bytes(), encodeErr, tt.wire)
 			}
 			for _, trailing := range [][]byte{nil, {0xc3, 0xc1}} {
 				var (
@@ -120,32 +99,11 @@ func TestFloat64Wire(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
 				input     = math.Float64frombits(tt.bits)
-				reused    = make([]byte, 2, len(tt.wire)+2)
-				scenarios = []struct {
-					name  string
-					dst   []byte
-					reuse bool
-				}{
-					{name: "fresh"},
-					{name: "prefix with growth", dst: []byte{0xaa, 0xbb}},
-					{name: "prefix with capacity", dst: reused, reuse: true},
-					{name: "reset buffer", dst: make([]byte, 0, len(tt.wire)), reuse: true},
-				}
+				output    bytes.Buffer
+				encodeErr = NewWriter(&output).EncodeFloat64(input)
 			)
-			reused[0], reused[1] = 0xaa, 0xbb
-			for _, scenario := range scenarios {
-				t.Run(scenario.name, func(t *testing.T) {
-					var (
-						want = append(append([]byte(nil), scenario.dst...), tt.wire...)
-						out  = AppendFloat64(scenario.dst, input)
-					)
-					if !bytes.Equal(out, want) {
-						t.Fatalf("AppendFloat64(bits %016x) = %x, want %x", tt.bits, out, want)
-					}
-					if scenario.reuse && &out[0] != &scenario.dst[:cap(scenario.dst)][0] {
-						t.Fatal("AppendFloat64() did not reuse available capacity")
-					}
-				})
+			if encodeErr != nil || !bytes.Equal(output.Bytes(), tt.wire) {
+				t.Fatalf("EncodeFloat64(bits %x) = (%x, %v), want %x", tt.bits, output.Bytes(), encodeErr, tt.wire)
 			}
 			for _, trailing := range [][]byte{nil, {0xc3, 0xc1}} {
 				var (

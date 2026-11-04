@@ -15,11 +15,16 @@ func FuzzRoundTripInt64(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, value int64) {
 		var (
-			wire = AppendInt64(nil, value)
-			got  int64
-			n    int
-			err  error
+			output bytes.Buffer
+			wire   []byte
+			got    int64
+			n      int
+			err    error
 		)
+		if err = NewWriter(&output).EncodeInt64(value); err != nil {
+			t.Fatal(err)
+		}
+		wire = output.Bytes()
 		got, n, err = ReadInt64(wire)
 		if err != nil || n != len(wire) || got != value {
 			t.Fatalf("signed roundtrip %d: (%d, %d, %v)", value, got, n, err)
@@ -34,11 +39,16 @@ func FuzzRoundTripUint64(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, value uint64) {
 		var (
-			wire = AppendUint64(nil, value)
-			got  uint64
-			n    int
-			err  error
+			output bytes.Buffer
+			wire   []byte
+			got    uint64
+			n      int
+			err    error
 		)
+		if err = NewWriter(&output).EncodeUint64(value); err != nil {
+			t.Fatal(err)
+		}
+		wire = output.Bytes()
 		got, n, err = ReadUint64(wire)
 		if err != nil || n != len(wire) || got != value {
 			t.Fatalf("unsigned roundtrip %d: (%d, %d, %v)", value, got, n, err)
@@ -53,11 +63,16 @@ func FuzzRoundTripFloat32(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, bits uint32) {
 		var (
-			wire = AppendFloat32(nil, math.Float32frombits(bits))
-			got  float32
-			n    int
-			err  error
+			output bytes.Buffer
+			wire   []byte
+			got    float32
+			n      int
+			err    error
 		)
+		if err = NewWriter(&output).EncodeFloat32(math.Float32frombits(bits)); err != nil {
+			t.Fatal(err)
+		}
+		wire = output.Bytes()
 		got, n, err = ReadFloat32(wire)
 		if err != nil || n != len(wire) || math.Float32bits(got) != bits {
 			t.Fatalf("float32 roundtrip %08x: (%08x, %d, %v)", bits, math.Float32bits(got), n, err)
@@ -73,11 +88,16 @@ func FuzzRoundTripFloat64(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, bits uint64) {
 		var (
-			wire = AppendFloat64(nil, math.Float64frombits(bits))
-			got  float64
-			n    int
-			err  error
+			output bytes.Buffer
+			wire   []byte
+			got    float64
+			n      int
+			err    error
 		)
+		if err = NewWriter(&output).EncodeFloat64(math.Float64frombits(bits)); err != nil {
+			t.Fatal(err)
+		}
+		wire = output.Bytes()
 		got, n, err = ReadFloat64(wire)
 		if err != nil || n != len(wire) || math.Float64bits(got) != bits {
 			t.Fatalf("float64 roundtrip %016x: (%016x, %d, %v)", bits, math.Float64bits(got), n, err)
@@ -96,16 +116,18 @@ func FuzzRoundTripString(f *testing.F) {
 			return
 		}
 		var (
-			wire  []byte
-			owned string
-			view  []byte
-			n     int
-			err   error
+			output bytes.Buffer
+			wire   []byte
+			owned  string
+			view   []byte
+			n      int
+			err    error
 		)
-		wire, err = AppendString(nil, value)
+		err = NewWriter(&output).EncodeString(value)
 		if err != nil {
 			t.Fatal(err)
 		}
+		wire = output.Bytes()
 		owned, n, err = ReadString(wire)
 		if err != nil || n != len(wire) || owned != value {
 			t.Fatalf("owned string roundtrip length %d: (%q, %d, %v)", len(value), owned, n, err)
@@ -128,15 +150,17 @@ func FuzzRoundTripBytes(f *testing.F) {
 			return
 		}
 		var (
-			wire []byte
-			got  []byte
-			n    int
-			err  error
+			output bytes.Buffer
+			wire   []byte
+			got    []byte
+			n      int
+			err    error
 		)
-		wire, err = AppendBytes(nil, value)
+		err = NewWriter(&output).EncodeBytes(value)
 		if err != nil {
 			t.Fatal(err)
 		}
+		wire = output.Bytes()
 		got, n, err = ReadBytes(wire)
 		if err != nil || n != len(wire) || !bytes.Equal(got, value) || cap(got) != len(got) {
 			t.Fatalf("binary roundtrip length %d: (%x, %d, %v)", len(value), got, n, err)

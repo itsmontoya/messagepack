@@ -27,12 +27,8 @@ func TestStreamingApplicationMessageWireAndInteroperability(t *testing.T) {
 	if sliceErr != nil || !reflect.DeepEqual(fromStream, message) {
 		t.Fatalf("slice read of stream output = (%+v, %v)", fromStream, sliceErr)
 	}
-	sliceWire, appendErr := message.appendTo(nil)
-	if appendErr != nil {
-		t.Fatal(appendErr)
-	}
 	for _, maxRead := range []int{0, 1, 3} {
-		r := &decoderTestReader{data: sliceWire, maxRead: maxRead}
+		r := &decoderTestReader{data: fixture, maxRead: maxRead}
 		d := NewDecoder(r)
 		decoded, decodeErr := decodeStreamingApplicationMessage(d)
 		if decodeErr != nil || !reflect.DeepEqual(decoded, message) || r.position != len(fixture) {

@@ -2,32 +2,6 @@ package messagepack
 
 import "encoding/binary"
 
-// AppendString appends value's bytes without UTF-8 validation or normalization.
-// Payload and dst storage must be disjoint. It preserves dst's prefix and reuses
-// capacity; an oversized payload returns dst unchanged with ErrOverflow.
-func AppendString(dst []byte, value string) (out []byte, err error) {
-	out, err = appendStringHeader(dst, uint64(len(value)))
-	if err != nil {
-		return dst, err
-	}
-	return append(out, value...), nil
-}
-
-func appendStringHeader(dst []byte, length uint64) (out []byte, err error) {
-	switch {
-	case length <= 31:
-		return append(dst, 0xa0|byte(length)), nil
-	case length <= 255:
-		return append(dst, 0xd9, byte(length)), nil
-	case length <= 65535:
-		return binary.BigEndian.AppendUint16(append(dst, 0xda), uint16(length)), nil
-	case length <= 4294967295:
-		return binary.BigEndian.AppendUint32(append(dst, 0xdb), uint32(length)), nil
-	default:
-		return dst, ErrOverflow
-	}
-}
-
 // ReadString consumes a string and returns an owned copy, leaving src unchanged.
 // It preserves bytes without UTF-8 validation or normalization. Failures return
 // an empty string and consume no bytes.

@@ -2,30 +2,6 @@ package messagepack
 
 import "encoding/binary"
 
-// AppendBytes appends value as binary; nil encodes empty binary, not nil.
-// Payload and dst storage must be disjoint. It preserves dst's prefix and reuses
-// capacity; an oversized payload returns dst unchanged with ErrOverflow.
-func AppendBytes(dst []byte, value []byte) (out []byte, err error) {
-	out, err = appendBytesHeader(dst, uint64(len(value)))
-	if err != nil {
-		return dst, err
-	}
-	return append(out, value...), nil
-}
-
-func appendBytesHeader(dst []byte, length uint64) (out []byte, err error) {
-	switch {
-	case length <= 255:
-		return append(dst, 0xc4, byte(length)), nil
-	case length <= 65535:
-		return binary.BigEndian.AppendUint16(append(dst, 0xc5), uint16(length)), nil
-	case length <= 4294967295:
-		return binary.BigEndian.AppendUint32(append(dst, 0xc6), uint32(length)), nil
-	default:
-		return dst, ErrOverflow
-	}
-}
-
 // ReadBytes consumes binary as a borrowed view with capacity equal to length.
 // Mutating src changes the view; retaining it retains src's backing array. Copy
 // before reusing that storage. Failures return nil and consume no bytes; use err

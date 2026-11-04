@@ -1,19 +1,32 @@
 package messagepack
 
-import "io"
+import (
+	"bytes"
+	"io"
+)
 
-// streamBenchmarkArrayReader fills requests incrementally using nine-byte scratch.
+// streamBenchmarkArrayReader fills requests incrementally using a reusable Writer.
 type streamBenchmarkArrayReader struct {
 	count   uint32
 	next    uint64
 	reads   uint64
 	scratch [9]byte
 	pending []byte
+	buffer  bytes.Buffer
+	writer  *Writer
 }
 
 func (r *streamBenchmarkArrayReader) Reset() {
 	r.next = 0
-	r.pending = AppendArrayHeader(r.scratch[:0], r.count)
+	if r.writer == nil {
+		r.buffer = *bytes.NewBuffer(r.scratch[:0])
+		r.writer = NewWriter(&r.buffer)
+	}
+	r.buffer.Reset()
+	if err := r.writer.EncodeArrayHeader(r.count); err != nil {
+		panic(err)
+	}
+	r.pending = r.buffer.Bytes()
 }
 
 func (r *streamBenchmarkArrayReader) Read(dst []byte) (n int, err error) {
@@ -26,7 +39,11 @@ func (r *streamBenchmarkArrayReader) Read(dst []byte) (n int, err error) {
 				}
 				return n, nil
 			}
-			r.pending = AppendUint64(r.scratch[:0], r.next)
+			r.buffer.Reset()
+			if err = r.writer.EncodeUint64(r.next); err != nil {
+				return n, err
+			}
+			r.pending = r.buffer.Bytes()
 			r.next++
 		}
 		size := copy(dst[n:], r.pending)

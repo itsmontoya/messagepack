@@ -1,10 +1,18 @@
 package messagepack
 
-import "io"
+import (
+	"bytes"
+	"io"
+)
 
 func newStreamArrayReader(count uint32) (r *streamArrayReader) {
 	r = &streamArrayReader{count: count}
-	r.pending = AppendArrayHeader(r.scratch[:0], count)
+	r.buffer = *bytes.NewBuffer(r.scratch[:0])
+	r.writer = NewWriter(&r.buffer)
+	if err := r.writer.EncodeArrayHeader(count); err != nil {
+		panic(err)
+	}
+	r.pending = r.buffer.Bytes()
 	return r
 }
 
@@ -17,6 +25,8 @@ type streamArrayReader struct {
 	maxRequest int
 	scratch    [9]byte
 	pending    []byte
+	buffer     bytes.Buffer
+	writer     *Writer
 }
 
 func (r *streamArrayReader) Read(dst []byte) (n int, err error) {
@@ -31,7 +41,11 @@ func (r *streamArrayReader) Read(dst []byte) (n int, err error) {
 		if r.next == uint64(r.count) {
 			return 0, io.EOF
 		}
-		r.pending = AppendUint64(r.scratch[:0], r.next)
+		r.buffer.Reset()
+		if err = r.writer.EncodeUint64(r.next); err != nil {
+			return n, err
+		}
+		r.pending = r.buffer.Bytes()
 		r.next++
 	}
 	n = copy(dst, r.pending)

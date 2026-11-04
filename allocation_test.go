@@ -1,10 +1,13 @@
 package messagepack
 
-import "testing"
+import (
+	"io"
+	"testing"
+)
 
 func TestZeroAllocations(t *testing.T) {
 	var (
-		dst        = make([]byte, 0, 128)
+		w          = NewWriter(io.Discard)
 		stringWire = []byte{0xa8, 'm', 's', 'g', 'p', 'a', 'c', 'k', '!'}
 		binaryWire = []byte{0xc4, 0x08, 'm', 's', 'g', 'p', 'a', 'c', 'k', '!'}
 		tests      = []struct {
@@ -60,30 +63,44 @@ func TestZeroAllocations(t *testing.T) {
 					t.Fatal(err)
 				}
 			}},
-			{name: "preallocated appends", run: func() {
-				var (
-					out = AppendNil(dst[:0])
-					err error
-				)
-				out = AppendBool(out, true)
-				out = AppendInt64(out, -32769)
-				out = AppendUint64(out, ^uint64(0))
-				out = AppendFloat32(out, 1.5)
-				out = AppendFloat64(out, 1.5)
-				out = AppendArrayHeader(out, 65536)
-				out = AppendMapHeader(out, 65536)
-				out, err = AppendString(out, "msgpack!")
-				if err != nil {
+			{name: "reused Writer", run: func() {
+				var err error
+				if err = w.EncodeNil(); err != nil {
 					t.Fatal(err)
 				}
-				out, err = AppendBytes(out, binaryWire[2:])
-				if err != nil {
+				if err = w.EncodeBool(true); err != nil {
 					t.Fatal(err)
 				}
-				benchmarkBytesSink = out
+				if err = w.EncodeInt64(-32769); err != nil {
+					t.Fatal(err)
+				}
+				if err = w.EncodeUint64(^uint64(0)); err != nil {
+					t.Fatal(err)
+				}
+				if err = w.EncodeFloat32(1.5); err != nil {
+					t.Fatal(err)
+				}
+				if err = w.EncodeFloat64(1.5); err != nil {
+					t.Fatal(err)
+				}
+				if err = w.EncodeArrayHeader(65536); err != nil {
+					t.Fatal(err)
+				}
+				if err = w.EncodeMapHeader(65536); err != nil {
+					t.Fatal(err)
+				}
+				if err = w.EncodeString("msgpack!"); err != nil {
+					t.Fatal(err)
+				}
+				if err = w.EncodeBytes(binaryWire[2:]); err != nil {
+					t.Fatal(err)
+				}
 			}},
 		}
 	)
+	if err := w.EncodeString("warm"); err != nil {
+		t.Fatal(err)
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			allocations := testing.AllocsPerRun(1000, tt.run)

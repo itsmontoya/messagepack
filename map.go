@@ -2,19 +2,6 @@ package messagepack
 
 import "encoding/binary"
 
-// AppendMapHeader appends the smallest header for count key/value pairs.
-// It preserves dst's prefix and reuses available capacity; growth may allocate.
-func AppendMapHeader(dst []byte, count uint32) (out []byte) {
-	switch {
-	case count <= 15:
-		return append(dst, 0x80|byte(count))
-	case count <= 65535:
-		return binary.BigEndian.AppendUint16(append(dst, 0xde), uint16(count))
-	default:
-		return binary.BigEndian.AppendUint32(append(dst, 0xdf), count)
-	}
-}
-
 // ReadMapHeader consumes only a map header and returns its key/value pair count.
 // Success does not validate child values or require them to exist. It leaves src
 // unchanged; failures return zero and consume no bytes.

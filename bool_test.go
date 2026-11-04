@@ -6,37 +6,6 @@ import (
 	"testing"
 )
 
-func TestAppendBool(t *testing.T) {
-	type testcase struct {
-		name  string
-		dst   []byte
-		value bool
-		want  []byte
-		reuse bool
-	}
-	tests := []testcase{
-		{name: "fresh false", want: []byte{0xc2}},
-		{name: "fresh true", value: true, want: []byte{0xc3}},
-		{name: "false prefix with growth", dst: []byte{0xaa, 0xbb}, want: []byte{0xaa, 0xbb, 0xc2}},
-		{name: "true prefix with growth", dst: []byte{0xaa, 0xbb}, value: true, want: []byte{0xaa, 0xbb, 0xc3}},
-		{name: "false prefix with capacity", dst: []byte{0xaa, 0xbb, 0, 0}[:2], want: []byte{0xaa, 0xbb, 0xc2}, reuse: true},
-		{name: "true prefix with capacity", dst: []byte{0xaa, 0xbb, 0, 0}[:2], value: true, want: []byte{0xaa, 0xbb, 0xc3}, reuse: true},
-		{name: "false reset buffer", dst: []byte{0xff, 0xff}[:0], want: []byte{0xc2}, reuse: true},
-		{name: "true reset buffer", dst: []byte{0xff, 0xff}[:0], value: true, want: []byte{0xc3}, reuse: true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			out := AppendBool(tt.dst, tt.value)
-			if !bytes.Equal(out, tt.want) {
-				t.Fatalf("AppendBool() = %x, want %x", out, tt.want)
-			}
-			if tt.reuse && &out[0] != &tt.dst[:cap(tt.dst)][0] {
-				t.Fatal("AppendBool() did not reuse available destination capacity")
-			}
-		})
-	}
-}
-
 func TestReadBool(t *testing.T) {
 	type testcase struct {
 		name  string

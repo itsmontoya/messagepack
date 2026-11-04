@@ -6,32 +6,6 @@ import (
 	"testing"
 )
 
-func TestAppendNil(t *testing.T) {
-	type testcase struct {
-		name  string
-		dst   []byte
-		want  []byte
-		reuse bool
-	}
-	tests := []testcase{
-		{name: "fresh", want: []byte{0xc0}},
-		{name: "prefix with growth", dst: []byte{0xaa, 0xbb}, want: []byte{0xaa, 0xbb, 0xc0}},
-		{name: "prefix with capacity", dst: []byte{0xaa, 0xbb, 0, 0}[:2], want: []byte{0xaa, 0xbb, 0xc0}, reuse: true},
-		{name: "reset buffer", dst: []byte{0xff, 0xff}[:0], want: []byte{0xc0}, reuse: true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			out := AppendNil(tt.dst)
-			if !bytes.Equal(out, tt.want) {
-				t.Fatalf("AppendNil() = %x, want %x", out, tt.want)
-			}
-			if tt.reuse && &out[0] != &tt.dst[:cap(tt.dst)][0] {
-				t.Fatal("AppendNil() did not reuse available destination capacity")
-			}
-		})
-	}
-}
-
 func TestReadNil(t *testing.T) {
 	type testcase struct {
 		name string

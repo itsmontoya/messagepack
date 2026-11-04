@@ -28,35 +28,12 @@ func TestBytesWireFixtures(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
-				wire      = append(append([]byte(nil), tt.header...), tt.value...)
-				reused    = make([]byte, 2, len(wire)+2)
-				scenarios = []struct {
-					name  string
-					dst   []byte
-					reuse bool
-				}{
-					{name: "fresh"},
-					{name: "prefix growth", dst: []byte{0xaa, 0xbb}},
-					{name: "prefix reuse", dst: reused, reuse: true},
-					{name: "reset", dst: make([]byte, 0, len(wire)), reuse: true},
-				}
+				wire   = append(append([]byte(nil), tt.header...), tt.value...)
+				output bytes.Buffer
+				err    = NewWriter(&output).EncodeBytes(tt.value)
 			)
-			reused[0], reused[1] = 0xaa, 0xbb
-			for _, scenario := range scenarios {
-				t.Run(scenario.name, func(t *testing.T) {
-					var (
-						want = append(append([]byte(nil), scenario.dst...), wire...)
-						out  []byte
-						err  error
-					)
-					out, err = AppendBytes(scenario.dst, tt.value)
-					if err != nil || !bytes.Equal(out, want) {
-						t.Fatalf("AppendBytes() = (%x, %v), want %x", out, err, want)
-					}
-					if scenario.reuse && &out[0] != &scenario.dst[:cap(scenario.dst)][0] {
-						t.Fatal("AppendBytes did not reuse destination capacity")
-					}
-				})
+			if err != nil || !bytes.Equal(output.Bytes(), wire) {
+				t.Fatalf("EncodeBytes() = (%x, %v), want %x", output.Bytes(), err, wire)
 			}
 
 			var (
@@ -64,7 +41,6 @@ func TestBytesWireFixtures(t *testing.T) {
 				before = append([]byte(nil), src...)
 				view   []byte
 				n      int
-				err    error
 			)
 			view, n, err = ReadBytes(src)
 			if err != nil || !bytes.Equal(view, tt.value) || n != len(wire) || cap(view) != len(view) {
@@ -210,7 +186,7 @@ func TestBytesOwnership(t *testing.T) {
 	}
 }
 
-func TestAppendBytesHeaderLimits(t *testing.T) {
+func TestWriterBytesHeaderLimits(t *testing.T) {
 	type testcase struct {
 		name   string
 		length uint64
@@ -225,18 +201,17 @@ func TestAppendBytesHeaderLimits(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
-				storage = []byte{0xaa, 0xbb, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
-				before  = append([]byte(nil), storage...)
-				dst     = storage[:2]
-				out     []byte
-				err     error
+				output = bytes.NewBuffer([]byte{0xaa, 0xbb})
+				w      = NewWriter(output)
+				err    = w.writePayloadHeader("encode bytes header", tt.length, false)
 			)
-			out, err = appendBytesHeader(dst, tt.length)
-			if !bytes.Equal(out, tt.want) || !errors.Is(err, tt.err) {
-				t.Fatalf("appendBytesHeader() = (%x, %v), want (%x, %v)", out, err, tt.want, tt.err)
+			if !bytes.Equal(output.Bytes(), tt.want) || !errors.Is(err, tt.err) {
+				t.Fatalf("bytes header = (%x, %v), want (%x, %v)", output.Bytes(), err, tt.want, tt.err)
 			}
-			if tt.err != nil && (!bytes.Equal(storage, before) || &out[0] != &dst[0] || cap(out) != cap(dst)) {
-				t.Fatal("overflow changed destination slice or backing storage")
+			if tt.err != nil {
+				if err = w.EncodeBool(true); err != nil || !bytes.Equal(output.Bytes(), []byte{0xaa, 0xbb, 0xc3}) {
+					t.Fatalf("EncodeBool after overflow = (%x, %v)", output.Bytes(), err)
+				}
 			}
 		})
 	}
