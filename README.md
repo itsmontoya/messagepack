@@ -21,6 +21,7 @@ values implementing this interface; all other values return `ErrUnsupportedType`
 Reflection is deferred.
 
 ```go
+// Encodee defines the encoding hook accepted by Encoder.
 type Encodee interface {
 	EncodeMessagePack(Writer) error
 }
@@ -29,6 +30,7 @@ type Encodee interface {
 Implement an explicit schema with the typed `Writer` methods:
 
 ```go
+// Record describes the one-field map used by the encoding example.
 type Record struct {
 	ID uint64
 }
@@ -38,9 +40,11 @@ func (r Record) EncodeMessagePack(w messagepack.Writer) (err error) {
 	if err = w.EncodeMapHeader(1); err != nil {
 		return err
 	}
+
 	if err = w.EncodeString("id"); err != nil {
 		return err
 	}
+
 	return w.EncodeUint64(r.ID)
 }
 ```
@@ -65,6 +69,7 @@ implementing this interface; other targets return `ErrUnsupportedType` without
 reading input or making the Decoder terminal. Reflection is deferred.
 
 ```go
+// Decodee defines the decoding hook accepted by Decoder.
 type Decodee interface {
 	DecodeMessagePack(Reader) error
 }
@@ -115,10 +120,12 @@ func FetchBinary(ctx context.Context, client *http.Client, url string, dst io.Wr
 	if err != nil {
 		return 0, fmt.Errorf("create request: %w", err)
 	}
+
 	response, err = client.Do(request)
 	if err != nil {
 		return 0, fmt.Errorf("fetch binary: %w", err)
 	}
+
 	defer func() {
 		if closeErr := response.Body.Close(); closeErr != nil {
 			err = errors.Join(err, fmt.Errorf("close response body: %w", closeErr))
@@ -127,6 +134,7 @@ func FetchBinary(ctx context.Context, client *http.Client, url string, dst io.Wr
 	if response.StatusCode != http.StatusOK {
 		return 0, fmt.Errorf("fetch binary: HTTP %s", response.Status)
 	}
+
 	d := messagepack.NewReader(response.Body)
 	n, err = d.DecodeBytesTo(dst)
 	return n, err
@@ -167,6 +175,7 @@ func WriteDataset(path string, count uint32, length uint64, src io.Reader) (err 
 	if err != nil {
 		return fmt.Errorf("create dataset: %w", err)
 	}
+
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
 			err = errors.Join(err, fmt.Errorf("close dataset: %w", closeErr))
@@ -179,9 +188,11 @@ func WriteDataset(path string, count uint32, length uint64, src io.Reader) (err 
 	if err = e.EncodeArrayHeader(2); err != nil {
 		return err
 	}
+
 	if err = e.EncodeArrayHeader(count); err != nil {
 		return err
 	}
+
 	for index := uint64(0); index < uint64(count); index++ {
 		if err = e.EncodeUint64(index); err != nil {
 			return err
@@ -190,9 +201,11 @@ func WriteDataset(path string, count uint32, length uint64, src io.Reader) (err 
 	if _, err = e.EncodeBytesFrom(length, src); err != nil {
 		return err
 	}
+
 	if err = buffered.Flush(); err != nil {
 		return fmt.Errorf("flush dataset: %w", err)
 	}
+
 	return nil
 }
 ```

@@ -107,6 +107,22 @@ If behavior grows too large, extract a new type instead of splitting methods acr
 * Follow standard Go conventions.
 * Keep vertical noise low.
 * Avoid unnecessary blank lines.
+* Separate distinct steps, such as validation, initialization, and state mutation,
+  with a single blank line. Keep a result declaration next to its call and error guard.
+* Leave a blank line after every completed `if` statement when another statement
+  follows in the same block. Apply this in nested blocks too.
+* Treat an `if`/`else` chain as one statement for spacing. Keep `else` and `else if`
+  attached to the preceding closing brace.
+
+```go
+if wire[0] <= 0x7f {
+    return int64(wire[0]), nil
+}
+
+if wire[0] >= 0xe0 {
+    return int64(int8(wire[0])), nil
+}
+```
 
 # Naming
 
@@ -199,10 +215,21 @@ Avoid:
 
 ```go
 var err error
-err = doThing()
+if err = doThing(); err != nil {
+    return err
+}
 
-if !cond {
-    return nil
+if err := doOtherThing(); err != nil {
+    return err
+}
+```
+
+Reuse the existing variable instead of redeclaring it in a nested scope:
+
+```go
+var err error
+if err = doThing(); err != nil {
+    return err
 }
 
 if err = doOtherThing(); err != nil {
@@ -254,6 +281,7 @@ func Parse(input string) (result Result, err error) {
         err = errors.New("empty")
         return
     }
+
     return
 }
 ```
@@ -289,6 +317,8 @@ Reduce nesting and keep control flow flat.
 if err != nil {
     return resp, err
 }
+
+return resp, nil
 ```
 
 ## Prefer Composition Over Large Methods
@@ -303,9 +333,41 @@ Do not split methods across files. Extract types instead.
 # Error Handling
 
 * Handle errors immediately.
+* When a call is followed directly by an error guard, assign its results in the
+  `if` initializer and return early.
+* Declare results before the guard when they are needed afterward. Reuse an
+  existing or named `err` with `=`. Simple results used only inside the guard may
+  use `:=` when they do not shadow another name.
 * For external/operation errors (IO, filesystem, network, system calls), context is required.
 * Errors from calls like `os.Open`, `os.OpenFile`, `Read`, `Write`, and `Close` must be wrapped with context via `%w` when returned.
 * Return sentinel contract/state errors directly when they are already descriptive.
+
+### Preferred assignment and guard pattern
+
+```go
+// SetLimits atomically replaces limits without I/O or clearing a stored failure.
+// Zero fields select defaults; invalid fields return ErrInvalidArgument unchanged.
+func (r *Reader) SetLimits(limits ReaderLimits) (err error) {
+    var normalized ReaderLimits
+    if normalized, err = limits.normalized(); err != nil {
+        return err
+    }
+
+    if r.state == nil {
+        r.state = newReaderState()
+    }
+
+    r.state.limits = normalized
+    return nil
+}
+```
+
+Keep required progress accounting, cleanup, and error-precedence checks in their
+execution order. Use separate assignments when those steps must precede the error
+guard. Tests may also use separate assignments for assertions covering several
+returned values together.
+
+### Error context
 
 ```go
 if err != nil {
@@ -350,17 +412,17 @@ if closed {
 ### GoDoc Example
 
 ```go
-// Service coordinates request handling and persistence.
-type Service struct {
-    store Store
-}
-
 // NewService constructs a Service with the provided Store.
 func NewService(store Store) (s *Service) {
     s = &Service{
         store: store,
     }
     return s
+}
+
+// Service coordinates request handling and persistence.
+type Service struct {
+    store Store
 }
 ```
 
