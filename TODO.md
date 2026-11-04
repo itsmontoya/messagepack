@@ -6,7 +6,8 @@ processing consecutive messages, and writing large objects to files without
 holding an entire encoded message or payload in memory. Keep the implementation
 small, typed, explicit, and standard-library-only.
 
-The S01 streaming contract is approved; implementation tasks remain pending.
+S01–S11 are complete: the approved streaming contract, implementation, examples,
+verification reports, and streaming-first documentation have recorded handoffs.
 The completed PoC plan and its handoffs are preserved in
 [docs/poc-todo.md](docs/poc-todo.md).
 
@@ -55,16 +56,26 @@ For each task:
 - `nil.go`, `bool.go`, `integer.go`, and `float.go` implement typed slice appends
   and reads. `string.go` and `bytes.go` include private payload-header helpers;
   their public readers require the complete payload in memory.
-- `array.go` and `map.go` handle headers only. `errors.go` defines five sentinels
-  and tag classification. No Encoder, Decoder, stream state, or I/O API exists.
-- [docs/poc-contract.md](docs/poc-contract.md) describes current wire, conversion,
-  slice ownership, and error behavior. It is the compatibility baseline, not a
-  streaming contract. In particular, failed slice reads consume zero bytes;
-  arbitrary readers cannot provide that rollback guarantee.
+- `array.go` and `map.go` handle slice headers only. `encoder.go` and `decoder.go`
+  implement typed streams, owned payload results, known-length transfers,
+  container headers, bounded Skip, and reset/error lifecycle. `decoder_limits.go`
+  defines finite defaults; `skip_state.go` bounds traversal. `errors.go` defines
+  eight sentinels and shared tag classification.
+- [docs/streaming-contract.md](docs/streaming-contract.md) describes the approved
+  implemented stream API. [docs/poc-contract.md](docs/poc-contract.md) preserves
+  the slice wire, conversion, ownership, and error compatibility baseline.
+  Failed slice reads consume zero bytes; arbitrary readers cannot provide that
+  rollback guarantee.
 - Per-family tests, `read_fuzz_test.go`, `roundtrip_fuzz_test.go`,
   `allocation_test.go`, and `benchmark_test.go` cover the slice codec.
   `application_message_test.go`, `integration_test.go`, and `example_test.go`
   demonstrate a six-field map with a nested array and a binary payload.
+- Streaming tests and [executable examples](stream_example_test.go) cover typed
+  schemas, flexible unknown-field skipping, HTTP response bodies, files,
+  incremental delivery, caller buffering, finite framing, and message sequences.
+  [Fuzz](docs/streaming-fuzzing.md) and
+  [measurement](docs/streaming-benchmarks.md) reports record S09/S10 evidence and
+  its platform/workload limits; linux/386 tests were cross-compiled, not executed.
 - Keep the existing exported slice API and its tests compatible in this phase.
   It can remain a low-level building block and wire oracle. Make streams the
   primary documented workflow. Do not implement streaming by accumulating a whole
@@ -938,7 +949,7 @@ allocations or add speculative pooling/unsafe optimizations to meet a target.
 
 ## S11 — Publish streaming-first documentation and final review
 
-- [ ] Complete S11.
+- [x] Complete S11.
 
 **Read:** every handoff, `docs/streaming-contract.md`, new examples/reports,
 `README.md`, `doc.go`, and the archived PoC contract. **Deliverables:** updated
@@ -959,3 +970,77 @@ Run `go build ./...`, `go test ./...`, `go vet ./...`, executable examples,
 both requested use cases work with bounded codec memory and without regressing the
 slice API. Record remaining platform/measurement limitations without marking
 unverified claims as proven. Preserve `AGENTS.md` and `STYLEGUIDE.md` unchanged.
+
+**Handoff (2026-11-04):**
+
+- Replaced `README.md` with streaming-first usage led by complete HTTP response-body
+  and incremental file functions using public APIs. Expanded package GoDoc in
+  `doc.go`; clarified only the `ErrTruncated` comment in `errors.go` as slice-only.
+  Updated current status/context in this file and `docs/streaming-contract.md`.
+  Added archive/current-document notices to `docs/poc-contract.md`,
+  `docs/poc-todo.md`, `docs/poc-fuzzing.md`, and `docs/poc-benchmarks.md`.
+  **Public API, signatures, types, and production logic changes: none.**
+- Documented typed scalar/payload/container methods, `Skip`, exact byte lengths
+  and uint32 limits, container/schema responsibilities, and unknown-length
+  application chunking/staging. Explained owned-result lifetime and the finite
+  16 MiB default, atomic `SetLimits`, independent per-Skip budgets, caller buffering,
+  flush/close/durability, deadlines/cancellation, partial accepted-payload counts,
+  error identity/precedence, terminal failures, clean EOF versus incomplete schemas,
+  reset/alignment, zero/nil/typed-nil behavior, and concurrency/copying boundaries.
+  Exactly-one-message checks require finite input/framing and the same buffering;
+  persistent sequences use schema boundaries. The flexible schema's 16-entry cap
+  is explicitly application policy. Lower-level slice ownership, buffer reuse,
+  borrowed-view lifetimes, and zero-consumption failures remain documented.
+- Reviewed the complete exported source, S01–S10 handoffs, test coverage, executable
+  examples/schema helpers, both streaming reports, and the archived PoC evidence.
+  Every S01–S10 task has a completed checkbox and handoff. No unresolved contract
+  conflict, codec defect, or unnecessary exported convenience API requiring removal
+  was identified. Streaming transfers and Skip are documented as implemented;
+  generic/reflection/mapping, extensions/timestamps, and the other deferred features
+  remain outside scope. Approval records and historical handoffs remain intact.
+- Final checks passed with `GOCACHE=/private/tmp/messagepack-go-cache`:
+
+  ```sh
+  GOCACHE=/private/tmp/messagepack-go-cache go build ./...
+  GOCACHE=/private/tmp/messagepack-go-cache go test ./...
+  GOCACHE=/private/tmp/messagepack-go-cache go vet ./...
+  GOCACHE=/private/tmp/messagepack-go-cache go test -run '^Example' -v ./...
+  GOCACHE=/private/tmp/messagepack-go-cache go test -race ./...
+  GOCACHE=/private/tmp/messagepack-go-cache go doc .
+  gofmt -l .
+  git diff --check
+  git diff --cached --check
+  ```
+
+  Build/vet passed; the full suite passed in **1.199 s**, all **six executable
+  examples** passed in **0.244 s**, and the race suite, including S10 memory
+  regression tests, passed in **12.173 s**. Full tests, examples, and race checks
+  used authorized sandbox escalation for existing localhost `httptest` listeners.
+  GoDoc output was inspected; formatting output was empty and both diff checks pass.
+- Extracted both complete README Go blocks unchanged into
+  `/private/tmp/messagepack-s11-readme-yc4y2t8b/snippet1.go` and `snippet2.go` in a
+  temporary module with a local module replacement. Their formatting check was
+  empty. `GOCACHE=/private/tmp/messagepack-go-cache go test -v ./...` there passed
+  in **0.276 s**, with authorized localhost access. The temporary harness executed
+  `FetchBinary` against a local server, checked payload/count, ran `WriteDataset`
+  with 100000 generated integers and a known-length payload, decoded every element,
+  verified extra source bytes remained unread, and checked finite-file EOF through
+  the same buffered reader. No test harness or generated source was added to the repo.
+  The repository-wide local Markdown path/anchor check passed **64 links** before
+  this handoff; the S01–S10 completion/handoff audit also passed.
+- Final compatibility review: `git diff e363472 -- AGENTS.md STYLEGUIDE.md go.mod
+  nil.go bool.go integer.go float.go string.go bytes.go array.go map.go` is empty.
+  The streaming contract's approved API/semantics and raw historical fuzz/benchmark
+  outputs are unchanged. Prior S08 incremental HTTP/file/backpressure proofs,
+  S09 November 1–2 fuzz runs, and S10 November 2 measurement evidence substantiate
+  bounded streaming without full-message staging. Final tests preserve the original
+  slice wire/ownership/allocation checks. Timed fuzzing and benchmarks were not
+  repeated for documentation-only edits; their original dates/results are retained.
+- Remaining limits: linux/386 tests were cross-compiled only; neither a compatible
+  userspace emulator nor a running Docker/Podman runtime was available in S09, and
+  no service/tooling was started or portability claim expanded here. Measurements
+  cover local synthetic endpoints, three payload sizes, and 100 ms sample targets;
+  process/GC noise and owned-result allocations remain explicit. No blanket zero-
+  allocation, real socket/file throughput, durability, or shared-codec concurrency
+  guarantee is claimed. S11 acceptance is complete, all streaming tasks are checked,
+  and no deferred feature or unrelated work is required for this plan.

@@ -1,5 +1,9 @@
 # Fuzz and portability checks
 
+> Historical slice-PoC verification. These recorded runs and their dates are
+> preserved. See the [streaming fuzz report](streaming-fuzzing.md) for stream I/O
+> and Skip checks, and the [current README](../README.md) for usage.
+
 Task 9 verification on 2026-11-01 used `go1.27.2 darwin/arm64`.
 These are smoke runs, not a guarantee that every malformed input has been explored.
 

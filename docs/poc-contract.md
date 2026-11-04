@@ -1,5 +1,10 @@
 # MessagePack PoC contract
 
+> Archived contract for the completed slice PoC. Its slice API remains the
+> compatibility baseline. Streaming I/O and bounded Skip, deferred at that stage,
+> are now implemented under the [streaming contract](streaming-contract.md).
+> See the [current README](../README.md) for response-body and file workflows.
+
 ## Status and environment
 
 Approved by the maintainer on 2026-11-01. In this session, the maintainer explicitly

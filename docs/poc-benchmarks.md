@@ -1,5 +1,9 @@
 # Allocation and performance baseline
 
+> Historical slice-PoC measurements with their original ownership and workload
+> boundaries. See the [streaming measurement report](streaming-benchmarks.md) for
+> stream I/O and memory results, and the [current README](../README.md) for usage.
+
 Measured on 2026-11-01 with `go1.27.2 darwin/arm64`, Darwin 25.5.0,
 an Apple M3 (`Mac15,13`), eight logical CPUs, and 24 GiB of memory.
 The benchmark process used Go's default CPU setting; result names have the `-8`

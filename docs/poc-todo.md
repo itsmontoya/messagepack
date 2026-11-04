@@ -1,5 +1,8 @@
 > Archived completed PoC plan. Its authorization applies only to the original
 > tasks 1–11 below, not to the streaming tasks in [the current TODO](../TODO.md).
+> Streaming and bounded Skip, deferred in this historical plan, are now
+> implemented; see the [current README](../README.md) and
+> [streaming contract](streaming-contract.md).
 
 # MessagePack PoC
 

@@ -2,7 +2,7 @@
 
 ## Status and authority
 
-**Approved by the maintainer on 2026-11-01. Streaming implementation is pending.**
+**Approved by the maintainer on 2026-11-01. S01–S11 are complete.**
 The API, lifecycle, limits, and implementation constraints below are the approved
 S01 contract for [streaming tasks S01–S11](../TODO.md).
 
@@ -23,8 +23,9 @@ The standing [agent policy](../AGENTS.md) and [style guide](../STYLEGUIDE.md) re
 unchanged. This session-specific authorization overrides the production-code
 restriction only for S01–S11. The earlier authority in the [PoC contract](poc-contract.md)
 still covers only its archived tasks 1–11 and is not the basis for streaming work.
-S01 is complete; S02 may begin under the authority recorded here. Approval does
-not claim any streaming API has already been implemented or verified.
+S01–S11 are complete with implementation, examples, tests, measurement evidence,
+user documentation, and final review in their [handoffs](../TODO.md). Approval
+itself was separate from that implementation evidence.
 
 The module remains `github.com/itsmontoya/messagepack`, package `messagepack`,
 using the existing Go 1.27.2 baseline and standard library only. Toolchain,
@@ -174,8 +175,10 @@ owned results intentionally allocate proportionally to their accepted lengths.
 No transfer path uses `io.ReadAll`, a whole-payload string-to-byte conversion,
 whole-object staging, or unbounded `WriterTo`/`ReaderFrom` delegation. Large strings
 are written in bounded chunks even if their in-memory source is already complete.
-Scratch allocation/reuse strategy is private; S10 must measure actual allocations
-and retained working memory rather than assume that these bounds prove a result.
+Scratch allocation/reuse strategy is private. S10's
+[measurement report](streaming-benchmarks.md) records actual allocation bytes
+and retained working memory across three payload sizes, with scoped results and
+measurement limits rather than a blanket allocation promise.
 
 No typed container-header operation allocates children or applies Skip limits.
 Map child calculations use `uint64(count) * 2`, never `int` or uint32 multiplication.
@@ -411,10 +414,12 @@ stream. `Skip` supports unknown fields; duplicate/required-field rules remain in
 the caller's schema. S07 proves that schema policy and S08 proves both sequence
 and exactly-one-message usage.
 
-S09 must fuzz fragmented I/O, hostile lengths, boundaries, ownership, and terminal
-state; report 32-bit execution separately from cross-compilation. S10 must measure
-at least three substantially different transfer sizes and demonstrate bounded
-allocation bytes and retained working memory, alongside owned-result costs.
-S11 publishes streaming-first user documentation only after implemented examples,
-tests, reports, and prior handoffs substantiate it. This contract makes no
-performance or implementation-completion claim.
+S09's [fuzz report](streaming-fuzzing.md) records four bounded smoke runs on
+November 1–2, 2026 covering fragmented I/O, hostile lengths, boundaries, ownership,
+and terminal state. Linux/386 tests cross-compiled; no compatible runtime was
+available for execution. S10's [measurement report](streaming-benchmarks.md)
+records five samples for each of 91 cases on November 2, 2026, including transfer
+allocation bytes and retained memory at 1 KiB, 64 KiB, and 8 MiB, plus proportional
+owned-result costs. These results apply to their stated workloads and environment.
+The [README](../README.md) and package GoDoc publish the implemented streaming
+workflow; final S11 verification is recorded in [the task handoff](../TODO.md).
