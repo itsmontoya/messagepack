@@ -28,12 +28,12 @@ func FuzzStreamRoundTrip(f *testing.F) {
 		var (
 			before = append([]byte(nil), payload...)
 			w      streamFuzzWriter
-			e      = NewEncoder(&w)
+			e      = NewWriter(&w)
 			want   = streamFuzzRoundTripWire(t, signed, unsigned, bits32, bits64, payload)
 		)
 		encodeStreamFuzzScalars(t, e, signed, unsigned, bits32, bits64)
 		encodeStreamFuzzPayloads(t, e, payload, fragments)
-		if !bytes.Equal(w.data, want) || !bytes.Equal(payload, before) || len(e.buffer) > 32768 {
+		if !bytes.Equal(w.data, want) || !bytes.Equal(payload, before) || len(e.state.buffer) > 32768 {
 			t.Fatal("typed stream wire differs from slice appends or changed its source")
 		}
 		var fresh streamFuzzWriter
@@ -53,7 +53,7 @@ func FuzzStreamRoundTrip(f *testing.F) {
 	})
 }
 
-func encodeStreamFuzzScalars(t *testing.T, e *Encoder, signed int64, unsigned uint64, bits32 uint32, bits64 uint64) {
+func encodeStreamFuzzScalars(t *testing.T, e *Writer, signed int64, unsigned uint64, bits32 uint32, bits64 uint64) {
 	t.Helper()
 	if err := e.EncodeArrayHeader(9); err != nil {
 		t.Fatal(err)
@@ -78,7 +78,7 @@ func encodeStreamFuzzScalars(t *testing.T, e *Encoder, signed int64, unsigned ui
 	}
 }
 
-func encodeStreamFuzzPayloads(t *testing.T, e *Encoder, payload, fragments []byte) {
+func encodeStreamFuzzPayloads(t *testing.T, e *Writer, payload, fragments []byte) {
 	t.Helper()
 	if err := e.EncodeString(string(payload)); err != nil {
 		t.Fatal(err)

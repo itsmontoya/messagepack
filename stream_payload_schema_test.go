@@ -3,7 +3,7 @@ package messagepack
 import "io"
 
 // encodeStreamingPayloadMessage streams data within the existing strict six-field schema.
-func encodeStreamingPayloadMessage(e *Encoder, length uint64, src io.Reader) (err error) {
+func encodeStreamingPayloadMessage(e *Writer, length uint64, src io.Reader) (err error) {
 	if err = e.EncodeMapHeader(6); err != nil {
 		return err
 	}

@@ -14,7 +14,7 @@ func TestStreamingApplicationMessageWireAndInteroperability(t *testing.T) {
 		message = applicationMessage{ID: 7, Name: "Ada", Active: true, Score: 1.5,
 			Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
 		writer  bytes.Buffer
-		e       = NewEncoder(&writer)
+		e       = NewWriter(&writer)
 		fixture = applicationMessageFixture()
 	)
 	if err := encodeStreamingApplicationMessage(e, message); err != nil {
@@ -137,7 +137,7 @@ func TestStreamingApplicationMessageInvalidSchema(t *testing.T) {
 func TestStreamNestedContainers(t *testing.T) {
 	var (
 		writer bytes.Buffer
-		e      = NewEncoder(&writer)
+		e      = NewWriter(&writer)
 		steps  = []func() (err error){
 			func() (err error) { return e.EncodeArrayHeader(2) },
 			func() (err error) { return e.EncodeMapHeader(1) },
@@ -189,7 +189,7 @@ func TestStreamGeneratedArrayIsIncremental(t *testing.T) {
 	const count uint32 = 100000
 	var (
 		writer = &streamArrayWriter{count: count}
-		e      = NewEncoder(writer)
+		e      = NewWriter(writer)
 		r      = newStreamArrayReader(count)
 		d      = NewDecoder(r)
 		total  uint64
@@ -202,11 +202,11 @@ func TestStreamGeneratedArrayIsIncremental(t *testing.T) {
 			t.Fatal(err)
 		}
 		if value == 0 && (writer.seen != 1 || writer.writes != 2) {
-			t.Fatal("Encoder delayed the first element until the array was complete")
+			t.Fatal("Writer delayed the first element until the array was complete")
 		}
 	}
-	if writer.seen != uint64(count) || writer.maxRequest > 9 || e.buffer != nil {
-		t.Fatalf("generated writes = %d values, max request %d, buffer %d", writer.seen, writer.maxRequest, len(e.buffer))
+	if writer.seen != uint64(count) || writer.maxRequest > 9 || e.state.buffer != nil {
+		t.Fatalf("generated writes = %d values, max request %d, buffer %d", writer.seen, writer.maxRequest, len(e.state.buffer))
 	}
 	decodedCount, headerErr := d.DecodeArrayHeader()
 	if headerErr != nil || decodedCount != count || r.next != 0 {

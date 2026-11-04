@@ -37,7 +37,7 @@ func TestStreamingHTTPIncrementalPayload(t *testing.T) {
 				// A blocked socket write must also have a caller-controlled deadline.
 				err = http.NewResponseController(w).SetWriteDeadline(time.Now().Add(10 * time.Second))
 				if err == nil {
-					err = encodeStreamingPayloadMessage(NewEncoder(&streamHTTPWriter{response: w}), length, source)
+					err = encodeStreamingPayloadMessage(NewWriter(&streamHTTPWriter{response: w}), length, source)
 				}
 				produced <- err
 			}))
@@ -185,7 +185,7 @@ func TestStreamingHTTPTruncatedPayload(t *testing.T) {
 	)
 	defer cancel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := NewEncoder(w).EncodeBytesFrom(declared, &encoderGeneratedReader{length: actual})
+		_, err := NewWriter(w).EncodeBytesFrom(declared, &encoderGeneratedReader{length: actual})
 		produced <- err
 	}))
 	defer server.Close()

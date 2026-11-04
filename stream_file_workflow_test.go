@@ -21,7 +21,7 @@ func writeStreamingDataset(dst io.WriteCloser, count uint32, length uint64) (err
 		}
 	}()
 	buffered := bufio.NewWriterSize(dst, 4096)
-	if err = encodeStreamingDataset(NewEncoder(buffered), count, length); err != nil {
+	if err = encodeStreamingDataset(NewWriter(buffered), count, length); err != nil {
 		return fmt.Errorf("encode dataset: %w", err)
 	}
 	if err = buffered.Flush(); err != nil {
@@ -30,7 +30,7 @@ func writeStreamingDataset(dst io.WriteCloser, count uint32, length uint64) (err
 	return nil
 }
 
-func encodeStreamingDataset(e *Encoder, count uint32, length uint64) (err error) {
+func encodeStreamingDataset(e *Writer, count uint32, length uint64) (err error) {
 	if err = e.EncodeArrayHeader(2); err != nil {
 		return err
 	}

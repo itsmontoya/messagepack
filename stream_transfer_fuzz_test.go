@@ -112,7 +112,7 @@ func checkStreamFuzzEncodeTransfer(t *testing.T, src, fragments []byte, settings
 			emptyBetween: int(settings[3]) % 102, dataError: settings[5]&1 != 0}
 		w = &streamFuzzWriter{fail: settings[6]%3 != 0,
 			failAt: int(binary.LittleEndian.Uint16(settings[7:9])) % (len(src) + 6)}
-		e      = NewEncoder(w)
+		e      = NewWriter(w)
 		header []byte
 		n      uint64
 		err    error
@@ -145,7 +145,7 @@ func checkStreamFuzzEncodeTransfer(t *testing.T, src, fragments []byte, settings
 		n, err = e.EncodeBytesFrom(length, r)
 	}
 	if length > 4294967295 {
-		if err != ErrOverflow || n != 0 || r.reads != 0 || w.writes != 0 || e.err != nil {
+		if err != ErrOverflow || n != 0 || r.reads != 0 || w.writes != 0 || e.state.err != nil {
 			t.Fatal("oversized encode length performed I/O or became terminal")
 		}
 		e.Reset(io.Discard)
@@ -185,7 +185,7 @@ func checkStreamFuzzEncodeTransfer(t *testing.T, src, fragments []byte, settings
 	if !bytes.Equal(src, before) || len(w.data) > len(available) || !bytes.Equal(w.data, available[:len(w.data)]) || n != uint64(accepted) {
 		t.Fatal("encode transfer changed input, wire prefix, or payload-only progress")
 	}
-	if len(e.buffer) > 32768 || r.position > len(src) || r.reads > (len(src)+1)*101+102 {
+	if len(e.state.buffer) > 32768 || r.position > len(src) || r.reads > (len(src)+1)*101+102 {
 		t.Fatal("encode transfer exceeded bounded memory or scheduled work")
 	}
 	if err == nil {
@@ -194,10 +194,10 @@ func checkStreamFuzzEncodeTransfer(t *testing.T, src, fragments []byte, settings
 		}
 		return
 	}
-	requireStreamFuzzEncoderTerminal(t, e, r, w, err)
+	requireStreamFuzzWriterTerminal(t, e, r, w, err)
 }
 
-func requireStreamFuzzEncoderTerminal(t *testing.T, e *Encoder, r *streamFuzzReader, w *streamFuzzWriter, failure error) {
+func requireStreamFuzzWriterTerminal(t *testing.T, e *Writer, r *streamFuzzReader, w *streamFuzzWriter, failure error) {
 	t.Helper()
 	reads, writes := r.reads, w.writes
 	if e.EncodeNil() != failure || e.EncodeBool(true) != failure || e.EncodeInt64(-1) != failure || e.EncodeUint64(1) != failure ||

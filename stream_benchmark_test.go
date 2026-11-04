@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	streamBenchmarkEncoderSink *Encoder
+	streamBenchmarkWriterSink  *Writer
 	streamBenchmarkDecoderSink *Decoder
 )
 
@@ -34,7 +34,7 @@ func BenchmarkStreamMessage(b *testing.B) {
 			Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
 	)
 	b.Run("Encode", func(b *testing.B) {
-		benchmarkStreamRecordEncode(b, len(source.data), func(e *Encoder) (err error) {
+		benchmarkStreamRecordEncode(b, len(source.data), func(e *Writer) (err error) {
 			return encodeStreamingApplicationMessage(e, message)
 		})
 	})
@@ -89,7 +89,7 @@ func BenchmarkStreamContainer(b *testing.B) {
 				streamBenchmarkCalls(b, source.reads, sink.writes)
 			})
 			b.Run("Encode", func(b *testing.B) {
-				benchmarkStreamRecordEncode(b, size, func(e *Encoder) (err error) {
+				benchmarkStreamRecordEncode(b, size, func(e *Writer) (err error) {
 					if err = e.EncodeArrayHeader(count); err != nil {
 						return err
 					}
@@ -131,7 +131,7 @@ func BenchmarkStreamContainer(b *testing.B) {
 	}
 }
 
-func benchmarkStreamRecordEncode(b *testing.B, size int, encode func(e *Encoder) (err error)) {
+func benchmarkStreamRecordEncode(b *testing.B, size int, encode func(e *Writer) (err error)) {
 	b.Helper()
 	for _, buffered := range []bool{false, true} {
 		for _, reuse := range []bool{false, true} {
@@ -140,7 +140,7 @@ func benchmarkStreamRecordEncode(b *testing.B, size int, encode func(e *Encoder)
 					sink    streamBenchmarkWriter
 					writer  io.Writer = &sink
 					buffer  *bufio.Writer
-					encoder *Encoder
+					encoder *Writer
 					err     error
 				)
 				if buffered {
@@ -148,7 +148,7 @@ func benchmarkStreamRecordEncode(b *testing.B, size int, encode func(e *Encoder)
 					writer = buffer
 				}
 				if reuse {
-					encoder = NewEncoder(writer)
+					encoder = NewWriter(writer)
 					if err = encode(encoder); err != nil {
 						b.Fatal(err)
 					}
@@ -166,8 +166,8 @@ func benchmarkStreamRecordEncode(b *testing.B, size int, encode func(e *Encoder)
 					if reuse {
 						encoder.Reset(writer)
 					} else {
-						encoder = NewEncoder(writer)
-						streamBenchmarkEncoderSink = encoder
+						encoder = NewWriter(writer)
+						streamBenchmarkWriterSink = encoder
 					}
 					if err = encode(encoder); err != nil {
 						b.Fatal(err)
@@ -251,7 +251,7 @@ func streamBenchmarkCalls(b *testing.B, reads uint64, writes uint64) {
 	b.ReportMetric(float64(writes)/float64(b.N), "writecalls/op")
 }
 
-func encodeStreamBenchmarkPrimitives(e *Encoder) (err error) {
+func encodeStreamBenchmarkPrimitives(e *Writer) (err error) {
 	if err = e.EncodeNil(); err != nil {
 		return err
 	}

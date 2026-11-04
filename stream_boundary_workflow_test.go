@@ -71,7 +71,7 @@ func TestStreamingCallerOwnedBuffering(t *testing.T) {
 	var (
 		file     encoderPayloadWriter
 		buffered = bufio.NewWriterSize(&file, 256)
-		e        = NewEncoder(buffered)
+		e        = NewWriter(buffered)
 		message  = applicationMessage{ID: 7, Name: "Ada", Active: true, Score: 1.5,
 			Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}
 	)
@@ -131,7 +131,7 @@ func TestStreamingPipeMessageSequence(t *testing.T) {
 		}
 	})
 	go func() {
-		e := NewEncoder(writer)
+		e := NewWriter(writer)
 		producerErr = encodeStreamingApplicationMessage(e, message)
 		if producerErr == nil {
 			select {

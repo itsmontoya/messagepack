@@ -7,7 +7,7 @@ import (
 )
 
 // encodeStreamingApplicationMessage writes the same strict schema as the slice example.
-func encodeStreamingApplicationMessage(e *Encoder, message applicationMessage) (err error) {
+func encodeStreamingApplicationMessage(e *Writer, message applicationMessage) (err error) {
 	if err = e.EncodeMapHeader(6); err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func encodeStreamingApplicationMessage(e *Encoder, message applicationMessage) (
 	return nil
 }
 
-func encodeStreamingApplicationSamples(e *Encoder, samples [2]int64) (err error) {
+func encodeStreamingApplicationSamples(e *Writer, samples [2]int64) (err error) {
 	if err = e.EncodeArrayHeader(2); err != nil {
 		return err
 	}

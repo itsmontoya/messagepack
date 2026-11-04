@@ -24,7 +24,7 @@ func ExampleDecoder_httpResponse() {
 	)
 	defer cancel()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		produced <- encodeStreamingPayloadMessage(NewEncoder(w), length, &encoderGeneratedReader{length: length})
+		produced <- encodeStreamingPayloadMessage(NewWriter(w), length, &encoderGeneratedReader{length: length})
 	}))
 	defer server.Close()
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil)
@@ -55,7 +55,7 @@ func ExampleDecoder_httpResponse() {
 	// 7 Ada 1048583 binary bytes [-1 2]
 }
 
-func ExampleEncoder_file() {
+func ExampleWriter_file() {
 	const (
 		count  = 100000
 		length = 8*1024*1024 + 7

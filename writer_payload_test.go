@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestEncoderPayloadWire(t *testing.T) {
+func TestWriterPayloadWire(t *testing.T) {
 	tests := []struct {
 		name         string
 		length       int
@@ -31,22 +31,22 @@ func TestEncoderPayloadWire(t *testing.T) {
 		methods := []struct {
 			name   string
 			header []byte
-			run    func(e *Encoder) (err error)
+			run    func(e *Writer) (err error)
 		}{
-			{name: "string", header: tt.stringHeader, run: func(e *Encoder) (err error) {
+			{name: "string", header: tt.stringHeader, run: func(e *Writer) (err error) {
 				return e.EncodeString(string(value))
 			}},
-			{name: "bytes", header: tt.binaryHeader, run: func(e *Encoder) (err error) {
+			{name: "bytes", header: tt.binaryHeader, run: func(e *Writer) (err error) {
 				return e.EncodeBytes(value)
 			}},
-			{name: "string from", header: tt.stringHeader, run: func(e *Encoder) (err error) {
+			{name: "string from", header: tt.stringHeader, run: func(e *Writer) (err error) {
 				n, sourceErr := e.EncodeStringFrom(uint64(len(value)), bytes.NewReader(value))
 				if n != uint64(len(value)) {
 					return fmt.Errorf("string payload progress = %d, want %d", n, len(value))
 				}
 				return sourceErr
 			}},
-			{name: "bytes from", header: tt.binaryHeader, run: func(e *Encoder) (err error) {
+			{name: "bytes from", header: tt.binaryHeader, run: func(e *Writer) (err error) {
 				n, sourceErr := e.EncodeBytesFrom(uint64(len(value)), bytes.NewReader(value))
 				if n != uint64(len(value)) {
 					return fmt.Errorf("binary payload progress = %d, want %d", n, len(value))
@@ -58,7 +58,7 @@ func TestEncoderPayloadWire(t *testing.T) {
 			t.Run(tt.name+"/"+method.name, func(t *testing.T) {
 				var (
 					writer = &encoderPayloadWriter{}
-					e      = NewEncoder(writer)
+					e      = NewWriter(writer)
 					want   = append(append([]byte(nil), method.header...), value...)
 					err    = method.run(e)
 				)
@@ -73,10 +73,10 @@ func TestEncoderPayloadWire(t *testing.T) {
 	}
 }
 
-func TestEncoderPayloadRawBytesAndConsecutiveValues(t *testing.T) {
+func TestWriterPayloadRawBytesAndConsecutiveValues(t *testing.T) {
 	var (
 		writer bytes.Buffer
-		e      = NewEncoder(&writer)
+		e      = NewWriter(&writer)
 		value  = []byte{0, 0xc3, 0xa9, 0xff}
 		want   = []byte{
 			0xa4, 0, 0xc3, 0xa9, 0xff, 0xc4, 4, 0, 0xc3, 0xa9, 0xff,
@@ -110,13 +110,13 @@ func TestEncoderPayloadRawBytesAndConsecutiveValues(t *testing.T) {
 	}
 }
 
-func TestEncoderFromSourceBoundaries(t *testing.T) {
+func TestWriterFromSourceBoundaries(t *testing.T) {
 	methods := []struct {
 		name string
-		run  func(e *Encoder, length uint64, src io.Reader) (n uint64, err error)
+		run  func(e *Writer, length uint64, src io.Reader) (n uint64, err error)
 	}{
-		{name: "string", run: (*Encoder).EncodeStringFrom},
-		{name: "bytes", run: (*Encoder).EncodeBytesFrom},
+		{name: "string", run: (*Writer).EncodeStringFrom},
+		{name: "bytes", run: (*Writer).EncodeBytesFrom},
 	}
 	tests := []struct {
 		name   string
@@ -140,7 +140,7 @@ func TestEncoderFromSourceBoundaries(t *testing.T) {
 				var (
 					source = &decoderTestReader{data: tt.data, maxRead: 1, endErr: tt.end}
 					writer = &encoderPayloadWriter{}
-					e      = NewEncoder(writer)
+					e      = NewWriter(writer)
 					n, err = method.run(e, tt.length, source)
 				)
 				if n != tt.wantN || !errors.Is(err, tt.want) || uint64(source.position) != tt.wantN {
@@ -163,20 +163,20 @@ func TestEncoderFromSourceBoundaries(t *testing.T) {
 	}
 }
 
-func TestEncoderFromValidationAndReset(t *testing.T) {
+func TestWriterFromValidationAndReset(t *testing.T) {
 	methods := []struct {
 		name string
-		run  func(e *Encoder, length uint64, src io.Reader) (n uint64, err error)
+		run  func(e *Writer, length uint64, src io.Reader) (n uint64, err error)
 	}{
-		{name: "string", run: (*Encoder).EncodeStringFrom},
-		{name: "bytes", run: (*Encoder).EncodeBytesFrom},
+		{name: "string", run: (*Writer).EncodeStringFrom},
+		{name: "bytes", run: (*Writer).EncodeBytesFrom},
 	}
 	for _, method := range methods {
 		t.Run(method.name, func(t *testing.T) {
 			var (
 				writer = &encoderPayloadWriter{}
 				source = &decoderTestReader{data: []byte{1}}
-				e      = NewEncoder(writer)
+				e      = NewWriter(writer)
 			)
 			for _, length := range []uint64{4294967296, math.MaxUint64} {
 				for _, input := range []io.Reader{nil, source} {
@@ -227,7 +227,7 @@ func TestEncoderFromValidationAndReset(t *testing.T) {
 	}
 }
 
-func TestEncoderFromReadFailures(t *testing.T) {
+func TestWriterFromReadFailures(t *testing.T) {
 	failure := errors.New("payload source failure")
 	tests := []struct {
 		name    string
@@ -251,7 +251,7 @@ func TestEncoderFromReadFailures(t *testing.T) {
 				var (
 					source = &decoderTestReader{data: tt.data, endErr: tt.end, maxRead: 1, initialEmpty: tt.empty, emptyBetween: tt.between}
 					writer = &encoderPayloadWriter{}
-					e      = NewEncoder(writer)
+					e      = NewWriter(writer)
 					n      uint64
 					err    error
 				)
@@ -271,7 +271,7 @@ func TestEncoderFromReadFailures(t *testing.T) {
 	}
 }
 
-func TestEncoderFromWriteFailures(t *testing.T) {
+func TestWriterFromWriteFailures(t *testing.T) {
 	var (
 		sourceFailure = errors.New("simultaneous source failure")
 		writeFailure  = errors.New("payload destination failure")
@@ -303,7 +303,7 @@ func TestEncoderFromWriteFailures(t *testing.T) {
 			var (
 				source = &decoderTestReader{data: []byte{1, 2, 3}, endErr: tt.sourceErr}
 				writer = &encoderPayloadWriter{failCall: tt.call, accept: tt.accept, acceptAll: tt.acceptAll, err: tt.writeErr}
-				e      = NewEncoder(writer)
+				e      = NewWriter(writer)
 				n, err = e.EncodeBytesFrom(3, source)
 			)
 			if n != tt.wantN || !errors.Is(err, tt.want) || source.reads != tt.wantReads {
@@ -321,14 +321,14 @@ func TestEncoderFromWriteFailures(t *testing.T) {
 	}
 }
 
-func TestEncoderInMemoryPayloadFailures(t *testing.T) {
+func TestWriterInMemoryPayloadFailures(t *testing.T) {
 	for _, isString := range []bool{false, true} {
 		for _, call := range []int{1, 2, 3} {
 			t.Run(fmt.Sprintf("string_%t/call_%d", isString, call), func(t *testing.T) {
 				var (
 					failure = errors.New("in-memory payload write failure")
 					writer  = &encoderPayloadWriter{failCall: call, accept: 1, err: failure}
-					e       = NewEncoder(writer)
+					e       = NewWriter(writer)
 					value   = bytes.Repeat([]byte{0xff}, 65536)
 					err     error
 				)
@@ -345,7 +345,7 @@ func TestEncoderInMemoryPayloadFailures(t *testing.T) {
 	}
 }
 
-func TestEncoderFromLaterChunkFailures(t *testing.T) {
+func TestWriterFromLaterChunkFailures(t *testing.T) {
 	var (
 		sourceFailure = errors.New("later source failure")
 		writeFailure  = errors.New("later destination failure")
@@ -371,7 +371,7 @@ func TestEncoderFromLaterChunkFailures(t *testing.T) {
 				var (
 					source = &decoderTestReader{data: bytes.Repeat([]byte{0x78}, tt.sourceLength), endErr: tt.sourceErr}
 					writer = &encoderPayloadWriter{failCall: tt.failCall, accept: tt.accept, err: tt.writeErr}
-					e      = NewEncoder(writer)
+					e      = NewWriter(writer)
 					n      uint64
 					err    error
 				)
@@ -394,7 +394,7 @@ func TestEncoderFromLaterChunkFailures(t *testing.T) {
 	}
 }
 
-func TestEncoderGeneratedPayloadIsIncremental(t *testing.T) {
+func TestWriterGeneratedPayloadIsIncremental(t *testing.T) {
 	const length = 8*1024*1024 + 7
 	for _, isString := range []bool{false, true} {
 		t.Run(fmt.Sprintf("string_%t", isString), func(t *testing.T) {
@@ -408,7 +408,7 @@ func TestEncoderGeneratedPayloadIsIncremental(t *testing.T) {
 				header[0] = 0xdb
 			}
 			writer := &encoderCountingWriter{header: header, source: source}
-			e := NewEncoder(writer)
+			e := NewWriter(writer)
 			if isString {
 				n, err = e.EncodeStringFrom(length, source)
 			} else {

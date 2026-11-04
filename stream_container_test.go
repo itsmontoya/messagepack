@@ -28,7 +28,7 @@ func TestStreamContainerHeaders(t *testing.T) {
 			t.Run(fmt.Sprintf("count_%d/map_%t", tt.count, isMap), func(t *testing.T) {
 				var (
 					writer bytes.Buffer
-					e      = NewEncoder(&writer)
+					e      = NewWriter(&writer)
 					wire   = tt.array
 					count  uint32
 					err    error
@@ -214,7 +214,7 @@ func TestStreamContainerHeaderIOFailures(t *testing.T) {
 		} {
 			var (
 				w   = &encoderTestWriter{limited: true, limit: test.limit, err: test.err}
-				e   = NewEncoder(w)
+				e   = NewWriter(w)
 				err error
 			)
 			if isMap {
@@ -234,12 +234,12 @@ func TestStreamContainerHeaderIOFailures(t *testing.T) {
 
 func TestStreamContainerHeaderInitializationAndReset(t *testing.T) {
 	var (
-		e Encoder
+		e Writer
 		d Decoder
 		w bytes.Buffer
 	)
 	if e.EncodeArrayHeader(0) != ErrUninitialized || e.EncodeMapHeader(0) != ErrUninitialized {
-		t.Fatal("unattached Encoder headers did not return ErrUninitialized")
+		t.Fatal("unattached Writer headers did not return ErrUninitialized")
 	}
 	for _, decode := range []func() (count uint32, err error){d.DecodeArrayHeader, d.DecodeMapHeader} {
 		count, err := decode()
@@ -252,7 +252,7 @@ func TestStreamContainerHeaderInitializationAndReset(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := e.EncodeMapHeader(0); err != nil || !bytes.Equal(w.Bytes(), []byte{0x90, 0x80}) {
-		t.Fatalf("reset Encoder headers = (%x, %v)", w.Bytes(), err)
+		t.Fatalf("reset Writer headers = (%x, %v)", w.Bytes(), err)
 	}
 	d.Reset(bytes.NewReader(w.Bytes()))
 	array, arrayErr := d.DecodeArrayHeader()
