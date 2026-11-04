@@ -68,12 +68,15 @@ func TestSkipSupportedValues(t *testing.T) {
 				if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 1}); err != nil {
 					t.Fatal(err)
 				}
+
 				if err := d.Skip(); err != nil || r.position != len(tt.wire) {
 					t.Fatalf("Skip() = %v, position %d, want %d", err, r.position, len(tt.wire))
 				}
+
 				if value, err := d.DecodeBool(); err != nil || !value {
 					t.Fatalf("value after Skip() = (%v, %v)", value, err)
 				}
+
 				if r.closes != 0 {
 					t.Fatal("Skip closed its source")
 				}
@@ -111,12 +114,15 @@ func TestSkipGeneratedPayloadBoundaries(t *testing.T) {
 			if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 1, MaxSkipBytes: uint64(len(tt.header)) + tt.length}); err != nil {
 				t.Fatal(err)
 			}
+
 			if err := d.Skip(); err != nil || payload.read != tt.length || next.Len() != 1 {
 				t.Fatalf("Skip() = %v, generated %d bytes, next bytes %d", err, payload.read, next.Len())
 			}
+
 			if payload.maxRequest > payloadBufferSize || len(d.state.buffer) != payloadBufferSize {
 				t.Fatalf("payload request %d, scratch %d", payload.maxRequest, len(d.state.buffer))
 			}
+
 			if value, err := d.DecodeBool(); err != nil || !value {
 				t.Fatalf("following value = (%v, %v)", value, err)
 			}
@@ -149,12 +155,15 @@ func TestSkipGeneratedContainerBoundaries(t *testing.T) {
 			if err := d.SetLimits(ReaderLimits{MaxSkipValues: tt.children + 1, MaxSkipBytes: uint64(len(tt.header)) + tt.children}); err != nil {
 				t.Fatal(err)
 			}
+
 			if err := d.Skip(); err != nil || children.read != tt.children || next.Len() != 1 {
 				t.Fatalf("Skip() = %v, children %d, next bytes %d", err, children.read, next.Len())
 			}
+
 			if children.maxRequest != 1 || d.state.buffer != nil {
 				t.Fatal("Skip requested or buffered the container as a whole")
 			}
+
 			if value, err := d.DecodeBool(); err != nil || !value {
 				t.Fatalf("following value = (%v, %v)", value, err)
 			}
@@ -187,12 +196,15 @@ func TestSkipTruncation(t *testing.T) {
 				if length == 0 {
 					want = io.EOF
 				}
+
 				if !errors.Is(err, want) || errors.Is(err, errFuzzTruncated) || err == want || r.position != length {
 					t.Fatalf("Skip() = %v, consumed %d, want wrapped %v after %d", err, r.position, want, length)
 				}
+
 				if length > 0 && errors.Is(err, io.EOF) {
 					t.Fatal("incomplete root also matched clean EOF")
 				}
+
 				reads := r.reads
 				requireSkipFailure(t, d, err)
 				if r.reads != reads {
@@ -251,13 +263,16 @@ func TestSkipLimits(t *testing.T) {
 			if err := d.SetLimits(tt.limits); err != nil {
 				t.Fatal(err)
 			}
+
 			err := d.Skip()
 			if !errors.Is(err, tt.want) || r.position != tt.consumed {
 				t.Fatalf("Skip() = %v, consumed %d, want %v after %d", err, r.position, tt.want, tt.consumed)
 			}
+
 			if tt.want == ErrLimitExceeded && err != tt.want {
 				t.Fatal("codec limit sentinel was wrapped")
 			}
+
 			if err != nil {
 				reads := r.reads
 				requireSkipFailure(t, d, err)
@@ -280,14 +295,17 @@ func TestSkipDepthLimits(t *testing.T) {
 				if end == 0x90 || end == 0x80 {
 					containers--
 				}
+
 				wire = append(bytes.Repeat([]byte{0x91}, int(containers)), end)
 				d := NewReader(bytes.NewReader(wire))
 				if err := d.SetLimits(ReaderLimits{MaxSkipDepth: depth}); err != nil {
 					t.Fatal(err)
 				}
+
 				if err := d.Skip(); err != nil {
 					t.Fatalf("allowed depth failed: %v", err)
 				}
+
 				wire = append([]byte{0x91}, wire...)
 				r := &decoderTestReader{data: wire, maxRead: 1}
 				d.Reset(r)
@@ -304,6 +322,7 @@ func requireSkipFailure(t *testing.T, d *Reader, want error) {
 	if err := d.Skip(); err != want {
 		t.Fatalf("later Skip() = %v, want identical %v", err, want)
 	}
+
 	requireReaderScalarFailure(t, d, want)
 	if n, err := d.DecodeBytesTo(nil); n != 0 || err != want {
 		t.Fatalf("later invalid transfer = (%d, %v), want stored failure", n, err)
@@ -347,12 +366,15 @@ func TestSkipClassificationAndSourceErrors(t *testing.T) {
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("Skip() = %v, want %v", err, tt.want)
 			}
+
 			if tt.want == failure && (err == failure || !strings.Contains(err.Error(), "skip source")) {
 				t.Fatal("source error lacks operation context")
 			}
+
 			if tt.want != failure && err != tt.want {
 				t.Fatal("codec sentinel was wrapped")
 			}
+
 			reads := r.reads
 			requireSkipFailure(t, d, err)
 			if r.reads != reads {
@@ -367,22 +389,26 @@ func TestSkipEOFAndLifecycle(t *testing.T) {
 	if err := unattached.Skip(); err != ErrUninitialized || unattached.state != nil {
 		t.Fatalf("zero Skip() = %v, state %+v", err, unattached.state)
 	}
+
 	for _, wire := range [][]byte{{0xc0}, {0x91, 0xc0}, {0x81, 0xc0, 0x90}, {0xc4, 1, 0xff}} {
 		r := &decoderTestReader{data: wire, maxRead: 1, endErr: io.EOF}
 		d := NewReader(r)
 		if err := d.Skip(); err != nil {
 			t.Fatalf("complete data with EOF = %v", err)
 		}
+
 		reads := r.reads
-		err := d.Skip()
+		var err = d.Skip()
 		if !errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) || r.reads != reads {
 			t.Fatalf("pending EOF = %v, reads %d, previous %d", err, r.reads, reads)
 		}
+
 		requireSkipFailure(t, d, err)
 		d.Reset(nil)
 		if err = d.Skip(); err != ErrUninitialized || r.closes != 0 || r.reads != reads {
 			t.Fatalf("nil reset = %v, closes %d, reads %d", err, r.closes, r.reads)
 		}
+
 		d.Reset(bytes.NewReader([]byte{0x90}))
 		if err = d.Skip(); err != nil {
 			t.Fatalf("reset after EOF = %v", err)
@@ -402,6 +428,7 @@ func TestSkipBudgetsRestartAndReset(t *testing.T) {
 	if err := d.SetLimits(ReaderLimits{MaxSkipDepth: 1, MaxSkipValues: 2, MaxSkipBytes: 2}); err != nil {
 		t.Fatal(err)
 	}
+
 	for index := 0; index < 2; index++ {
 		if err := d.Skip(); err != nil || r.position != 2*(index+1) {
 			t.Fatalf("Skip %d = %v, position %d", index, err, r.position)
@@ -410,14 +437,17 @@ func TestSkipBudgetsRestartAndReset(t *testing.T) {
 	if value, err := d.DecodeBool(); err != nil || !value {
 		t.Fatalf("following value = (%v, %v)", value, err)
 	}
+
 	d.Reset(bytes.NewReader([]byte{0x91, 0x90}))
 	failure := d.Skip()
 	if failure != ErrLimitExceeded {
 		t.Fatalf("depth failure = %v", failure)
 	}
+
 	if err := d.SetLimits(ReaderLimits{MaxSkipDepth: 2}); err != nil {
 		t.Fatal(err)
 	}
+
 	requireSkipFailure(t, d, failure)
 	d.Reset(bytes.NewReader([]byte{0x91, 0x90}))
 	if err := d.Skip(); err != nil || d.state.limits.MaxSkipDepth != 2 {
@@ -448,6 +478,7 @@ func TestSkipZeroProgress(t *testing.T) {
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("Skip() = %v, want %v", err, tt.want)
 			}
+
 			if err != nil {
 				reads := r.reads
 				requireSkipFailure(t, d, err)

@@ -36,13 +36,16 @@ func TestReaderNilAndBool(t *testing.T) {
 					t.Fatalf("DecodeBool() = %v, want %v", value, tt.want)
 				}
 			}
+
 			if err != nil || r.reads != 1 || r.position != 1 {
 				t.Fatalf("decode = %v, reads %d, consumed %d", err, r.reads, r.position)
 			}
+
 			err = d.DecodeNil()
 			if !errors.Is(err, io.EOF) || errors.Is(err, errFuzzTruncated) || r.reads != 1 {
 				t.Fatalf("pending EOF = %v after %d reads", err, r.reads)
 			}
+
 			requireReaderScalarFailure(t, d, err)
 			if r.reads != 1 {
 				t.Fatal("terminal EOF caused additional reads")
@@ -100,6 +103,7 @@ func TestReaderIntegerWire(t *testing.T) {
 			if signed != tt.signed || signedErr != tt.signedErr || r.position != len(tt.wire) {
 				t.Fatalf("DecodeInt64(%x) = (%d, %v), consumed %d", tt.wire, signed, signedErr, r.position)
 			}
+
 			if signedErr != nil {
 				requireReaderScalarFailure(t, d, signedErr)
 			} else {
@@ -108,12 +112,14 @@ func TestReaderIntegerWire(t *testing.T) {
 					t.Fatalf("following bool = (%v, %v)", value, nextErr)
 				}
 			}
+
 			r = &decoderTestReader{data: src, maxRead: 1}
 			d.Reset(r)
 			unsigned, unsignedErr := d.DecodeUint64()
 			if unsigned != tt.unsigned || unsignedErr != tt.unsignedErr || r.position != len(tt.wire) {
 				t.Fatalf("DecodeUint64(%x) = (%d, %v), consumed %d", tt.wire, unsigned, unsignedErr, r.position)
 			}
+
 			if unsignedErr != nil {
 				requireReaderScalarFailure(t, d, unsignedErr)
 			} else {
@@ -153,12 +159,14 @@ func TestReaderFloat32Wire(t *testing.T) {
 			if err != nil || math.Float32bits(value) != tt.bits {
 				t.Fatalf("DecodeFloat32(%x) = (%08x, %v)", tt.wire, math.Float32bits(value), err)
 			}
+
 			d.Reset(bytes.NewReader(tt.wire))
 			wide, wideErr := d.DecodeFloat64()
 			want := float64(math.Float32frombits(tt.bits))
 			if wideErr != nil {
 				t.Fatal(wideErr)
 			}
+
 			if math.IsNaN(want) {
 				if !math.IsNaN(wide) {
 					t.Fatalf("widened NaN = %v", wide)
@@ -196,6 +204,7 @@ func TestReaderFloat64Wire(t *testing.T) {
 			if err != nil || math.Float64bits(value) != tt.bits {
 				t.Fatalf("DecodeFloat64(%x) = (%016x, %v)", tt.wire, math.Float64bits(value), err)
 			}
+
 			d.Reset(bytes.NewReader(tt.wire))
 			narrow, narrowErr := d.DecodeFloat32()
 			if narrowErr != ErrTypeMismatch || math.Float32bits(narrow) != 0 {
@@ -210,22 +219,27 @@ func requireReaderScalarFailure(t *testing.T, d *Reader, want error) {
 	if err := d.DecodeNil(); err != want {
 		t.Fatalf("DecodeNil() terminal error = %v, want same %v", err, want)
 	}
+
 	valueBool, boolErr := d.DecodeBool()
 	if valueBool || boolErr != want {
 		t.Fatalf("DecodeBool() after failure = (%v, %v)", valueBool, boolErr)
 	}
+
 	valueInt, intErr := d.DecodeInt64()
 	if valueInt != 0 || intErr != want {
 		t.Fatalf("DecodeInt64() after failure = (%v, %v)", valueInt, intErr)
 	}
+
 	valueUint, uintErr := d.DecodeUint64()
 	if valueUint != 0 || uintErr != want {
 		t.Fatalf("DecodeUint64() after failure = (%v, %v)", valueUint, uintErr)
 	}
+
 	value32, float32Err := d.DecodeFloat32()
 	if math.Float32bits(value32) != 0 || float32Err != want {
 		t.Fatalf("DecodeFloat32() after failure = (%v, %v)", value32, float32Err)
 	}
+
 	value64, float64Err := d.DecodeFloat64()
 	if math.Float64bits(value64) != 0 || float64Err != want {
 		t.Fatalf("DecodeFloat64() after failure = (%v, %v)", value64, float64Err)
@@ -243,49 +257,54 @@ func TestReaderScalarTruncation(t *testing.T) {
 		tests = []struct {
 			name   string
 			wires  [][]byte
-			decode func(t *testing.T, d *Reader) (err error)
+			decode func(test *testing.T, d *Reader) (err error)
 		}{
-			{name: "nil", wires: [][]byte{{0xc0}}, decode: func(t *testing.T, d *Reader) (err error) {
+			{name: "nil", wires: [][]byte{{0xc0}}, decode: func(test *testing.T, d *Reader) (err error) {
 				return d.DecodeNil()
 			}},
-			{name: "bool", wires: [][]byte{{0xc2}, {0xc3}}, decode: func(t *testing.T, d *Reader) (err error) {
+			{name: "bool", wires: [][]byte{{0xc2}, {0xc3}}, decode: func(test *testing.T, d *Reader) (err error) {
 				var value bool
 				value, err = d.DecodeBool()
 				if value {
-					t.Fatal("failed boolean result is not zero")
+					test.Fatal("failed boolean result is not zero")
 				}
+
 				return err
 			}},
-			{name: "int64", wires: integers, decode: func(t *testing.T, d *Reader) (err error) {
+			{name: "int64", wires: integers, decode: func(test *testing.T, d *Reader) (err error) {
 				var value int64
 				value, err = d.DecodeInt64()
 				if value != 0 {
-					t.Fatal("failed signed result is not zero")
+					test.Fatal("failed signed result is not zero")
 				}
+
 				return err
 			}},
-			{name: "uint64", wires: integers, decode: func(t *testing.T, d *Reader) (err error) {
+			{name: "uint64", wires: integers, decode: func(test *testing.T, d *Reader) (err error) {
 				var value uint64
 				value, err = d.DecodeUint64()
 				if value != 0 {
-					t.Fatal("failed unsigned result is not zero")
+					test.Fatal("failed unsigned result is not zero")
 				}
+
 				return err
 			}},
-			{name: "float32", wires: [][]byte{{0xca, 0x3f, 0xc0, 0, 0}}, decode: func(t *testing.T, d *Reader) (err error) {
+			{name: "float32", wires: [][]byte{{0xca, 0x3f, 0xc0, 0, 0}}, decode: func(test *testing.T, d *Reader) (err error) {
 				var value float32
 				value, err = d.DecodeFloat32()
 				if math.Float32bits(value) != 0 {
-					t.Fatal("failed float32 bits are not zero")
+					test.Fatal("failed float32 bits are not zero")
 				}
+
 				return err
 			}},
-			{name: "float64", wires: [][]byte{{0xca, 0x3f, 0xc0, 0, 0}, {0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}}, decode: func(t *testing.T, d *Reader) (err error) {
+			{name: "float64", wires: [][]byte{{0xca, 0x3f, 0xc0, 0, 0}, {0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}}, decode: func(test *testing.T, d *Reader) (err error) {
 				var value float64
 				value, err = d.DecodeFloat64()
 				if math.Float64bits(value) != 0 {
-					t.Fatal("failed float64 bits are not zero")
+					test.Fatal("failed float64 bits are not zero")
 				}
+
 				return err
 			}},
 		}
@@ -303,12 +322,15 @@ func TestReaderScalarTruncation(t *testing.T) {
 					if length == 0 {
 						want = io.EOF
 					}
+
 					if !errors.Is(err, want) || errors.Is(err, errFuzzTruncated) || err == want || r.position != length {
 						t.Fatalf("truncation = %v, consumed %d, want wrapped %v after %d", err, r.position, want, length)
 					}
+
 					if length > 0 && errors.Is(err, io.EOF) {
 						t.Fatal("incomplete value also matched clean EOF")
 					}
+
 					reads := r.reads
 					requireReaderScalarFailure(t, d, err)
 					if r.reads != reads {
@@ -341,17 +363,21 @@ func TestReaderReadErrorsAndEOF(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
-				r = &decoderTestReader{data: tt.data, endErr: tt.end}
-				d = NewReader(r)
+				r     = &decoderTestReader{data: tt.data, endErr: tt.end}
+				d     = NewReader(r)
+				value uint64
+				err   error
 			)
-			value, err := d.DecodeUint64()
+			value, err = d.DecodeUint64()
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("DecodeUint64() = (%d, %v), want %v", value, err, tt.want)
 			}
+
 			if err == nil {
 				if value != 7 {
 					t.Fatalf("complete data with EOF = %d, want 7", value)
 				}
+
 				reads := r.reads
 				err = d.DecodeNil()
 				if !errors.Is(err, io.EOF) || r.reads != reads {
@@ -360,6 +386,7 @@ func TestReaderReadErrorsAndEOF(t *testing.T) {
 			} else if value != 0 || err == tt.want || !strings.Contains(err.Error(), "decode uint64 source") {
 				t.Fatalf("failure did not return zero/context: (%d, %v)", value, err)
 			}
+
 			reads := r.reads
 			requireReaderScalarFailure(t, d, err)
 			if r.reads != reads {
@@ -392,15 +419,19 @@ func TestReaderZeroProgress(t *testing.T) {
 			if !errors.Is(err, tt.want) || r.reads != tt.reads {
 				t.Fatalf("DecodeUint64() = (%d, %v), reads %d, want error %v and %d reads", value, err, r.reads, tt.want, tt.reads)
 			}
+
 			if err == nil {
 				if value != 7 {
 					t.Fatalf("temporary empty reads changed value to %d", value)
 				}
+
 				return
 			}
+
 			if value != 0 || err == tt.want {
 				t.Fatalf("zero progress did not return zero and wrapped error: (%d, %v)", value, err)
 			}
+
 			requireReaderScalarFailure(t, d, err)
 			if r.reads != tt.reads {
 				t.Fatal("zero-progress failure performed further reads")
@@ -451,9 +482,11 @@ func TestReaderClassification(t *testing.T) {
 			if value || !errors.Is(err, tt.want) || r.position != 1 || r.reads != 1 {
 				t.Fatalf("DecodeBool(%x) = (%v, %v), consumed %d in %d reads", tt.tag, value, err, r.position, r.reads)
 			}
+
 			if tt.want != failure && err != tt.want {
 				t.Fatalf("codec sentinel was wrapped: %v", err)
 			}
+
 			requireReaderScalarFailure(t, d, err)
 			if r.reads != 1 {
 				t.Fatal("classification failure read past its tag")
@@ -472,37 +505,46 @@ func TestReaderConsecutiveScalars(t *testing.T) {
 	if err := d.DecodeNil(); err != nil || r.position != 1 {
 		t.Fatalf("nil = %v at %d", err, r.position)
 	}
-	valueBool, boolErr := d.DecodeBool()
+
+	var valueBool, boolErr = d.DecodeBool()
 	if !valueBool || boolErr != nil || r.position != 2 {
 		t.Fatalf("bool = (%v, %v) at %d", valueBool, boolErr, r.position)
 	}
+
 	valueInt, intErr := d.DecodeInt64()
 	if valueInt != -33 || intErr != nil || r.position != 4 {
 		t.Fatalf("int64 = (%v, %v) at %d", valueInt, intErr, r.position)
 	}
+
 	valueUint, uintErr := d.DecodeUint64()
 	if valueUint != 256 || uintErr != nil || r.position != 7 {
 		t.Fatalf("uint64 = (%v, %v) at %d", valueUint, uintErr, r.position)
 	}
+
 	value32, err32 := d.DecodeFloat32()
 	if value32 != 1.5 || err32 != nil || r.position != 12 {
 		t.Fatalf("float32 = (%v, %v) at %d", value32, err32, r.position)
 	}
+
 	value64, err64 := d.DecodeFloat64()
 	if value64 != 1.5 || err64 != nil || r.position != 21 {
 		t.Fatalf("float64 = (%v, %v) at %d", value64, err64, r.position)
 	}
+
 	if !bytes.Equal(r.data[r.position:], []byte{0xc2}) {
 		t.Fatal("following value was read ahead")
 	}
+
 	wantRequests := []int{1, 1, 1, 1, 1, 2, 1, 4, 1, 8}
 	if fmt.Sprint(r.requests) != fmt.Sprint(wantRequests) {
 		t.Fatalf("read requests = %v, want %v", r.requests, wantRequests)
 	}
+
 	valueBool, boolErr = d.DecodeBool()
 	if valueBool || boolErr != nil {
 		t.Fatalf("last bool = (%v, %v)", valueBool, boolErr)
 	}
+
 	if err := d.DecodeNil(); !errors.Is(err, io.EOF) {
 		t.Fatalf("EOF after concatenated values = %v", err)
 	}

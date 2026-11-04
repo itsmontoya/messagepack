@@ -16,19 +16,23 @@ type streamBenchmarkArrayReader struct {
 	writer  *Writer
 }
 
+// Reset starts a new array while preserving scratch and cumulative read counts.
 func (r *streamBenchmarkArrayReader) Reset() {
 	r.next = 0
 	if r.writer == nil {
 		r.buffer = *bytes.NewBuffer(r.scratch[:0])
 		r.writer = NewWriter(&r.buffer)
 	}
+
 	r.buffer.Reset()
 	if err := r.writer.EncodeArrayHeader(r.count); err != nil {
 		panic(err)
 	}
+
 	r.pending = r.buffer.Bytes()
 }
 
+// Read fills requests incrementally without materializing the generated array.
 func (r *streamBenchmarkArrayReader) Read(dst []byte) (n int, err error) {
 	r.reads++
 	for n < len(dst) {
@@ -37,15 +41,19 @@ func (r *streamBenchmarkArrayReader) Read(dst []byte) (n int, err error) {
 				if n == 0 {
 					return 0, io.EOF
 				}
+
 				return n, nil
 			}
+
 			r.buffer.Reset()
 			if err = r.writer.EncodeUint64(r.next); err != nil {
 				return n, err
 			}
+
 			r.pending = r.buffer.Bytes()
 			r.next++
 		}
+
 		size := copy(dst[n:], r.pending)
 		r.pending = r.pending[size:]
 		n += size

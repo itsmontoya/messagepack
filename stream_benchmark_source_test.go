@@ -33,6 +33,7 @@ func TestStreamBenchmarkPayloadSource(t *testing.T) {
 					if err == io.EOF {
 						break
 					}
+
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -61,6 +62,7 @@ func TestStreamBenchmarkArraySource(t *testing.T) {
 			if err == io.EOF {
 				break
 			}
+
 			if err != nil {
 				t.Fatal(err)
 			}

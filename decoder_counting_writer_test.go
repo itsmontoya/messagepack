@@ -10,14 +10,17 @@ type decoderCountingWriter struct {
 	invalid                bool
 }
 
+// Write validates payload progress and records transfer request sizes.
 func (w *decoderCountingWriter) Write(src []byte) (n int, err error) {
 	w.writes++
 	if w.writes == 1 {
 		w.firstPayloadSourceRead = w.source.read
 	}
+
 	if len(src) > w.maxRequest {
 		w.maxRequest = len(src)
 	}
+
 	for index, value := range src {
 		if value != byte(w.bytes+uint64(index)) {
 			w.invalid = true

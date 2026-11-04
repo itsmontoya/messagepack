@@ -39,6 +39,7 @@ func TestStreamingHTTPIncrementalPayload(t *testing.T) {
 				if err == nil {
 					err = encodeStreamingPayloadMessage(NewWriter(&streamHTTPWriter{response: w}), length, source)
 				}
+
 				produced <- err
 			}))
 			t.Cleanup(func() {
@@ -48,25 +49,36 @@ func TestStreamingHTTPIncrementalPayload(t *testing.T) {
 						t.Errorf("cleanup response body: %v", err)
 					}
 				}
+
 				server.CloseClientConnections()
 				server.Close()
 			})
-			request, requestErr := http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil)
-			if requestErr != nil {
+			var (
+				request    *http.Request
+				requestErr error
+			)
+			if request, requestErr = http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil); requestErr != nil {
 				t.Fatal(requestErr)
 			}
-			response, responseErr := server.Client().Do(request)
-			if responseErr != nil {
+
+			var (
+				response    *http.Response
+				responseErr error
+			)
+			if response, responseErr = server.Client().Do(request); responseErr != nil {
 				t.Fatal(responseErr)
 			}
+
 			body = &streamOwnedBody{body: response.Body}
 			d := NewReader(body)
 			if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 16}); err != nil {
 				t.Fatal(err)
 			}
+
 			if mode == "destination failure" {
 				sink.failAfter, sink.failure = 3, sinkFailure
 			}
+
 			go func() {
 				message, n, decodeErr = decodeStreamingPayloadMessage(d, sink)
 				close(decoded)
@@ -79,6 +91,7 @@ func TestStreamingHTTPIncrementalPayload(t *testing.T) {
 						t.Errorf("cleanup response body: %v", err)
 					}
 				}
+
 				<-decoded
 			})
 			select {
@@ -94,23 +107,28 @@ func TestStreamingHTTPIncrementalPayload(t *testing.T) {
 			if mode == "complete" {
 				close(release)
 			}
+
 			if mode == "cancel request" {
 				cancel()
 			}
+
 			select {
 			case <-decoded:
 			case <-ctx.Done():
 				if mode != "cancel request" {
 					t.Fatalf("waiting for decoder: %v", ctx.Err())
 				}
+
 				<-decoded
 			}
 			if body.closes != 0 {
 				t.Fatal("decoder closed the caller's response body")
 			}
+
 			if err := body.Close(); err != nil {
 				t.Fatalf("close response body: %v", err)
 			}
+
 			cancel()
 			producerErr := <-produced
 			switch mode {
@@ -132,6 +150,7 @@ func TestStreamingHTTPIncrementalPayload(t *testing.T) {
 			if sink.maxRequest > 32768 {
 				t.Fatalf("unbounded sink write: %d", sink.maxRequest)
 			}
+
 			if decodeErr != nil && d.DecodeNil() != decodeErr {
 				t.Fatal("HTTP transfer failure did not remain terminal")
 			}
@@ -151,22 +170,31 @@ func TestStreamingHTTPTruncatedResponse(t *testing.T) {
 			produced <- err
 		}))
 		t.Cleanup(server.Close)
-		request, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil)
-		if err != nil {
+		var (
+			request *http.Request
+			err     error
+		)
+		if request, err = http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil); err != nil {
 			cancel()
 			t.Fatal(err)
 		}
-		response, responseErr := server.Client().Do(request)
-		if responseErr != nil {
+
+		var (
+			response    *http.Response
+			responseErr error
+		)
+		if response, responseErr = server.Client().Do(request); responseErr != nil {
 			cancel()
 			t.Fatal(responseErr)
 		}
+
 		_, err = decodeStreamingApplicationMessage(NewReader(response.Body))
 		closeErr := response.Body.Close()
 		cancel()
 		if !errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF) || closeErr != nil {
 			t.Fatalf("truncated HTTP schema = %v, close %v", err, closeErr)
 		}
+
 		if err = <-produced; err != nil {
 			t.Fatal(err)
 		}
@@ -189,19 +217,28 @@ func TestStreamingHTTPTruncatedPayload(t *testing.T) {
 		produced <- err
 	}))
 	defer server.Close()
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil)
-	if err != nil {
+	var (
+		request *http.Request
+		err     error
+	)
+	if request, err = http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil); err != nil {
 		t.Fatal(err)
 	}
-	response, responseErr := server.Client().Do(request)
-	if responseErr != nil {
+
+	var (
+		response    *http.Response
+		responseErr error
+	)
+	if response, responseErr = server.Client().Do(request); responseErr != nil {
 		t.Fatal(responseErr)
 	}
+
 	n, decodeErr := NewReader(response.Body).DecodeBytesTo(&sink)
 	closeErr := response.Body.Close()
 	if !errors.Is(decodeErr, io.ErrUnexpectedEOF) || n != actual || sink.bytes != actual || closeErr != nil {
 		t.Fatalf("truncated HTTP payload = (%d, %v), sink %d, close %v", n, decodeErr, sink.bytes, closeErr)
 	}
+
 	if err = <-produced; !errors.Is(err, io.ErrUnexpectedEOF) {
 		t.Fatalf("short HTTP payload source = %v", err)
 	}
@@ -215,16 +252,21 @@ func TestStreamingHTTPCallerDeadline(t *testing.T) {
 		t.Error("expired request reached the server")
 	}))
 	defer server.Close()
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil)
-	if err != nil {
+	var (
+		request *http.Request
+		err     error
+	)
+	if request, err = http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil); err != nil {
 		t.Fatal(err)
 	}
+
 	response, responseErr := server.Client().Do(request)
 	if response != nil {
 		if err = response.Body.Close(); err != nil {
 			t.Errorf("close unexpected response: %v", err)
 		}
 	}
+
 	if !errors.Is(responseErr, context.DeadlineExceeded) {
 		t.Fatalf("caller deadline = %v", responseErr)
 	}

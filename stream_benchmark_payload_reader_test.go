@@ -17,6 +17,7 @@ type streamBenchmarkPayloadReader struct {
 	writer   *Writer
 }
 
+// Reset selects raw or encoded payload generation and preserves read counts.
 func (r *streamBenchmarkPayloadReader) Reset(length uint64, isString bool, encoded bool) {
 	r.length = length
 	r.position = 0
@@ -24,26 +25,31 @@ func (r *streamBenchmarkPayloadReader) Reset(length uint64, isString bool, encod
 	if !encoded {
 		return
 	}
+
 	if r.writer == nil {
 		r.buffer = *bytes.NewBuffer(r.header[:0])
 		r.writer = NewWriter(&r.buffer)
 	}
+
 	r.buffer.Reset()
 	if err := r.writer.writePayloadHeader("benchmark header", length, isString); err != nil {
 		panic(err)
 	}
+
 	r.pending = r.buffer.Bytes()
 }
 
+// Read emits pending header bytes before generating the requested payload prefix.
 func (r *streamBenchmarkPayloadReader) Read(dst []byte) (n int, err error) {
 	r.reads++
 	n = copy(dst, r.pending)
 	r.pending = r.pending[n:]
 	dst = dst[n:]
-	size := len(dst)
+	var size = len(dst)
 	if uint64(size) > r.length-r.position {
 		size = int(r.length - r.position)
 	}
+
 	for index := 0; index < size; index++ {
 		dst[index] = 'x'
 	}
@@ -52,5 +58,6 @@ func (r *streamBenchmarkPayloadReader) Read(dst []byte) (n int, err error) {
 	if n == 0 && r.position == r.length && len(r.pending) == 0 {
 		return 0, io.EOF
 	}
+
 	return n, nil
 }

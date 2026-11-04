@@ -48,6 +48,7 @@ func TestStringWireFixtures(t *testing.T) {
 			if err != nil || owned != tt.value || n != len(wire) {
 				t.Fatalf("DecodeString() = (%q, %d, %v), want (%q, %d, nil)", owned, n, err, tt.value, len(wire))
 			}
+
 			if !bytes.Equal(src, before) || src[n] != 0xc3 {
 				t.Fatal("string reader modified input or consumed trailing value")
 			}
@@ -135,6 +136,7 @@ func TestReaderStringErrorsFixtures(t *testing.T) {
 			if owned != "" || !errors.Is(err, streamFuzzError(tt.err, len(tt.src))) {
 				t.Fatalf("DecodeString(%x) = (%q, %d, %v), want zero and %v", tt.src, owned, n, err, tt.err)
 			}
+
 			if !bytes.Equal(tt.src, before) {
 				t.Fatal("string reader modified input")
 			}
@@ -165,6 +167,7 @@ func TestReaderStringsTruncatedFixtures(t *testing.T) {
 				if owned != "" || !errors.Is(err, streamFuzzError(errFuzzTruncated, len(src))) {
 					t.Fatalf("DecodeString(%x) = (%q, %d, %v)", src, owned, n, err)
 				}
+
 				if !bytes.Equal(wire, before) {
 					t.Fatal("string reader modified source backing storage")
 				}
@@ -182,6 +185,7 @@ func TestReadererStringOwnershipFixtureFixtures(t *testing.T) {
 	if err != nil || owned != "abc" {
 		t.Fatalf("DecodeString() = (%q, %v)", owned, err)
 	}
+
 	src[1] = 'z'
 	r.Reset(bytes.NewReader([]byte{0xa1, 'x'}))
 	if _, err = r.DecodeString(); err != nil || owned != "abc" {
@@ -211,6 +215,7 @@ func TestWriterStringHeaderLimits(t *testing.T) {
 			if !bytes.Equal(output.Bytes(), tt.want) || !errors.Is(err, tt.err) {
 				t.Fatalf("string header = (%x, %v), want (%x, %v)", output.Bytes(), err, tt.want, tt.err)
 			}
+
 			if tt.err != nil {
 				if err = w.EncodeBool(true); err != nil || !bytes.Equal(output.Bytes(), []byte{0xaa, 0xbb, 0xc3}) {
 					t.Fatalf("EncodeBool after overflow = (%x, %v)", output.Bytes(), err)

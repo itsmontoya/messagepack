@@ -52,6 +52,7 @@ func TestReaderPayloadWire(t *testing.T) {
 				if err != nil || owned == nil || !bytes.Equal(owned, value) || r.position != len(wire)-1 {
 					t.Fatalf("owned result = (%d bytes, %v), consumed %d", len(owned), err, r.position)
 				}
+
 				for _, request := range r.requests {
 					if request > 32768 {
 						t.Fatalf("owned payload request = %d, exceeds 32 KiB", request)
@@ -60,6 +61,7 @@ func TestReaderPayloadWire(t *testing.T) {
 				if next, nextErr := d.DecodeBool(); !next || nextErr != nil {
 					t.Fatalf("following bool = (%v, %v)", next, nextErr)
 				}
+
 				r = &decoderTestReader{data: wire, maxRead: 7}
 				d.Reset(r)
 				var dst bytes.Buffer
@@ -67,6 +69,7 @@ func TestReaderPayloadWire(t *testing.T) {
 				if transferErr != nil || n != uint64(tt.length) || !bytes.Equal(dst.Bytes(), value) || r.position != len(wire)-1 {
 					t.Fatalf("transfer = (%d, %v), consumed %d", n, transferErr, r.position)
 				}
+
 				if next, nextErr := d.DecodeBool(); !next || nextErr != nil {
 					t.Fatalf("following transfer bool = (%v, %v)", next, nextErr)
 				}
@@ -110,13 +113,16 @@ func TestReaderPayloadWiderHeadersAndRawBytes(t *testing.T) {
 			} else {
 				owned, err = d.DecodeBytes()
 			}
+
 			if err != nil || owned == nil || !bytes.Equal(owned, tt.want) {
 				t.Fatalf("owned = (%x, %v), want %x", owned, err, tt.want)
 			}
+
 			reads := r.reads
 			if nextErr := d.DecodeNil(); !errors.Is(nextErr, io.EOF) || r.reads != reads {
 				t.Fatalf("pending EOF = %v, reads %d, want %d", nextErr, r.reads, reads)
 			}
+
 			r = &decoderTestReader{data: tt.wire, maxRead: 1, endErr: io.EOF}
 			d.Reset(r)
 			var (
@@ -128,6 +134,7 @@ func TestReaderPayloadWiderHeadersAndRawBytes(t *testing.T) {
 			} else {
 				n, err = d.DecodeBytesTo(&dst)
 			}
+
 			if err != nil || n != uint64(len(tt.want)) || !bytes.Equal(dst.Bytes(), tt.want) {
 				t.Fatalf("transfer = (%d, %v), output %x", n, err, dst.Bytes())
 			}
@@ -162,6 +169,7 @@ func TestReaderPayloadTruncation(t *testing.T) {
 				if length == 0 {
 					want = io.EOF
 				}
+
 				if tt.isString {
 					var text string
 					text, err = d.DecodeString()
@@ -171,9 +179,11 @@ func TestReaderPayloadTruncation(t *testing.T) {
 				} else {
 					owned, err = d.DecodeBytes()
 				}
+
 				if owned != nil || !errors.Is(err, want) || errors.Is(err, errFuzzTruncated) || r.position != length {
 					t.Fatalf("owned truncation = (%x, %v), consumed %d", owned, err, r.position)
 				}
+
 				requireReaderPayloadFailure(t, d, err)
 				r = &decoderTestReader{data: tt.wire[:length], maxRead: 1}
 				d.Reset(r)
@@ -185,14 +195,17 @@ func TestReaderPayloadTruncation(t *testing.T) {
 				if length > tt.header {
 					wantN = length - tt.header
 				}
+
 				if tt.isString {
 					n, err = d.DecodeStringTo(&dst)
 				} else {
 					n, err = d.DecodeBytesTo(&dst)
 				}
+
 				if n != uint64(wantN) || dst.Len() != wantN || !errors.Is(err, want) || errors.Is(err, errFuzzTruncated) || r.position != length {
 					t.Fatalf("transfer truncation = (%d, %v), bytes %d, consumed %d", n, err, dst.Len(), r.position)
 				}
+
 				reads := r.reads
 				requireReaderPayloadFailure(t, d, err)
 				if r.reads != reads {
@@ -209,10 +222,12 @@ func requireReaderPayloadFailure(t *testing.T, d *Reader, want error) {
 	if text != "" || textErr != want {
 		t.Fatalf("DecodeString after failure = (%q, %v)", text, textErr)
 	}
+
 	value, bytesErr := d.DecodeBytes()
 	if value != nil || bytesErr != want {
 		t.Fatalf("DecodeBytes after failure = (%x, %v)", value, bytesErr)
 	}
+
 	for _, transfer := range []func(io.Writer) (uint64, error){d.DecodeStringTo, d.DecodeBytesTo} {
 		if n, err := transfer(nil); n != 0 || err != want {
 			t.Fatalf("nil transfer after failure = (%d, %v)", n, err)
@@ -231,9 +246,11 @@ func TestReaderPayloadLimits(t *testing.T) {
 		} else {
 			_, err = d.DecodeBytes()
 		}
+
 		if err != ErrLimitExceeded || r.position != len(header) || d.state.buffer != nil {
 			t.Fatalf("hostile length = %v, consumed %d, buffer %d", err, r.position, len(d.state.buffer))
 		}
+
 		requireReaderPayloadFailure(t, d, err)
 	}
 	for _, length := range []byte{1, 2, 3} {
@@ -244,24 +261,29 @@ func TestReaderPayloadLimits(t *testing.T) {
 			} else {
 				wire = []byte{0xc4, length}
 			}
+
 			wire = append(wire, bytes.Repeat([]byte{0x78}, int(length))...)
 			r := &decoderTestReader{data: wire}
 			d := NewReader(r)
 			if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 2}); err != nil {
 				t.Fatal(err)
 			}
+
 			var err error
 			if isString {
 				_, err = d.DecodeString()
 			} else {
 				_, err = d.DecodeBytes()
 			}
+
 			if length > 2 {
 				if err != ErrLimitExceeded || r.position != 2 {
 					t.Fatalf("above cap = %v, consumed %d", err, r.position)
 				}
+
 				continue
 			}
+
 			if err != nil || r.position != len(wire) {
 				t.Fatalf("within cap = %v, consumed %d", err, r.position)
 			}
@@ -273,18 +295,21 @@ func TestReaderOwnedPayloadIntOverflow(t *testing.T) {
 	if strconv.IntSize != 32 {
 		t.Skip("uint32 payload lengths fit int on this platform; 32-bit execution required")
 	}
+
 	for _, tag := range []byte{0xdb, 0xc6} {
 		r := &decoderTestReader{data: []byte{tag, 0x80, 0, 0, 0, 0x78}}
 		d := NewReader(r)
 		if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: math.MaxUint32}); err != nil {
 			t.Fatal(err)
 		}
+
 		var err error
 		if tag == 0xdb {
 			_, err = d.DecodeString()
 		} else {
 			_, err = d.DecodeBytes()
 		}
+
 		if err != ErrOverflow || r.position != 5 {
 			t.Fatalf("int overflow = %v, consumed %d", err, r.position)
 		}
@@ -301,19 +326,26 @@ func TestReaderPayloadOwnership(t *testing.T) {
 	if textErr != nil || bytesErr != nil || text != "abc" || !bytes.Equal(value, []byte{1, 2, 3}) {
 		t.Fatalf("initial owned values = (%q, %x, %v, %v)", text, value, textErr, bytesErr)
 	}
+
 	wire[1], wire[6] = 'x', 8
 	if _, err := d.DecodeString(); err != nil {
 		t.Fatal(err)
 	}
-	later, err := d.DecodeBytes()
-	if err != nil {
+
+	var (
+		later []byte
+		err   error
+	)
+	if later, err = d.DecodeBytes(); err != nil {
 		t.Fatal(err)
 	}
+
 	later[0] = 7
 	d.Reset(bytes.NewReader([]byte{0xc4, 3, 4, 5, 6}))
 	if n, transferErr := d.DecodeBytesTo(io.Discard); n != 3 || transferErr != nil {
 		t.Fatalf("scratch reuse transfer = (%d, %v)", n, transferErr)
 	}
+
 	if text != "abc" || !bytes.Equal(value, []byte{1, 2, 3}) {
 		t.Fatalf("owned values changed after source/result/scratch/reset reuse: %q, %x", text, value)
 	}

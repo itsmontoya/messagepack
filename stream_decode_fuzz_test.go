@@ -22,6 +22,7 @@ func FuzzStreamTypedDecode(f *testing.F) {
 		if len(src) > streamFuzzInputLimit || len(fragments) > 32 {
 			t.Skip()
 		}
+
 		var (
 			before = append([]byte(nil), src...)
 			r      = &streamFuzzReader{data: src, fragments: fragments, empty: int(empty) % 102,
@@ -33,31 +34,38 @@ func FuzzStreamTypedDecode(f *testing.F) {
 			r.endErr = errStreamFuzzSource
 			r.dataError = mode%3 == 1
 		}
+
 		if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: limit}); err != nil {
 			t.Fatal(err)
 		}
+
 		plain := bytes.NewReader(src)
 		baseline := NewReader(plain)
 		if err := baseline.SetLimits(ReaderLimits{MaxPayloadBytes: limit}); err != nil {
 			t.Fatal(err)
 		}
-		want, got := checkStreamFuzzTyped(t, d, baseline, kind%10)
+
+		var want, got = checkStreamFuzzTyped(t, d, baseline, kind%10)
 		n := len(src) - plain.Len()
 		want = streamFuzzError(want, len(src))
 		if r.noProgress {
 			want = io.ErrNoProgress
 		}
+
 		if r.deliveredError == errStreamFuzzSource {
 			want = errStreamFuzzSource
 		}
+
 		requireStreamFuzzError(t, got, want)
 		requireStreamFuzzInput(t, src, before, r, d)
 		if got == nil {
 			if r.position != n || n <= 0 || n > len(src) {
 				t.Fatalf("typed success consumed %d bytes, contiguous Reader consumed %d of %d", r.position, n, len(src))
 			}
+
 			return
 		}
+
 		requireStreamFuzzTerminal(t, d, r, got)
 	})
 }
@@ -104,6 +112,7 @@ func checkStreamFuzzTyped(t *testing.T, d, baseline *Reader, kind uint8) (want, 
 		if got == nil && math.IsNaN(value) && math.IsNaN(expected) && baseline.scratch[0] == 0xca {
 			break // The contract leaves widened float32 NaN payload bits unspecified.
 		}
+
 		if got == nil && math.Float64bits(value) != math.Float64bits(expected) || got != nil && math.Float64bits(value) != 0 {
 			t.Fatalf("float64 result bits = %x, contiguous %x, error %v", math.Float64bits(value), math.Float64bits(expected), got)
 		}

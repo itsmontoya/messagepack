@@ -49,21 +49,26 @@ func TestApplicationMessageDecoding(t *testing.T) {
 		if err != nil || n != len(fixture) {
 			t.Fatalf("readApplicationMessage() = (%+v, %d, %v)", message, n, err)
 		}
+
 		if message.ID != 7 || message.Name != "Ada" || !message.Active || message.Score != 1.5 ||
 			!bytes.Equal(message.Payload, []byte{1, 2}) || message.Samples != [2]int64{-1, 2} {
 			t.Fatalf("decoded unexpected message: %+v", message)
 		}
+
 		if cap(message.Payload) != len(message.Payload) || !bytes.Equal(src, before) ||
 			!bytes.Equal(src[n:], trailing) {
 			t.Fatal("decoding modified input, consumed trailing data, or returned an uncapped view")
 		}
+
 		message, err = readCompleteApplicationMessage(src)
 		if len(trailing) == 0 {
 			if err != nil || message.ID != 7 {
 				t.Fatalf("complete-message read failed: %+v, %v", message, err)
 			}
+
 			continue
 		}
+
 		if !errors.Is(err, errApplicationTrailing) {
 			t.Fatalf("complete-message read returned %v, want unwanted-trailing-data error", err)
 		}
@@ -104,6 +109,7 @@ func TestApplicationMessageInvalidSchema(t *testing.T) {
 				message.Active || message.Score != 0 || message.Payload != nil || message.Samples != [2]int64{} {
 				t.Fatalf("readApplicationMessage() = (%+v, %d, %v), want zero and %v", message, n, err, tt.err)
 			}
+
 			if !bytes.Equal(tt.src, before) {
 				t.Fatal("fixed-schema decoder modified input")
 			}
@@ -126,6 +132,7 @@ func TestApplicationMessageTruncated(t *testing.T) {
 				message.Active || message.Score != 0 || message.Payload != nil || message.Samples != [2]int64{} {
 				t.Fatalf("readApplicationMessage() = (%+v, %d, %v), want zero and errFuzzTruncated", message, n, err)
 			}
+
 			if !bytes.Equal(wire, before) {
 				t.Fatal("truncated read modified source backing storage")
 			}
@@ -140,15 +147,16 @@ func TestApplicationMessageOwnershipAndReuse(t *testing.T) {
 		out     []byte
 		err     error
 	)
-	message, err = readCompleteApplicationMessage(wire)
-	if err != nil {
+	if message, err = readCompleteApplicationMessage(wire); err != nil {
 		t.Fatal(err)
 	}
+
 	owned := append([]byte(nil), message.Payload...)
 	message.Payload[0] = 9
 	if !bytes.Equal(wire, applicationMessageFixture()) || !bytes.Equal(owned, []byte{1, 2}) {
 		t.Fatal("owned payload mutation changed input or its independent copy")
 	}
+
 	// Owned payload storage remains valid while the input buffer is reused.
 	message.Payload = owned
 	message.Name = "Eve"
@@ -158,6 +166,7 @@ func TestApplicationMessageOwnershipAndReuse(t *testing.T) {
 	if err != nil || &out[0] != &wire[0] {
 		t.Fatalf("reuse failed: %v", err)
 	}
+
 	if !bytes.Equal(owned, []byte{1, 2}) {
 		t.Fatal("source reuse changed the copied payload")
 	}

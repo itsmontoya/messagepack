@@ -15,9 +15,11 @@ func (m exampleMessage) EncodeMessagePack(w messagepack.Writer) (err error) {
 	if err = w.EncodeMapHeader(1); err != nil {
 		return err
 	}
+
 	if err = w.EncodeString("id"); err != nil {
 		return err
 	}
+
 	return w.EncodeUint64(m.ID)
 }
 
@@ -27,20 +29,22 @@ func (m *exampleMessage) DecodeMessagePack(r messagepack.Reader) (err error) {
 		count uint32
 		key   string
 	)
-	count, err = r.DecodeMapHeader()
-	if err != nil {
+	if count, err = r.DecodeMapHeader(); err != nil {
 		return err
 	}
+
 	if count != 1 {
 		return fmt.Errorf("example: expected one field, got %d", count)
 	}
-	key, err = r.DecodeString()
-	if err != nil {
+
+	if key, err = r.DecodeString(); err != nil {
 		return err
 	}
+
 	if key != "id" {
 		return fmt.Errorf("example: unexpected key %q", key)
 	}
+
 	m.ID, err = r.DecodeUint64()
 	return err
 }

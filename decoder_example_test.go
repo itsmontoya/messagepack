@@ -17,9 +17,11 @@ func ExampleDecoder() {
 	if err = d.Decode(&message); err != nil {
 		panic(err)
 	}
+
 	if err = d.Close(); err != nil {
 		panic(err)
 	}
+
 	fmt.Println(message.ID)
 	// Output: 42
 }

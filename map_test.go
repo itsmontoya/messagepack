@@ -31,6 +31,7 @@ func TestMapHeaderWire(t *testing.T) {
 			if encodeErr != nil || !bytes.Equal(output.Bytes(), tt.wire) {
 				t.Fatalf("EncodeMapHeader(%d) = (%x, %v), want %x", tt.count, output.Bytes(), encodeErr, tt.wire)
 			}
+
 			for _, trailing := range [][]byte{nil, {0xc3, 0xc1}} {
 				var (
 					src    = append(append([]byte(nil), tt.wire...), trailing...)
@@ -45,6 +46,7 @@ func TestMapHeaderWire(t *testing.T) {
 				if err != nil || count != tt.count || n != len(tt.wire) {
 					t.Fatalf("DecodeMapHeader(%x) = (%d, %d, %v), want (%d, %d, nil)", src, count, n, err, tt.count, len(tt.wire))
 				}
+
 				if !bytes.Equal(src, before) {
 					t.Fatal("DecodeMapHeader modified input")
 				}
@@ -80,6 +82,7 @@ func TestReaderMapHeaderWiderFixtures(t *testing.T) {
 			if err != nil || count != tt.count || n != len(tt.wire) {
 				t.Fatalf("DecodeMapHeader(%x) = (%d, %d, %v)", tt.wire, count, n, err)
 			}
+
 			if !bytes.Equal(tt.wire, before) {
 				t.Fatal("DecodeMapHeader modified input")
 			}
@@ -133,6 +136,7 @@ func TestReaderMapHeaderErrorsFixtures(t *testing.T) {
 			if count != 0 || !errors.Is(err, streamFuzzError(tt.err, len(tt.src))) {
 				t.Fatalf("DecodeMapHeader(%x) = (%d, %d, %v), want (0, 0, %v)", tt.src, count, n, err, tt.err)
 			}
+
 			if !bytes.Equal(tt.src, before) {
 				t.Fatal("DecodeMapHeader modified input")
 			}
@@ -160,6 +164,7 @@ func TestReaderMapHeaderTruncatedFixtures(t *testing.T) {
 				if count != 0 || !errors.Is(err, streamFuzzError(errFuzzTruncated, length)) {
 					t.Fatalf("DecodeMapHeader(%x) = (%d, %d, %v)", wire[:length], count, n, err)
 				}
+
 				if !bytes.Equal(wire, before) {
 					t.Fatal("DecodeMapHeader modified source backing storage")
 				}
@@ -184,15 +189,18 @@ func TestReaderMapHeaderDoesNotValidateChildrenFixtures(t *testing.T) {
 		if err != nil || count != 1 || n != 1 {
 			t.Fatalf("DecodeMapHeader(%x) = (%d, %d, %v)", src, count, n, err)
 		}
+
 		if len(src) > n {
 			want = ErrInvalidFormat
 		}
+
 		sourceNil := bytes.NewReader(src[n:])
 		err = NewReader(sourceNil).DecodeNil()
 		childN = len(src[n:]) - sourceNil.Len()
 		if !errors.Is(err, streamFuzzError(want, len(src[n:]))) {
 			t.Fatalf("DecodeNil(child) = (%d, %v), want (0, %v)", childN, err, want)
 		}
+
 		if !bytes.Equal(src, before) {
 			t.Fatal("header or child read modified input")
 		}

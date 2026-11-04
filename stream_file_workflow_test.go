@@ -15,8 +15,7 @@ import (
 // The array schema is [generated integers, known-length binary].
 func writeStreamingDataset(dst io.WriteCloser, count uint32, length uint64) (err error) {
 	defer func() {
-		closeErr := dst.Close()
-		if closeErr != nil {
+		if closeErr := dst.Close(); closeErr != nil {
 			err = errors.Join(err, fmt.Errorf("close dataset: %w", closeErr))
 		}
 	}()
@@ -24,9 +23,11 @@ func writeStreamingDataset(dst io.WriteCloser, count uint32, length uint64) (err
 	if err = encodeStreamingDataset(NewWriter(buffered), count, length); err != nil {
 		return fmt.Errorf("encode dataset: %w", err)
 	}
+
 	if err = buffered.Flush(); err != nil {
 		return fmt.Errorf("flush dataset: %w", err)
 	}
+
 	return nil
 }
 
@@ -34,9 +35,11 @@ func encodeStreamingDataset(e *Writer, count uint32, length uint64) (err error) 
 	if err = e.EncodeArrayHeader(2); err != nil {
 		return err
 	}
+
 	if err = e.EncodeArrayHeader(count); err != nil {
 		return err
 	}
+
 	for index := uint64(0); index < uint64(count); index++ {
 		if err = e.EncodeUint64(index); err != nil {
 			return err
@@ -53,36 +56,39 @@ func checkStreamingDataset(d *Reader, count uint32, length uint64) (err error) {
 		n      uint64
 		sink   streamCheckingWriter
 	)
-	actual, err = d.DecodeArrayHeader()
-	if err != nil {
+	if actual, err = d.DecodeArrayHeader(); err != nil {
 		return err
 	}
+
 	if actual != 2 {
 		return errApplicationSchema
 	}
-	actual, err = d.DecodeArrayHeader()
-	if err != nil {
+
+	if actual, err = d.DecodeArrayHeader(); err != nil {
 		return streamingApplicationChildError(err)
 	}
+
 	if actual != count {
 		return errApplicationSchema
 	}
+
 	for index := uint64(0); index < uint64(count); index++ {
-		value, err = d.DecodeUint64()
-		if err != nil {
+		if value, err = d.DecodeUint64(); err != nil {
 			return streamingApplicationChildError(err)
 		}
+
 		if value != index {
 			return fmt.Errorf("example: dataset element %d = %d", index, value)
 		}
 	}
-	n, err = d.DecodeBytesTo(&sink)
-	if err != nil {
+	if n, err = d.DecodeBytesTo(&sink); err != nil {
 		return streamingApplicationChildError(err)
 	}
+
 	if n != length || sink.bytes != length || sink.maxRequest > 32768 {
 		return fmt.Errorf("example: dataset payload = %d bytes, want %d", n, length)
 	}
+
 	return nil
 }
 
@@ -96,17 +102,18 @@ func TestStreamingTemporaryFileDataset(t *testing.T) {
 		file *os.File
 		err  error
 	)
-	file, err = os.Create(path)
-	if err != nil {
+	if file, err = os.Create(path); err != nil {
 		t.Fatal(err)
 	}
+
 	if err = writeStreamingDataset(file, count, length); err != nil {
 		t.Fatal(err)
 	}
-	file, err = os.Open(path)
-	if err != nil {
+
+	if file, err = os.Open(path); err != nil {
 		t.Fatal(err)
 	}
+
 	t.Cleanup(func() {
 		if file != nil {
 			if closeErr := file.Close(); closeErr != nil {
@@ -121,16 +128,20 @@ func TestStreamingTemporaryFileDataset(t *testing.T) {
 	if err = d.SetLimits(ReaderLimits{MaxPayloadBytes: 1}); err != nil {
 		t.Fatal(err)
 	}
+
 	if err = checkStreamingDataset(d, count, length); err != nil {
 		t.Fatal(err)
 	}
+
 	// This is a finite file: the caller checks EOF on the same buffered reader.
 	if _, err = buffered.Peek(1); !errors.Is(err, io.EOF) {
 		t.Fatalf("dataset trailing data = %v", err)
 	}
+
 	if err = file.Close(); err != nil {
 		t.Fatal(err)
 	}
+
 	file = nil
 }
 
@@ -160,6 +171,7 @@ func TestStreamingFileErrors(t *testing.T) {
 				(tt.closeErr != nil && !errors.Is(err, tt.closeErr)) || file.closes != 1 {
 				t.Fatalf("file failure = %v, closes %d", err, file.closes)
 			}
+
 			if !strings.Contains(err.Error(), tt.context) {
 				t.Fatalf("file failure lacks %q context: %v", tt.context, err)
 			}

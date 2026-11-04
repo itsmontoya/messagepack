@@ -20,6 +20,7 @@ func TestReaderPayloadClassification(t *testing.T) {
 			if value != "" {
 				return fmt.Errorf("failed string result %q is not zero", value)
 			}
+
 			return readErr
 		}},
 		{name: "binary", wrong: 0xdb, run: func(d *Reader) (err error) {
@@ -27,6 +28,7 @@ func TestReaderPayloadClassification(t *testing.T) {
 			if value != nil {
 				return fmt.Errorf("failed binary result %x is not nil", value)
 			}
+
 			return readErr
 		}},
 		{name: "string to", wrong: 0xc6, run: func(d *Reader) (err error) {
@@ -34,6 +36,7 @@ func TestReaderPayloadClassification(t *testing.T) {
 			if n != 0 {
 				return fmt.Errorf("failed string progress %d is not zero", n)
 			}
+
 			return readErr
 		}},
 		{name: "binary to", wrong: 0xdb, run: func(d *Reader) (err error) {
@@ -41,6 +44,7 @@ func TestReaderPayloadClassification(t *testing.T) {
 			if n != 0 {
 				return fmt.Errorf("failed binary progress %d is not zero", n)
 			}
+
 			return readErr
 		}},
 	}
@@ -56,6 +60,7 @@ func TestReaderPayloadClassification(t *testing.T) {
 				if err != want || r.position != 1 {
 					t.Fatalf("classification = %v, consumed %d, want %v and one byte", err, r.position, want)
 				}
+
 				reads := r.reads
 				requireReaderPayloadFailure(t, d, err)
 				if r.reads != reads {
@@ -87,19 +92,24 @@ func TestReaderPayloadTransferValidationAndEmpty(t *testing.T) {
 			if n, err := method.run(&unattached, nil); n != 0 || err != ErrUninitialized {
 				t.Fatalf("unattached nil transfer = (%d, %v)", n, err)
 			}
+
 			if n, err := method.run(d, nil); n != 0 || err != ErrInvalidArgument || r.reads != 0 || d.state.err != nil {
 				t.Fatalf("nil destination = (%d, %v), reads %d", n, err, r.reads)
 			}
+
 			if n, err := method.run(d, writer); n != 0 || err != nil || writer.writes != 0 || d.state.buffer != nil || r.position != len(method.empty) {
 				t.Fatalf("empty transfer = (%d, %v), writes %d, consumed %d", n, err, writer.writes, r.position)
 			}
+
 			if next, err := d.DecodeBool(); !next || err != nil {
 				t.Fatalf("following value after empty = (%v, %v)", next, err)
 			}
+
 			d.Reset(bytes.NewReader(method.wire))
 			if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 1}); err != nil {
 				t.Fatal(err)
 			}
+
 			var typedNil *encoderTestWriter
 			if n, err := method.run(d, typedNil); n != 2 || err != nil {
 				t.Fatalf("valid typed-nil writer/independent cap = (%d, %v)", n, err)
@@ -135,6 +145,7 @@ func TestReaderPayloadSourceErrors(t *testing.T) {
 				} else {
 					header = []byte{0xc4, 4}
 				}
+
 				var (
 					wire = append(append([]byte(nil), header...), tt.tail...)
 					r    = &decoderTestReader{data: wire, endErr: tt.end}
@@ -154,9 +165,11 @@ func TestReaderPayloadSourceErrors(t *testing.T) {
 						t.Fatalf("failed owned binary = %x", value)
 					}
 				}
+
 				if !errors.Is(err, tt.want) || errors.Is(err, errFuzzTruncated) {
 					t.Fatalf("owned source error = %v, want %v", err, tt.want)
 				}
+
 				r = &decoderTestReader{data: wire, endErr: tt.end}
 				d.Reset(r)
 				var (
@@ -168,13 +181,16 @@ func TestReaderPayloadSourceErrors(t *testing.T) {
 				} else {
 					n, err = d.DecodeBytesTo(&dst)
 				}
+
 				if !errors.Is(err, tt.want) || n != tt.wantN || !bytes.Equal(dst.Bytes(), tt.tail) {
 					t.Fatalf("source transfer = (%d, %v), payload %x", n, err, dst.Bytes())
 				}
+
 				if tt.want != nil {
 					if err == tt.want || !strings.Contains(err.Error(), "source") || !strings.Contains(err.Error(), "decode") {
 						t.Fatalf("source error lacks context: %v", err)
 					}
+
 					reads := r.reads
 					requireReaderPayloadFailure(t, d, err)
 					if reads != r.reads {
@@ -200,6 +216,7 @@ func TestReaderPayloadHeaderErrors(t *testing.T) {
 		} else {
 			n, err = d.DecodeBytesTo(io.Discard)
 		}
+
 		if n != 0 || !errors.Is(err, failure) {
 			t.Fatalf("full header plus error for %x = (%d, %v)", wire, n, err)
 		}
@@ -248,9 +265,11 @@ func TestReaderPayloadDestinationFailures(t *testing.T) {
 				if n != tt.wantN || !errors.Is(err, tt.want) || errors.Is(err, sourceFailure) || !bytes.Equal(writer.data, []byte{1, 2, 3, 4}[:int(tt.wantN)]) {
 					t.Fatalf("destination failure = (%d, %v), accepted %x", n, err, writer.data)
 				}
+
 				if err == tt.want || !strings.Contains(err.Error(), "destination") || !strings.Contains(err.Error(), "decode") {
 					t.Fatalf("destination error lacks context: %v", err)
 				}
+
 				reads := r.reads
 				requireReaderPayloadFailure(t, d, err)
 				if r.reads != reads || writer.writes != 1 || writer.flushes != 0 || writer.closes != 0 {
@@ -270,6 +289,7 @@ func TestReaderPayloadZeroProgress(t *testing.T) {
 			} else {
 				header = []byte{0xc4, 2}
 			}
+
 			var (
 				source = &decoderTestReader{data: []byte{1, 2}, maxRead: 1, initialEmpty: empty, emptyBetween: empty}
 				d      = NewReader(io.MultiReader(bytes.NewReader(header), source))
@@ -282,15 +302,19 @@ func TestReaderPayloadZeroProgress(t *testing.T) {
 			} else {
 				n, err = d.DecodeBytesTo(&dst)
 			}
+
 			if empty == 99 {
 				if n != 2 || err != nil || !bytes.Equal(dst.Bytes(), []byte{1, 2}) {
 					t.Fatalf("temporary empty reads = (%d, %v), bytes %x", n, err, dst.Bytes())
 				}
+
 				continue
 			}
+
 			if n != 0 || !errors.Is(err, io.ErrNoProgress) || source.reads != 100 || dst.Len() != 0 {
 				t.Fatalf("zero progress = (%d, %v), reads %d", n, err, source.reads)
 			}
+
 			requireReaderPayloadFailure(t, d, err)
 		}
 	}
@@ -316,13 +340,16 @@ func TestReaderGeneratedPayloadTransfer(t *testing.T) {
 			if err := d.SetLimits(ReaderLimits{MaxPayloadBytes: 1}); err != nil {
 				t.Fatal(err)
 			}
+
 			n, err := method.run(d, writer)
 			if err != nil || n != length || source.read != length || writer.bytes != length || writer.invalid {
 				t.Fatalf("generated transfer = (%d, %v), source %d, sink %d, invalid %v", n, err, source.read, writer.bytes, writer.invalid)
 			}
+
 			if source.maxRequest > 32768 || writer.maxRequest > 32768 || writer.firstPayloadSourceRead > 32768 || writer.firstPayloadSourceRead >= length || len(d.state.buffer) > 32768 {
 				t.Fatalf("transfer was not bounded/incremental: source request %d, sink request %d, first output after %d", source.maxRequest, writer.maxRequest, writer.firstPayloadSourceRead)
 			}
+
 			if next, nextErr := d.DecodeBool(); !next || nextErr != nil {
 				t.Fatalf("following generated-payload value = (%v, %v)", next, nextErr)
 			}
@@ -343,6 +370,7 @@ func TestReaderPayloadFailureDoesNotDrain(t *testing.T) {
 		if n != wantN || !errors.Is(err, io.ErrClosedPipe) || source.read != wantRead || source.read == source.length {
 			t.Fatalf("failed chunk %d = (%d, %v), source read %d", failCall, n, err, source.read)
 		}
+
 		reads := source.reads
 		requireReaderPayloadFailure(t, d, err)
 		if source.reads != reads || writer.writes != failCall {
@@ -367,17 +395,21 @@ func TestReaderPayloadLaterChunkSourceFailure(t *testing.T) {
 		} else {
 			n, err = d.DecodeBytesTo(&dst)
 		}
+
 		if n != 32771 || !errors.Is(err, failure) || dst.Len() != 32771 || r.position != len(wire) {
 			t.Fatalf("later source transfer = (%d, %v), output %d, consumed %d", n, err, dst.Len(), r.position)
 		}
+
 		d.Reset(&decoderTestReader{data: wire, endErr: failure})
 		if tag == 0xdb {
 			value, readErr := d.DecodeString()
 			if value != "" || !errors.Is(readErr, failure) {
 				t.Fatalf("later owned string failure = (%q, %v)", value, readErr)
 			}
+
 			continue
 		}
+
 		value, readErr := d.DecodeBytes()
 		if value != nil || !errors.Is(readErr, failure) {
 			t.Fatalf("later owned binary failure = (%x, %v)", value, readErr)
@@ -411,6 +443,7 @@ func TestReaderHugeTransferHeaderDoesNotMaterialize(t *testing.T) {
 		} else {
 			n, err = d.DecodeBytesTo(&dst)
 		}
+
 		if n != 2 || !errors.Is(err, io.ErrUnexpectedEOF) || !bytes.Equal(dst.Bytes(), []byte{1, 2}) || len(d.state.buffer) != 32768 {
 			t.Fatalf("huge transfer header = (%d, %v), payload %x, scratch %d", n, err, dst.Bytes(), len(d.state.buffer))
 		}

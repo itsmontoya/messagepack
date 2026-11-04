@@ -20,13 +20,16 @@ func TestStreamingApplicationMessageWireAndInteroperability(t *testing.T) {
 	if err := encodeStreamingApplicationMessage(e, message); err != nil {
 		t.Fatal(err)
 	}
+
 	if !bytes.Equal(writer.Bytes(), fixture) {
 		t.Fatalf("stream encoded %x, want literal fixture %x", writer.Bytes(), fixture)
 	}
+
 	fromStream, sliceErr := readCompleteApplicationMessage(writer.Bytes())
 	if sliceErr != nil || !reflect.DeepEqual(fromStream, message) {
 		t.Fatalf("slice read of stream output = (%+v, %v)", fromStream, sliceErr)
 	}
+
 	for _, maxRead := range []int{0, 1, 3} {
 		r := &decoderTestReader{data: fixture, maxRead: maxRead}
 		d := NewReader(r)
@@ -51,13 +54,16 @@ func TestStreamingApplicationMessageSequenceAndOwnership(t *testing.T) {
 	if err != nil || r.position != len(fixture) {
 		t.Fatalf("first message = (%+v, %v), position %d", first, err, r.position)
 	}
+
 	second, err = decodeStreamingApplicationMessage(d)
 	if err != nil || !reflect.DeepEqual(first, second) || r.position != len(wire) {
 		t.Fatalf("second message = (%+v, %v), position %d", second, err, r.position)
 	}
+
 	if _, err = decodeStreamingApplicationMessage(d); !errors.Is(err, io.EOF) {
 		t.Fatalf("sequence end = %v, want EOF before next root", err)
 	}
+
 	for index := range wire {
 		wire[index] = 0
 	}
@@ -66,6 +72,7 @@ func TestStreamingApplicationMessageSequenceAndOwnership(t *testing.T) {
 	if _, err = d.DecodeString(); err != nil {
 		t.Fatal(err)
 	}
+
 	if first.Name != "Ada" || !bytes.Equal(first.Payload, []byte{1, 2}) {
 		t.Fatalf("later message, source mutation or Reset changed owned results: %+v", first)
 	}
@@ -85,10 +92,12 @@ func TestStreamingApplicationMessageTruncation(t *testing.T) {
 			if length == 0 {
 				want = io.EOF
 			}
+
 			message, err = decodeStreamingApplicationMessage(d)
 			if !errors.Is(err, want) || !reflect.DeepEqual(message, applicationMessage{}) || r.position != length {
 				t.Fatalf("truncated message = (%+v, %v), position %d, want zero and %v", message, err, r.position, want)
 			}
+
 			if length > 0 && errors.Is(err, io.EOF) {
 				t.Fatal("EOF inside the schema was mistaken for a complete sequence")
 			}
@@ -154,28 +163,36 @@ func TestStreamNestedContainers(t *testing.T) {
 	if !bytes.Equal(writer.Bytes(), wire) {
 		t.Fatalf("nested container bytes = %x, want %x", writer.Bytes(), wire)
 	}
+
 	d := NewReader(bytes.NewReader(wire))
 	if count, err := d.DecodeArrayHeader(); count != 2 || err != nil {
 		t.Fatalf("outer array = (%d, %v)", count, err)
 	}
+
 	if count, err := d.DecodeMapHeader(); count != 1 || err != nil {
 		t.Fatalf("nested map = (%d, %v)", count, err)
 	}
+
 	if key, err := d.DecodeString(); key != "k" || err != nil {
 		t.Fatalf("nested key = (%q, %v)", key, err)
 	}
+
 	if count, err := d.DecodeArrayHeader(); count != 2 || err != nil {
 		t.Fatalf("nested array = (%d, %v)", count, err)
 	}
+
 	if err := d.DecodeNil(); err != nil {
 		t.Fatal(err)
 	}
+
 	if count, err := d.DecodeMapHeader(); count != 0 || err != nil {
 		t.Fatalf("empty map = (%d, %v)", count, err)
 	}
+
 	if count, err := d.DecodeArrayHeader(); count != 0 || err != nil {
 		t.Fatalf("empty array = (%d, %v)", count, err)
 	}
+
 	if value, err := d.DecodeBool(); !value || err != nil {
 		t.Fatalf("following value = (%v, %v)", value, err)
 	}
@@ -193,10 +210,12 @@ func TestStreamGeneratedArrayIsIncremental(t *testing.T) {
 	if err := e.EncodeArrayHeader(count); err != nil {
 		t.Fatal(err)
 	}
+
 	for value := uint64(0); value < uint64(count); value++ {
 		if err := e.EncodeUint64(value); err != nil {
 			t.Fatal(err)
 		}
+
 		if value == 0 && (writer.seen != 1 || writer.writes != 2) {
 			t.Fatal("Writer delayed the first element until the array was complete")
 		}
@@ -204,15 +223,18 @@ func TestStreamGeneratedArrayIsIncremental(t *testing.T) {
 	if writer.seen != uint64(count) || writer.maxRequest > 9 || e.state.buffer != nil {
 		t.Fatalf("generated writes = %d values, max request %d, buffer %d", writer.seen, writer.maxRequest, len(e.state.buffer))
 	}
+
 	decodedCount, headerErr := d.DecodeArrayHeader()
 	if headerErr != nil || decodedCount != count || r.next != 0 {
 		t.Fatalf("generated array header = (%d, %v), generated elements %d", decodedCount, headerErr, r.next)
 	}
+
 	for index := uint64(0); index < uint64(decodedCount); index++ {
 		value, readErr := d.DecodeUint64()
 		if readErr != nil || value != index {
 			t.Fatalf("generated element %d = (%d, %v)", index, value, readErr)
 		}
+
 		total += value
 		if index == 0 && r.next != 1 {
 			t.Fatal("Reader waited for ungenerated elements before returning the first")
@@ -221,6 +243,7 @@ func TestStreamGeneratedArrayIsIncremental(t *testing.T) {
 	if total != uint64(count)*(uint64(count)-1)/2 || r.bytes != writer.bytes || r.maxRequest > 8 || d.state.buffer != nil {
 		t.Fatalf("incremental total %d, wire bytes %d/%d, request %d, buffer %d", total, r.bytes, writer.bytes, r.maxRequest, len(d.state.buffer))
 	}
+
 	if err := d.DecodeNil(); !errors.Is(err, io.EOF) {
 		t.Fatalf("generated array end = %v", err)
 	}

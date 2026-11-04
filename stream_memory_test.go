@@ -18,10 +18,11 @@ func TestStreamTransferAllocationBytes(t *testing.T) {
 	} {
 		t.Run(operation.name, func(t *testing.T) {
 			for _, reuse := range []bool{false, true} {
-				name := "New"
+				var name = "New"
 				if reuse {
 					name = "Reset"
 				}
+
 				t.Run(name, func(t *testing.T) {
 					var (
 						minimum = ^uint64(0)
@@ -35,9 +36,11 @@ func TestStreamTransferAllocationBytes(t *testing.T) {
 						if allocated > 4*payloadBufferSize {
 							t.Fatalf("%s allocated %d B/transfer, budget %d", size.name, allocated, 4*payloadBufferSize)
 						}
+
 						if allocated < minimum {
 							minimum = allocated
 						}
+
 						if allocated > maximum {
 							maximum = allocated
 						}
@@ -61,27 +64,29 @@ func measureStreamTransferAllocation(t *testing.T, length uint64, encode bool, i
 		decoder = NewReader(&source)
 		before  runtime.MemStats
 		after   runtime.MemStats
-		run     func() (n uint64, err error)
+		run     func() (accepted uint64, transferErr error)
 		n       uint64
 		err     error
 	)
 	if encode {
-		run = func() (n uint64, err error) { return encoder.EncodeBytesFrom(length, &source) }
+		run = func() (accepted uint64, transferErr error) { return encoder.EncodeBytesFrom(length, &source) }
 		if isString {
-			run = func() (n uint64, err error) { return encoder.EncodeStringFrom(length, &source) }
+			run = func() (accepted uint64, transferErr error) { return encoder.EncodeStringFrom(length, &source) }
 		}
 	} else {
-		run = func() (n uint64, err error) { return decoder.DecodeBytesTo(&sink) }
+		run = func() (accepted uint64, transferErr error) { return decoder.DecodeBytesTo(&sink) }
 		if isString {
-			run = func() (n uint64, err error) { return decoder.DecodeStringTo(&sink) }
+			run = func() (accepted uint64, transferErr error) { return decoder.DecodeStringTo(&sink) }
 		}
 	}
+
 	if reuse {
 		source.Reset(length, isString, !encode)
 		if n, err = run(); err != nil || n != length {
 			t.Fatalf("warm transfer = %d, %v", n, err)
 		}
 	}
+
 	runtime.GC()
 	runtime.ReadMemStats(&before)
 	for index := 0; index < 16; index++ {
@@ -101,6 +106,7 @@ func measureStreamTransferAllocation(t *testing.T, length uint64, encode bool, i
 				streamBenchmarkReaderSink = decoder
 			}
 		}
+
 		if n, err = run(); err != nil || n != length {
 			t.Fatalf("transfer = %d, %v", n, err)
 		}
@@ -114,10 +120,11 @@ func measureStreamTransferAllocation(t *testing.T, length uint64, encode bool, i
 func TestStreamRetainedWorkingMemory(t *testing.T) {
 	const cohort = 32
 	for _, isString := range []bool{false, true} {
-		name := "Bytes"
+		var name = "Bytes"
 		if isString {
 			name = "String"
 		}
+
 		t.Run(name, func(t *testing.T) {
 			for _, size := range streamBenchmarkSizes {
 				t.Run(size.name, func(t *testing.T) {
@@ -143,23 +150,28 @@ func TestStreamRetainedWorkingMemory(t *testing.T) {
 						} else {
 							n, err = encoders[index].EncodeBytesFrom(size.length, &source)
 						}
+
 						if err != nil || n != size.length {
 							t.Fatalf("encode = %d, %v", n, err)
 						}
+
 						source.Reset(size.length, isString, true)
 						if isString {
 							n, err = decoders[index].DecodeStringTo(&sink)
 						} else {
 							n, err = decoders[index].DecodeBytesTo(&sink)
 						}
+
 						if err != nil || n != size.length {
 							t.Fatalf("decode = %d, %v", n, err)
 						}
+
 						encoders[index].Reset(nil)
 						decoders[index].Reset(nil)
 						if cap(encoders[index].state.buffer) > payloadBufferSize || cap(decoders[index].state.buffer) > payloadBufferSize {
 							t.Fatal("codec scratch capacity grew beyond the transfer bound")
 						}
+
 						scratch += uint64(cap(encoders[index].state.buffer) + cap(decoders[index].state.buffer))
 					}
 					runtime.GC()
@@ -199,9 +211,11 @@ func TestStreamTransferScratchBounds(t *testing.T) {
 			} else {
 				n, err = encoder.EncodeBytesFrom(size.length, &source)
 			}
+
 			if err != nil || n != size.length {
 				t.Fatalf("encode = %d, %v", n, err)
 			}
+
 			source.Reset(size.length, isString, true)
 			decoder.Reset(&source)
 			if isString {
@@ -209,9 +223,11 @@ func TestStreamTransferScratchBounds(t *testing.T) {
 			} else {
 				n, err = decoder.DecodeBytesTo(&sink)
 			}
+
 			if err != nil || n != size.length {
 				t.Fatalf("decode = %d, %v", n, err)
 			}
+
 			if cap(encoder.state.buffer) > payloadBufferSize || cap(decoder.state.buffer) > payloadBufferSize {
 				t.Fatal("unexpected retained scratch bounds")
 			}

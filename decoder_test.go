@@ -22,6 +22,7 @@ func TestDecoderDecodee(t *testing.T) {
 		if err = d.Decode(&message); err != nil {
 			t.Fatal(err)
 		}
+
 		if !reflect.DeepEqual(message, want) || input.position != count*len(fixture) {
 			t.Fatalf("Decode call %d = %+v, position %d", count, message, input.position)
 		}
@@ -58,6 +59,7 @@ func TestDecoderUnsupportedValues(t *testing.T) {
 			if err != ErrUnsupportedType || input.reads != 0 {
 				t.Fatalf("Decode(%T) = %v, reads %d", tt.value, err, input.reads)
 			}
+
 			if err = d.Decode(value); err != nil || value.calls != 1 || input.position != 1 {
 				t.Fatalf("Decode after unsupported target = %v, calls %d, position %d", err, value.calls, input.position)
 			}
@@ -90,6 +92,7 @@ func TestDecoderFailuresAreTerminal(t *testing.T) {
 					if _, err = r.DecodeArrayHeader(); err != nil {
 						return err
 					}
+
 					return customFailure
 				}},
 			{name: "source", endErr: sourceFailure, wantErr: sourceFailure,
@@ -119,12 +122,15 @@ func TestDecoderFailuresAreTerminal(t *testing.T) {
 			if !errors.Is(first, tt.wantErr) {
 				t.Fatalf("Decode = %v, want %v", first, tt.wantErr)
 			}
+
 			if tt.wantErr == ErrInvalidFormat && first != tt.wantErr {
 				t.Fatal("Reader classification sentinel was wrapped")
 			}
+
 			if err = d.Decode(value); err != first || value.calls != 1 || input.reads != reads {
 				t.Fatalf("terminal Decode = %v, calls %d, reads %d", err, value.calls, input.reads)
 			}
+
 			for count := 0; count < 2; count++ {
 				if err = d.Close(); err != first || input.closes != 0 || input.reads != reads {
 					t.Fatalf("Close = %v, closes %d, reads %d", err, input.closes, input.reads)
@@ -147,6 +153,7 @@ func TestDecoderCloseLeavesInputOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	for count := 0; count < 2; count++ {
 		if err = d.Close(); err != nil || input.closes != 0 || input.reads != reads {
 			t.Fatalf("Close = %v, closes %d, reads %d", err, input.closes, input.reads)
@@ -155,6 +162,7 @@ func TestDecoderCloseLeavesInputOpen(t *testing.T) {
 	if err = d.Decode(value); err != ErrClosed || input.reads != reads {
 		t.Fatalf("Decode after Close = %v, reads %d", err, input.reads)
 	}
+
 	n, err = input.Read(tail[:])
 	if err != nil || n != 1 || tail[0] != 0xc3 {
 		t.Fatalf("input after Close = (%x, %d, %v)", tail, n, err)
@@ -167,9 +175,11 @@ func TestDecoderUninitialized(t *testing.T) {
 		if err := d.Decode(value); err != ErrUninitialized {
 			t.Fatalf("unattached Decode = %v", err)
 		}
+
 		if err := d.Close(); err != nil {
 			t.Fatal(err)
 		}
+
 		if err := d.Decode(value); err != ErrClosed {
 			t.Fatalf("closed Decode = %v", err)
 		}
@@ -184,6 +194,7 @@ func TestDecoderPublicMethods(t *testing.T) {
 	if typ.NumMethod() != len(want) {
 		t.Fatalf("Decoder exposes %d methods, want %v", typ.NumMethod(), want)
 	}
+
 	for index, name := range want {
 		if typ.Method(index).Name != name {
 			t.Fatalf("Decoder method %d = %s, want %s", index, typ.Method(index).Name, name)

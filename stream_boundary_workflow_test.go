@@ -13,18 +13,20 @@ import (
 
 // decodeExactlyOneStreamingMessage requires a finite body or externally bounded frame.
 func decodeExactlyOneStreamingMessage(buffered *bufio.Reader) (message applicationMessage, err error) {
-	message, err = decodeStreamingApplicationMessage(NewReader(buffered))
-	if err != nil {
+	if message, err = decodeStreamingApplicationMessage(NewReader(buffered)); err != nil {
 		return applicationMessage{}, err
 	}
+
 	// Continue through the same wrapper, which may already hold trailing bytes.
 	_, err = buffered.Peek(1)
 	if errors.Is(err, io.EOF) {
 		return message, nil
 	}
+
 	if err != nil {
 		return applicationMessage{}, fmt.Errorf("check message boundary: %w", err)
 	}
+
 	return applicationMessage{}, errApplicationTrailing
 }
 
@@ -52,10 +54,12 @@ func TestStreamingExactlyOneFrame(t *testing.T) {
 			if !errors.Is(err, tt.want) || (err == nil && message.ID != 7) {
 				t.Fatalf("framed message = (%+v, %v), want %v", message, err, tt.want)
 			}
+
 			// After rejection, the caller discards the rest of this finite frame explicitly.
 			if _, err = io.Copy(io.Discard, frame); err != nil {
 				t.Fatalf("discard finite frame remainder: %v", err)
 			}
+
 			if value, nextErr := NewReader(connection).DecodeBool(); nextErr != nil || !value {
 				t.Fatalf("next frame sentinel = (%v, %v)", value, nextErr)
 			}
@@ -78,15 +82,19 @@ func TestStreamingCallerOwnedBuffering(t *testing.T) {
 	if err := encodeStreamingApplicationMessage(e, message); err != nil {
 		t.Fatal(err)
 	}
+
 	if len(file.data) != 0 || file.flushes != 0 || file.closes != 0 || buffered.Buffered() == 0 {
 		t.Fatal("encoder flushed or closed the caller's buffering")
 	}
+
 	if _, err := buffered.WriteString("tail"); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := buffered.Flush(); err != nil {
 		t.Fatal(err)
 	}
+
 	var (
 		input = bufio.NewReaderSize(bytes.NewReader(file.data), 256)
 		d     = NewReader(input)
@@ -95,15 +103,19 @@ func TestStreamingCallerOwnedBuffering(t *testing.T) {
 	if _, err := decodeStreamingApplicationMessage(d); err != nil {
 		t.Fatal(err)
 	}
+
 	if input.Buffered() != len(tail) {
 		t.Fatalf("caller read-ahead = %d, want %d", input.Buffered(), len(tail))
 	}
+
 	if _, err := io.ReadFull(input, tail[:]); err != nil || string(tail[:]) != "tail" {
 		t.Fatalf("continued buffered input = %q, %v", tail, err)
 	}
+
 	if file.closes != 0 {
 		t.Fatal("codec closed the caller's writer")
 	}
+
 	if err := file.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -126,6 +138,7 @@ func TestStreamingPipeMessageSequence(t *testing.T) {
 		if err := reader.CloseWithError(ctx.Err()); err != nil {
 			t.Errorf("cancel pipe reader: %v", err)
 		}
+
 		if err := writer.CloseWithError(ctx.Err()); err != nil {
 			t.Errorf("cancel pipe writer: %v", err)
 		}
@@ -143,10 +156,12 @@ func TestStreamingPipeMessageSequence(t *testing.T) {
 				producerErr = ctx.Err()
 			}
 		}
+
 		closeErr := writer.CloseWithError(producerErr)
 		if producerErr == nil {
 			producerErr = closeErr
 		}
+
 		close(finished)
 	}()
 	// Cleanup releases blocked pipe operations and joins the producer even on Fatal.
@@ -154,13 +169,16 @@ func TestStreamingPipeMessageSequence(t *testing.T) {
 		if !stop() {
 			<-canceled
 		}
+
 		cancel()
 		if err := reader.Close(); err != nil {
 			t.Errorf("close pipe reader: %v", err)
 		}
+
 		if err := writer.Close(); err != nil {
 			t.Errorf("close pipe writer: %v", err)
 		}
+
 		<-finished
 	})
 	var (
@@ -171,6 +189,7 @@ func TestStreamingPipeMessageSequence(t *testing.T) {
 	if firstErr != nil || first.ID != 7 {
 		t.Fatalf("first persistent-stream message = (%+v, %v)", first, firstErr)
 	}
+
 	select {
 	case <-finished:
 		t.Fatal("producer finished before the consumer released its gate")
@@ -192,9 +211,11 @@ func TestStreamingPipeMessageSequence(t *testing.T) {
 	if secondErr != nil || second.ID != 8 {
 		t.Fatalf("second persistent-stream message = (%+v, %v)", second, secondErr)
 	}
+
 	if _, err := decodeStreamingApplicationMessage(d); !errors.Is(err, io.EOF) {
 		t.Fatalf("sequence termination = %v", err)
 	}
+
 	<-finished
 	if producerErr != nil {
 		t.Fatalf("pipe producer: %v", producerErr)

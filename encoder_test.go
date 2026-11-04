@@ -17,12 +17,15 @@ func TestEncoderEncodee(t *testing.T) {
 			if err = w.EncodeArrayHeader(3); err != nil {
 				return err
 			}
+
 			if err = w.EncodeString("id"); err != nil {
 				return err
 			}
+
 			if err = w.EncodeUint64(42); err != nil {
 				return err
 			}
+
 			return w.EncodeBytes([]byte{1, 2})
 		}}
 		want = []byte{0x93, 0xa2, 'i', 'd', 0x2a, 0xc4, 0x02, 0x01, 0x02}
@@ -32,6 +35,7 @@ func TestEncoderEncodee(t *testing.T) {
 		if err = e.Encode(value); err != nil {
 			t.Fatal(err)
 		}
+
 		if value.calls != count || !bytes.Equal(output.data, bytes.Repeat(want, count)) {
 			t.Fatalf("Encode call %d = (%x, %d dispatches)", count, output.data, value.calls)
 		}
@@ -78,6 +82,7 @@ func TestEncoderUnsupportedValues(t *testing.T) {
 			if err != ErrUnsupportedType || output.writes != 0 {
 				t.Fatalf("Encode(%T) = %v, writes %d", tt.value, err, output.writes)
 			}
+
 			if err = e.Encode(value); err != nil || value.calls != 1 || !bytes.Equal(output.data, []byte{0xc3}) {
 				t.Fatalf("Encode after unsupported value = (%x, %v), dispatches %d", output.data, err, value.calls)
 			}
@@ -112,6 +117,7 @@ func TestEncoderFailuresAreTerminal(t *testing.T) {
 					if err = w.EncodeArrayHeader(1); err != nil {
 						return err
 					}
+
 					return customFailure
 				},
 				wantErr: customFailure, wantWire: []byte{0x91}, wantWrites: 1,
@@ -169,12 +175,15 @@ func TestEncoderFailuresAreTerminal(t *testing.T) {
 			if !errors.Is(first, tt.wantErr) || first == tt.wantErr {
 				t.Fatalf("Encode error = %v, want context wrapping %v", first, tt.wantErr)
 			}
+
 			if err = e.Encode(later); err != first || later.calls != 0 {
 				t.Fatalf("later Encode = %v, dispatches %d, want stored error without dispatch", err, later.calls)
 			}
+
 			if output.writes != tt.wantWrites || !bytes.Equal(output.data, tt.wantWire) {
 				t.Fatalf("failed output = (%x, %d writes), want (%x, %d)", output.data, output.writes, tt.wantWire, tt.wantWrites)
 			}
+
 			for count := 0; count < 2; count++ {
 				if err = e.Close(); err != first {
 					t.Fatalf("Close = %v, want stored error %v", err, first)
@@ -198,6 +207,7 @@ func TestEncoderCloseLeavesOutputOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	for count := 0; count < 2; count++ {
 		if err = e.Close(); err != nil {
 			t.Fatal(err)
@@ -206,9 +216,11 @@ func TestEncoderCloseLeavesOutputOpen(t *testing.T) {
 	if err = e.Encode(value); err != ErrClosed || value.calls != 1 || output.writes != 1 {
 		t.Fatalf("Encode after Close = %v, dispatches %d, writes %d", err, value.calls, output.writes)
 	}
+
 	if output.flushes != 0 || output.closes != 0 {
 		t.Fatal("Close flushed or closed the caller-owned output")
 	}
+
 	n, err = output.Write([]byte{0xc0})
 	if err != nil || n != 1 || !bytes.Equal(output.data, []byte{0xc3, 0xc0}) {
 		t.Fatalf("caller output after Close = (%x, %d, %v)", output.data, n, err)
@@ -233,9 +245,11 @@ func TestEncoderUninitialized(t *testing.T) {
 			if err != ErrUninitialized || value.calls != 0 {
 				t.Fatalf("unattached Encode = %v, dispatches %d", err, value.calls)
 			}
+
 			if err = e.Close(); err != nil {
 				t.Fatal(err)
 			}
+
 			if err = e.Encode(value); err != ErrClosed || value.calls != 0 {
 				t.Fatalf("closed Encode = %v, dispatches %d", err, value.calls)
 			}
@@ -251,6 +265,7 @@ func TestEncoderPublicMethods(t *testing.T) {
 	if typ.NumMethod() != len(want) {
 		t.Fatalf("Encoder exposes %d methods, want %v", typ.NumMethod(), want)
 	}
+
 	for index, name := range want {
 		if typ.Method(index).Name != name {
 			t.Fatalf("Encoder method %d = %s, want %s", index, typ.Method(index).Name, name)

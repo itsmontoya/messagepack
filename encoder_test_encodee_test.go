@@ -6,10 +6,12 @@ type encoderTestEncodee struct {
 	calls  int
 }
 
+// EncodeMessagePack records dispatch; a typed nil receiver writes a nil value.
 func (v *encoderTestEncodee) EncodeMessagePack(w Writer) (err error) {
 	if v == nil {
 		return w.EncodeNil()
 	}
+
 	v.calls++
 	return v.encode(w)
 }

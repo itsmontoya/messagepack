@@ -48,6 +48,7 @@ func TestBytesWireFixtures(t *testing.T) {
 			if err != nil || !bytes.Equal(view, tt.value) || n != len(wire) || cap(view) != len(view) {
 				t.Fatalf("DecodeBytes() = (%x, %d, %v), cap %d", view, n, err, cap(view))
 			}
+
 			if !bytes.Equal(src, before) || src[n] != 0xc3 {
 				t.Fatal("DecodeBytes modified input or consumed trailing value")
 			}
@@ -132,6 +133,7 @@ func TestReaderBytesErrorsFixtures(t *testing.T) {
 			if view != nil || !errors.Is(err, streamFuzzError(tt.err, len(tt.src))) {
 				t.Fatalf("DecodeBytes(%x) = (%x, %d, %v), want nil, 0, %v", tt.src, view, n, err, tt.err)
 			}
+
 			if !bytes.Equal(tt.src, before) {
 				t.Fatal("DecodeBytes modified input")
 			}
@@ -161,6 +163,7 @@ func TestReaderBytesTruncatedFixtures(t *testing.T) {
 				if view != nil || !errors.Is(err, streamFuzzError(errFuzzTruncated, len(src))) {
 					t.Fatalf("DecodeBytes(%x) = (%x, %d, %v)", src, view, n, err)
 				}
+
 				if !bytes.Equal(wire, before) {
 					t.Fatal("DecodeBytes modified source backing storage")
 				}
@@ -178,11 +181,13 @@ func TestReadererBytesOwnershipFixtureFixtures(t *testing.T) {
 	if err != nil || string(owned) != "abc" {
 		t.Fatalf("DecodeBytes() = (%x, %v)", owned, err)
 	}
+
 	src[2] = 'z'
 	r.Reset(bytes.NewReader([]byte{0xc4, 1, 'x'}))
 	if _, err = r.DecodeBytes(); err != nil || string(owned) != "abc" {
 		t.Fatalf("owned bytes changed after source mutation and Reset: %x, %v", owned, err)
 	}
+
 	owned[1] = 'y'
 	if src[3] != 'b' {
 		t.Fatal("owned payload mutation changed source storage")
@@ -211,6 +216,7 @@ func TestWriterBytesHeaderLimits(t *testing.T) {
 			if !bytes.Equal(output.Bytes(), tt.want) || !errors.Is(err, tt.err) {
 				t.Fatalf("bytes header = (%x, %v), want (%x, %v)", output.Bytes(), err, tt.want, tt.err)
 			}
+
 			if tt.err != nil {
 				if err = w.EncodeBool(true); err != nil || !bytes.Equal(output.Bytes(), []byte{0xaa, 0xbb, 0xc3}) {
 					t.Fatalf("EncodeBool after overflow = (%x, %v)", output.Bytes(), err)

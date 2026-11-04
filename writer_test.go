@@ -61,9 +61,11 @@ func TestWriterNonnegativeIntegerWire(t *testing.T) {
 			if err != nil || !bytes.Equal(writer.Bytes(), tt.wire) {
 				t.Fatalf("EncodeUint64(%d) = (%x, %v), want (%x, nil)", tt.value, writer.Bytes(), err, tt.wire)
 			}
+
 			if tt.value > math.MaxInt64 {
 				return
 			}
+
 			writer.Reset()
 			err = e.EncodeInt64(int64(tt.value))
 			if err != nil || !bytes.Equal(writer.Bytes(), tt.wire) {
@@ -186,6 +188,7 @@ func TestWriterConsecutiveScalars(t *testing.T) {
 		if err := step.run(); err != nil {
 			t.Fatalf("operation %d: %v", index, err)
 		}
+
 		want = append(want, step.wire...)
 		if !bytes.Equal(writer.data, want) {
 			t.Fatalf("operation %d produced %x, want %x immediately", index, writer.data, want)
@@ -236,12 +239,15 @@ func TestWriterWriterFailures(t *testing.T) {
 			if !errors.Is(first, tt.wantErr) || first == tt.wantErr {
 				t.Fatalf("first error = %v, want context wrapping %v", first, tt.wantErr)
 			}
+
 			if !strings.Contains(first.Error(), "encode uint64") || !strings.Contains(first.Error(), "destination") {
 				t.Fatalf("error lacks operation/destination context: %v", first)
 			}
+
 			if writer.writes != 1 || !bytes.Equal(writer.data, wire[:tt.wantN]) {
 				t.Fatalf("failed write = (%d calls, %x), want (1, %x)", writer.writes, writer.data, wire[:tt.wantN])
 			}
+
 			for _, operation := range later {
 				if err := operation.run(); err != first {
 					t.Fatalf("later %s returned %v, want stored error %v", operation.name, err, first)
@@ -250,6 +256,7 @@ func TestWriterWriterFailures(t *testing.T) {
 			if writer.writes != 1 || !bytes.Equal(writer.data, wire[:tt.wantN]) {
 				t.Fatal("a terminal Writer performed additional output")
 			}
+
 			if writer.flushes != 0 || writer.closes != 0 {
 				t.Fatal("failed Writer flushed or closed its writer")
 			}
@@ -308,24 +315,30 @@ func TestWriterReset(t *testing.T) {
 	if !errors.Is(first, failure) {
 		t.Fatalf("initial encode error = %v, want %v", first, failure)
 	}
+
 	e.Reset(&newWriter)
 	if err := e.EncodeBool(true); err != nil {
 		t.Fatal(err)
 	}
+
 	e.Reset(&newWriter)
 	if err := e.EncodeNil(); err != nil {
 		t.Fatal(err)
 	}
+
 	if !bytes.Equal(newWriter.data, []byte{0xc3, 0xc0}) {
 		t.Fatalf("reset output = %x, want c3c0", newWriter.data)
 	}
+
 	if oldWriter.writes != 1 || !bytes.Equal(oldWriter.data, []byte{0xcc}) {
 		t.Fatalf("reset repaired or reused partial old output: %x", oldWriter.data)
 	}
+
 	e.Reset(nil)
 	if err := e.EncodeNil(); err != ErrUninitialized {
 		t.Fatalf("nil reset returned %v, want ErrUninitialized", err)
 	}
+
 	if oldWriter.closes != 0 || oldWriter.flushes != 0 || newWriter.closes != 0 || newWriter.flushes != 0 {
 		t.Fatal("reset flushed or closed caller-owned writers")
 	}
@@ -355,20 +368,25 @@ func TestWriterCopiesShareFailureAndReset(t *testing.T) {
 	if !errors.Is(first, failure) {
 		t.Fatalf("copied Writer error = %v, want %v", first, failure)
 	}
+
 	if err = w.EncodeNil(); err != first || output.writes != 1 {
 		t.Fatalf("original Writer error = %v, writes %d, want stored error without I/O", err, output.writes)
 	}
+
 	copied.Reset(&next)
 	if err = w.EncodeBool(true); err != nil {
 		t.Fatal(err)
 	}
+
 	if err = copied.EncodeNil(); err != nil || !bytes.Equal(next.Bytes(), []byte{0xc3, 0xc0}) {
 		t.Fatalf("shared reset output = (%x, %v), want (c3c0, nil)", next.Bytes(), err)
 	}
+
 	w.Reset(nil)
 	if err = copied.EncodeNil(); err != ErrUninitialized {
 		t.Fatalf("shared nil Reset error = %v, want ErrUninitialized", err)
 	}
+
 	if output.writes != 1 || output.flushes != 0 || output.closes != 0 {
 		t.Fatal("shared Reset reused, flushed, or closed the previous output")
 	}

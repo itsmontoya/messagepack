@@ -23,6 +23,7 @@ func FuzzStreamSkip(f *testing.F) {
 		if len(src) > streamFuzzInputLimit || len(controls) > 32 {
 			t.Skip()
 		}
+
 		var (
 			settings [9]byte
 			before   = append([]byte(nil), src...)
@@ -41,31 +42,38 @@ func FuzzStreamSkip(f *testing.F) {
 		if err := baseline.SetLimits(limits); err != nil {
 			t.Fatal(err)
 		}
+
 		baselineErr = baseline.Skip()
 		consumed := len(src) - plain.Len()
 		oracleSize, oracleErr := streamFuzzValueSize(src, 0, &values, &deepest)
 		if baselineErr == nil && (oracleErr != nil || oracleSize != consumed) {
 			t.Fatalf("Skip boundary %d disagrees with bounded slice walk (%d, %v)", consumed, oracleSize, oracleErr)
 		}
+
 		if oracleErr == nil {
 			var want error
 			if uint64(oracleSize) > limits.MaxSkipBytes || uint64(values) > limits.MaxSkipValues || deepest > limits.MaxSkipDepth {
 				want = ErrLimitExceeded
 			}
+
 			requireStreamFuzzError(t, baselineErr, want)
 		}
+
 		r := &streamFuzzReader{data: src, fragments: controls, empty: int(settings[0]) % 102,
 			emptyBetween: int(settings[1]) % 102, dataError: settings[3]&1 != 0}
 		if settings[2]%3 == 1 {
 			r.endErr = io.EOF
 		}
+
 		if settings[2]%3 == 2 {
 			r.endErr = errStreamFuzzSource
 		}
+
 		d := NewReader(r)
 		if err := d.SetLimits(limits); err != nil {
 			t.Fatal(err)
 		}
+
 		var (
 			err  = d.Skip()
 			want = baselineErr
@@ -73,27 +81,34 @@ func FuzzStreamSkip(f *testing.F) {
 		if errors.Is(want, io.EOF) {
 			want = io.EOF
 		}
+
 		if errors.Is(want, io.ErrUnexpectedEOF) {
 			want = io.ErrUnexpectedEOF
 		}
+
 		if r.noProgress {
 			want = io.ErrNoProgress
 		}
+
 		if r.deliveredError == errStreamFuzzSource {
 			want = errStreamFuzzSource
 		}
+
 		requireStreamFuzzError(t, err, want)
 		requireStreamFuzzInput(t, src, before, r, d)
 		if uint64(r.position) > limits.MaxSkipBytes || uint64(consumed) > limits.MaxSkipBytes {
 			t.Fatal("Skip consumed above its wire-byte budget")
 		}
+
 		if !r.noProgress && r.deliveredError != errStreamFuzzSource && r.position != consumed {
 			t.Fatalf("fragmented Skip consumed %d, contiguous Skip %d", r.position, consumed)
 		}
+
 		if err != nil {
 			requireStreamFuzzTerminal(t, d, r, err)
 			return
 		}
+
 		// Repeat the exact accepted root twice to verify per-call budgets and an
 		// intact following sentinel, including nested map keys and last children.
 		wire := append(append(append([]byte(nil), src[:consumed]...), src[:consumed]...), 0xc3)
@@ -102,6 +117,7 @@ func FuzzStreamSkip(f *testing.F) {
 		if d.Skip() != nil || fresh.position != consumed || d.Skip() != nil || fresh.position != 2*consumed {
 			t.Fatal("Skip budgets did not restart or the next root boundary moved")
 		}
+
 		if value, nextErr := d.DecodeBool(); !value || nextErr != nil {
 			t.Fatalf("following sentinel = (%v, %v)", value, nextErr)
 		}
@@ -114,9 +130,11 @@ func streamFuzzValueSize(src []byte, depth uint32, values, deepest *uint32) (n i
 	if len(src) == 0 {
 		return 0, errFuzzTruncated
 	}
+
 	if depth > 32 || *values == streamFuzzInputLimit {
 		return 0, ErrLimitExceeded
 	}
+
 	*values += 1
 	var (
 		tag      = src[0]
@@ -136,13 +154,14 @@ func streamFuzzValueSize(src []byte, depth uint32, values, deepest *uint32) (n i
 		n = 9
 	case tag >= 0xa0 && tag <= 0xbf || tag >= 0xd9 && tag <= 0xdb || tag >= 0xc4 && tag <= 0xc6:
 		var length uint64
-		length, n, err = streamFuzzPayloadHeader(src, tag >= 0xa0 && tag <= 0xbf || tag >= 0xd9 && tag <= 0xdb)
-		if err != nil {
+		if length, n, err = streamFuzzPayloadHeader(src, tag >= 0xa0 && tag <= 0xbf || tag >= 0xd9 && tag <= 0xdb); err != nil {
 			return 0, err
 		}
+
 		if length > uint64(len(src)-n) {
 			return 0, errFuzzTruncated
 		}
+
 		return n + int(length), nil
 	case tag >= 0x80 && tag <= 0x9f:
 		n, count = 1, uint32(tag&15)
@@ -155,14 +174,17 @@ func streamFuzzValueSize(src []byte, depth uint32, values, deepest *uint32) (n i
 		if tag == 0xdc || tag == 0xde {
 			n = 3
 		}
+
 		if len(src) < n {
 			return 0, errFuzzTruncated
 		}
+
 		if n == 3 {
 			count = uint32(binary.BigEndian.Uint16(src[1:3]))
 		} else {
 			count = binary.BigEndian.Uint32(src[1:5])
 		}
+
 		children = uint64(count)
 		if tag == 0xde || tag == 0xdf {
 			children *= 2
@@ -173,22 +195,26 @@ func streamFuzzValueSize(src []byte, depth uint32, values, deepest *uint32) (n i
 	if len(src) < n {
 		return 0, errFuzzTruncated
 	}
+
 	if children == 0 && !(tag >= 0x80 && tag <= 0x9f || tag >= 0xdc && tag <= 0xdf) {
 		return n, nil
 	}
+
 	depth++
 	if depth > *deepest {
 		*deepest = depth
 	}
+
 	if children > uint64(len(src)-n) {
 		return 0, errFuzzTruncated
 	}
+
 	for child := uint64(0); child < children; child++ {
 		var size int
-		size, err = streamFuzzValueSize(src[n:], depth, values, deepest)
-		if err != nil {
+		if size, err = streamFuzzValueSize(src[n:], depth, values, deepest); err != nil {
 			return 0, err
 		}
+
 		n += size
 	}
 	return n, nil

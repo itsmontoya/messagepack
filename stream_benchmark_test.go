@@ -57,6 +57,7 @@ func BenchmarkStreamContainer(b *testing.B) {
 			if err := w.EncodeArrayHeader(count); err != nil {
 				b.Fatal(err)
 			}
+
 			for index := uint64(0); index < uint64(count); index++ {
 				if err := w.EncodeUint64(index); err != nil {
 					b.Fatal(err)
@@ -77,17 +78,20 @@ func BenchmarkStreamContainer(b *testing.B) {
 				for index := 0; index < b.N; index++ {
 					source.Reset()
 					for remaining := size; remaining > 0; {
-						chunk := buffer
+						var chunk = buffer
 						if remaining < len(chunk) {
 							chunk = chunk[:remaining]
 						}
+
 						n, err = source.Read(chunk)
 						if err != nil || n != len(chunk) {
 							b.Fatalf("generate array = %d, %v", n, err)
 						}
+
 						if _, err = sink.Write(chunk[:n]); err != nil {
 							b.Fatal(err)
 						}
+
 						remaining -= n
 					}
 				}
@@ -99,6 +103,7 @@ func BenchmarkStreamContainer(b *testing.B) {
 					if err = e.EncodeArrayHeader(count); err != nil {
 						return err
 					}
+
 					for index := uint64(0); index < uint64(count); index++ {
 						if err = e.EncodeUint64(index); err != nil {
 							return err
@@ -113,18 +118,19 @@ func BenchmarkStreamContainer(b *testing.B) {
 						actual uint32
 						value  uint64
 					)
-					actual, err = d.DecodeArrayHeader()
-					if err != nil {
+					if actual, err = d.DecodeArrayHeader(); err != nil {
 						return err
 					}
+
 					if actual != count {
 						return fmt.Errorf("benchmark: array count %d, want %d", actual, count)
 					}
+
 					for index := uint64(0); index < uint64(count); index++ {
-						value, err = d.DecodeUint64()
-						if err != nil {
+						if value, err = d.DecodeUint64(); err != nil {
 							return err
 						}
+
 						if value != index {
 							return fmt.Errorf("benchmark: element %d, want %d", value, index)
 						}
@@ -153,17 +159,20 @@ func benchmarkStreamRecordEncode(b *testing.B, size int, encode func(e *Writer) 
 					buffer = bufio.NewWriterSize(writer, 4096)
 					writer = buffer
 				}
+
 				if reuse {
 					encoder = NewWriter(writer)
 					if err = encode(encoder); err != nil {
 						b.Fatal(err)
 					}
+
 					if buffer != nil {
 						if err = buffer.Flush(); err != nil {
 							b.Fatal(err)
 						}
 					}
 				}
+
 				sink = streamBenchmarkWriter{}
 				b.ReportAllocs()
 				b.SetBytes(int64(size))
@@ -175,9 +184,11 @@ func benchmarkStreamRecordEncode(b *testing.B, size int, encode func(e *Writer) 
 						encoder = NewWriter(writer)
 						streamBenchmarkWriterSink = encoder
 					}
+
 					if err = encode(encoder); err != nil {
 						b.Fatal(err)
 					}
+
 					if buffer != nil {
 						if err = buffer.Flush(); err != nil {
 							b.Fatal(err)
@@ -188,6 +199,7 @@ func benchmarkStreamRecordEncode(b *testing.B, size int, encode func(e *Writer) 
 				if sink.bytes != uint64(b.N)*uint64(size) {
 					b.Fatalf("encoded %d bytes, want %d", sink.bytes, uint64(b.N)*uint64(size))
 				}
+
 				streamBenchmarkCalls(b, 0, sink.writes)
 			})
 		}
@@ -209,9 +221,11 @@ func benchmarkStreamRecordDecode(b *testing.B, size int, source io.Reader, reset
 					buffer = bufio.NewReaderSize(reader, 4096)
 					reader = buffer
 				}
+
 				if reuse {
 					decoder = NewReader(reader)
 				}
+
 				*reads = 0
 				b.ReportAllocs()
 				b.SetBytes(int64(size))
@@ -221,12 +235,14 @@ func benchmarkStreamRecordDecode(b *testing.B, size int, source io.Reader, reset
 					if buffer != nil {
 						buffer.Reset(source)
 					}
+
 					if reuse {
 						decoder.Reset(reader)
 					} else {
 						decoder = NewReader(reader)
 						streamBenchmarkReaderSink = decoder
 					}
+
 					if err = decode(decoder); err != nil {
 						b.Fatal(err)
 					}
@@ -243,12 +259,14 @@ func streamBenchmarkMode(buffered bool, reuse bool) (name string) {
 	if buffered {
 		name = "Buffered4KiB/New"
 	}
+
 	if reuse {
 		name = "Unbuffered/Reset"
 		if buffered {
 			name = "Buffered4KiB/Reset"
 		}
 	}
+
 	return name
 }
 
@@ -261,18 +279,23 @@ func encodeStreamBenchmarkPrimitives(e *Writer) (err error) {
 	if err = e.EncodeNil(); err != nil {
 		return err
 	}
+
 	if err = e.EncodeBool(true); err != nil {
 		return err
 	}
+
 	if err = e.EncodeInt64(-32769); err != nil {
 		return err
 	}
+
 	if err = e.EncodeUint64(^uint64(0)); err != nil {
 		return err
 	}
+
 	if err = e.EncodeFloat32(1.5); err != nil {
 		return err
 	}
+
 	return e.EncodeFloat64(1.5)
 }
 
@@ -280,18 +303,23 @@ func decodeStreamBenchmarkPrimitives(d *Reader) (err error) {
 	if err = d.DecodeNil(); err != nil {
 		return err
 	}
+
 	if benchmarkBoolSink, err = d.DecodeBool(); err != nil {
 		return err
 	}
+
 	if benchmarkIntSink, err = d.DecodeInt64(); err != nil {
 		return err
 	}
+
 	if benchmarkUintSink, err = d.DecodeUint64(); err != nil {
 		return err
 	}
+
 	if benchmarkFloat32Sink, err = d.DecodeFloat32(); err != nil {
 		return err
 	}
+
 	benchmarkFloat64Sink, err = d.DecodeFloat64()
 	return err
 }

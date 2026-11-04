@@ -9,6 +9,7 @@ type streamGatedReader struct {
 	release <-chan struct{}
 }
 
+// Read blocks after the first chunk until released or the context ends.
 func (r *streamGatedReader) Read(dst []byte) (n int, err error) {
 	if r.source.read >= 32768 {
 		select {
@@ -17,8 +18,10 @@ func (r *streamGatedReader) Read(dst []byte) (n int, err error) {
 			return 0, r.ctx.Err()
 		}
 	}
+
 	if r.source.read < 32768 && len(dst) > int(32768-r.source.read) {
 		dst = dst[:int(32768-r.source.read)]
 	}
+
 	return r.source.Read(dst)
 }

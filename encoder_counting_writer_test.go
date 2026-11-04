@@ -13,18 +13,22 @@ type encoderCountingWriter struct {
 	invalid                bool
 }
 
+// Write checks the literal header and validates payload progress without retaining bytes.
 func (w *encoderCountingWriter) Write(src []byte) (n int, err error) {
 	w.writes++
 	if len(src) > w.maxRequest {
 		w.maxRequest = len(src)
 	}
+
 	if w.writes == 1 {
 		w.invalid = !bytes.Equal(src, w.header)
 		return len(src), nil
 	}
+
 	if w.writes == 2 {
 		w.firstPayloadSourceRead = w.source.read
 	}
+
 	for index, value := range src {
 		if value != byte(w.bytes+uint64(index)) {
 			w.invalid = true

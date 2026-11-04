@@ -44,6 +44,7 @@ func TestWriterPayloadWire(t *testing.T) {
 				if n != uint64(len(value)) {
 					return fmt.Errorf("string payload progress = %d, want %d", n, len(value))
 				}
+
 				return sourceErr
 			}},
 			{name: "bytes from", header: tt.binaryHeader, run: func(e *Writer) (err error) {
@@ -51,6 +52,7 @@ func TestWriterPayloadWire(t *testing.T) {
 				if n != uint64(len(value)) {
 					return fmt.Errorf("binary payload progress = %d, want %d", n, len(value))
 				}
+
 				return sourceErr
 			}},
 		}
@@ -65,6 +67,7 @@ func TestWriterPayloadWire(t *testing.T) {
 				if err != nil || !bytes.Equal(writer.data, want) {
 					t.Fatalf("encoding length %d = %d bytes, %v; want %d exact bytes", tt.length, len(writer.data), err, len(want))
 				}
+
 				if writer.maxRequest > 32768 || writer.flushes != 0 || writer.closes != 0 {
 					t.Fatal("payload write exceeded chunk bound or changed writer ownership")
 				}
@@ -87,24 +90,31 @@ func TestWriterPayloadRawBytesAndConsecutiveValues(t *testing.T) {
 	if err := e.EncodeString(string(value)); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := e.EncodeBytes(value); err != nil {
 		t.Fatal(err)
 	}
+
 	if n, err := e.EncodeStringFrom(4, bytes.NewReader(value)); n != 4 || err != nil {
 		t.Fatalf("raw string transfer = (%d, %v)", n, err)
 	}
+
 	if n, err := e.EncodeBytesFrom(4, bytes.NewReader(value)); n != 4 || err != nil {
 		t.Fatalf("raw binary transfer = (%d, %v)", n, err)
 	}
+
 	if err := e.EncodeBytes(nil); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := e.EncodeNil(); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := e.EncodeBool(true); err != nil {
 		t.Fatal(err)
 	}
+
 	if !bytes.Equal(writer.Bytes(), want) {
 		t.Fatalf("raw string/binary and nil = %x, want %x", writer.Bytes(), want)
 	}
@@ -146,14 +156,17 @@ func TestWriterFromSourceBoundaries(t *testing.T) {
 				if n != tt.wantN || !errors.Is(err, tt.want) || uint64(source.position) != tt.wantN {
 					t.Fatalf("transfer = (%d, %v), consumed %d; want (%d, %v)", n, err, source.position, tt.wantN, tt.want)
 				}
+
 				if tt.length == 0 && source.reads != 0 {
 					t.Fatal("zero-length transfer read its source")
 				}
+
 				if tt.want != nil {
 					reads, writes := source.reads, writer.writes
 					if later := e.EncodeBool(true); later != err || source.reads != reads || writer.writes != writes {
 						t.Fatal("source failure did not stop later I/O")
 					}
+
 					if errors.Is(err, io.EOF) || errors.Is(err, errFuzzTruncated) || !strings.Contains(err.Error(), "source") {
 						t.Fatalf("source EOF has wrong identity or context: %v", err)
 					}
@@ -186,38 +199,45 @@ func TestWriterFromValidationAndReset(t *testing.T) {
 					}
 				}
 			}
-			n, err := method.run(e, 1, nil)
+			var n, err = method.run(e, 1, nil)
 			if n != 0 || err != ErrInvalidArgument || writer.writes != 0 {
 				t.Fatalf("nil source = (%d, %v), writes %d", n, err, writer.writes)
 			}
+
 			n, err = method.run(e, 0, nil)
 			if n != 0 || err != nil {
 				t.Fatalf("zero nil source = (%d, %v)", n, err)
 			}
+
 			n, err = method.run(e, 1, source)
 			if n != 1 || err != nil {
 				t.Fatalf("validation was terminal: (%d, %v)", n, err)
 			}
+
 			e.Reset(nil)
 			n, err = method.run(e, math.MaxUint64, nil)
 			if n != 0 || err != ErrUninitialized || e.EncodeString("") != ErrUninitialized || e.EncodeBytes(nil) != ErrUninitialized {
 				t.Fatalf("unattached argument precedence = (%d, %v)", n, err)
 			}
+
 			e.Reset(writer)
 			n, err = method.run(e, 4294967295, bytes.NewReader(nil))
 			if n != 0 || !errors.Is(err, io.ErrUnexpectedEOF) {
 				t.Fatalf("maximum valid length with empty source = (%d, %v)", n, err)
 			}
+
 			first := err
 			n, err = method.run(e, math.MaxUint64, nil)
 			if n != 0 || err != first || e.EncodeString("") != first || e.EncodeBytes(nil) != first {
 				t.Fatal("terminal error lost precedence to validation or payload calls")
 			}
+
 			e.Reset(writer)
 			n, err = method.run(e, 0, nil)
 			if n != 0 || err != nil || writer.flushes != 0 || writer.closes != 0 {
 				t.Fatalf("Reset recovery/ownership = (%d, %v)", n, err)
 			}
+
 			var typedNil *decoderTestReader
 			n, err = method.run(e, 1, typedNil)
 			if n != 1 || err != nil {
@@ -260,9 +280,11 @@ func TestWriterFromReadFailures(t *testing.T) {
 				} else {
 					n, err = e.EncodeBytesFrom(3, source)
 				}
+
 				if n != tt.wantN || !errors.Is(err, tt.want) {
 					t.Fatalf("source fault = (%d, %v), want (%d, %v)", n, err, tt.wantN, tt.want)
 				}
+
 				if tt.want != nil && (err == tt.want || !strings.Contains(err.Error(), "source") || e.EncodeNil() != err) {
 					t.Fatalf("source fault lacks context/sticky identity: %v", err)
 				}
@@ -309,9 +331,11 @@ func TestWriterFromWriteFailures(t *testing.T) {
 			if n != tt.wantN || !errors.Is(err, tt.want) || source.reads != tt.wantReads {
 				t.Fatalf("write fault = (%d, %v), reads %d; want (%d, %v), reads %d", n, err, source.reads, tt.wantN, tt.want, tt.wantReads)
 			}
+
 			if !strings.Contains(err.Error(), "destination") || errors.Is(err, sourceFailure) {
 				t.Fatalf("wrong simultaneous fault precedence/context: %v", err)
 			}
+
 			reads, writes := source.reads, writer.writes
 			laterN, laterErr := e.EncodeStringFrom(1, source)
 			if laterN != 0 || laterErr != err || reads != source.reads || writes != writer.writes {
@@ -337,6 +361,7 @@ func TestWriterInMemoryPayloadFailures(t *testing.T) {
 				} else {
 					err = e.EncodeBytes(value)
 				}
+
 				if !errors.Is(err, failure) || writer.writes != call || writer.maxRequest > 32768 || e.EncodeNil() != err {
 					t.Fatalf("in-memory payload fault = %v, writes %d, maximum request %d", err, writer.writes, writer.maxRequest)
 				}
@@ -380,12 +405,15 @@ func TestWriterFromLaterChunkFailures(t *testing.T) {
 				} else {
 					n, err = e.EncodeBytesFrom(70000, source)
 				}
+
 				if n != tt.wantN || !errors.Is(err, tt.want) || source.reads != 2 || writer.writes != 3 {
 					t.Fatalf("later chunk failure = (%d, %v), reads %d, writes %d", n, err, source.reads, writer.writes)
 				}
+
 				if len(writer.data) != 5+int(n) || uint64(source.position)-n > 32768 {
 					t.Fatalf("header included in count or source over-consumed: n %d, written %d, read %d", n, len(writer.data), source.position)
 				}
+
 				if e.EncodeBytes(nil) != err || source.reads != 2 || writer.writes != 3 {
 					t.Fatal("later failure did not stop all future I/O")
 				}
@@ -407,6 +435,7 @@ func TestWriterGeneratedPayloadIsIncremental(t *testing.T) {
 			if isString {
 				header[0] = 0xdb
 			}
+
 			writer := &encoderCountingWriter{header: header, source: source}
 			e := NewWriter(writer)
 			if isString {
@@ -414,9 +443,11 @@ func TestWriterGeneratedPayloadIsIncremental(t *testing.T) {
 			} else {
 				n, err = e.EncodeBytesFrom(length, source)
 			}
+
 			if err != nil || n != length || source.read != length || writer.bytes != length || writer.invalid {
 				t.Fatalf("generated transfer = (%d, %v), read %d, wrote %d, invalid %t", n, err, source.read, writer.bytes, writer.invalid)
 			}
+
 			if source.maxRequest > 32768 || writer.maxRequest > 32768 || writer.firstPayloadSourceRead >= length {
 				t.Fatalf("unbounded/staged transfer: source request %d, write request %d, first output after %d source bytes", source.maxRequest, writer.maxRequest, writer.firstPayloadSourceRead)
 			}

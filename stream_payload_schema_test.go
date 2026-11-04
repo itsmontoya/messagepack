@@ -7,10 +7,12 @@ func encodeStreamingPayloadMessage(e *Writer, length uint64, src io.Reader) (err
 	if err = e.EncodeMapHeader(6); err != nil {
 		return err
 	}
+
 	for _, key := range []string{"id", "name", "active", "score", "data", "samples"} {
 		if err = e.EncodeString(key); err != nil {
 			return err
 		}
+
 		switch key {
 		case "id":
 			err = e.EncodeUint64(7)
@@ -39,21 +41,23 @@ func decodeStreamingPayloadMessage(d *Reader, dst io.Writer) (message applicatio
 		count uint32
 		key   string
 	)
-	count, err = d.DecodeMapHeader()
-	if err != nil {
+	if count, err = d.DecodeMapHeader(); err != nil {
 		return applicationMessage{}, 0, err
 	}
+
 	if count != 6 {
 		return applicationMessage{}, 0, errApplicationSchema
 	}
+
 	for _, expected := range []string{"id", "name", "active", "score", "data", "samples"} {
-		key, err = d.DecodeString()
-		if err != nil {
+		if key, err = d.DecodeString(); err != nil {
 			return applicationMessage{}, n, streamingApplicationChildError(err)
 		}
+
 		if key != expected {
 			return applicationMessage{}, n, errApplicationSchema
 		}
+
 		switch key {
 		case "id":
 			message.ID, err = d.DecodeUint64()

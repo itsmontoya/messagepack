@@ -31,25 +31,31 @@ type streamArrayReader struct {
 	writer     *Writer
 }
 
+// Read generates the next integer after its pending bytes have been consumed.
 func (r *streamArrayReader) Read(dst []byte) (n int, err error) {
 	r.reads++
 	if len(dst) > r.maxRequest {
 		r.maxRequest = len(dst)
 	}
+
 	if len(dst) == 0 {
 		return 0, nil
 	}
+
 	if len(r.pending) == 0 {
 		if r.next == uint64(r.count) {
 			return 0, io.EOF
 		}
+
 		r.buffer.Reset()
 		if err = r.writer.EncodeUint64(r.next); err != nil {
 			return n, err
 		}
+
 		r.pending = r.buffer.Bytes()
 		r.next++
 	}
+
 	n = copy(dst, r.pending)
 	r.pending = r.pending[n:]
 	r.bytes += uint64(n)

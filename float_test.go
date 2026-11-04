@@ -39,6 +39,7 @@ func TestFloat32Wire(t *testing.T) {
 			if encodeErr != nil || !bytes.Equal(output.Bytes(), tt.wire) {
 				t.Fatalf("EncodeFloat32(bits %x) = (%x, %v), want %x", tt.bits, output.Bytes(), encodeErr, tt.wire)
 			}
+
 			for _, trailing := range [][]byte{nil, {0xc3, 0xc1}} {
 				var (
 					src    = append(append([]byte(nil), tt.wire...), trailing...)
@@ -54,15 +55,18 @@ func TestFloat32Wire(t *testing.T) {
 				if err != nil || n != len(tt.wire) || math.Float32bits(value) != tt.bits {
 					t.Fatalf("DecodeFloat32(%x) = (bits %08x, %d, %v)", src, math.Float32bits(value), n, err)
 				}
+
 				if !bytes.Equal(src, before) {
 					t.Fatal("DecodeFloat32() modified source bytes")
 				}
+
 				sourceFloat64 := bytes.NewReader(src)
 				wide, err = NewReader(sourceFloat64).DecodeFloat64()
 				n = len(src) - sourceFloat64.Len()
 				if err != nil || n != len(tt.wire) {
 					t.Fatalf("DecodeFloat64(%x) = (%v, %d, %v)", src, wide, n, err)
 				}
+
 				if math.IsNaN(float64(input)) {
 					if !math.IsNaN(wide) {
 						t.Fatalf("DecodeFloat64(%x) = %v, want NaN", src, wide)
@@ -70,6 +74,7 @@ func TestFloat32Wire(t *testing.T) {
 				} else if math.Float64bits(wide) != math.Float64bits(float64(input)) {
 					t.Fatalf("DecodeFloat64(%x) bits = %016x, want %016x", src, math.Float64bits(wide), math.Float64bits(float64(input)))
 				}
+
 				if !bytes.Equal(src, before) {
 					t.Fatal("DecodeFloat64() modified source bytes")
 				}
@@ -109,6 +114,7 @@ func TestFloat64Wire(t *testing.T) {
 			if encodeErr != nil || !bytes.Equal(output.Bytes(), tt.wire) {
 				t.Fatalf("EncodeFloat64(bits %x) = (%x, %v), want %x", tt.bits, output.Bytes(), encodeErr, tt.wire)
 			}
+
 			for _, trailing := range [][]byte{nil, {0xc3, 0xc1}} {
 				var (
 					src    = append(append([]byte(nil), tt.wire...), trailing...)
@@ -124,15 +130,18 @@ func TestFloat64Wire(t *testing.T) {
 				if err != nil || n != len(tt.wire) || math.Float64bits(value) != tt.bits {
 					t.Fatalf("DecodeFloat64(%x) = (bits %016x, %d, %v)", src, math.Float64bits(value), n, err)
 				}
+
 				if !bytes.Equal(src, before) {
 					t.Fatal("DecodeFloat64() modified source bytes")
 				}
+
 				sourceFloat32 := bytes.NewReader(src)
 				narrow, err = NewReader(sourceFloat32).DecodeFloat32()
 				n = len(src) - sourceFloat32.Len()
 				if !errors.Is(err, ErrTypeMismatch) || math.Float32bits(narrow) != 0 {
 					t.Fatalf("DecodeFloat32(%x) = (%v, %d, %v), want (0, 0, ErrTypeMismatch)", src, narrow, n, err)
 				}
+
 				if !bytes.Equal(src, before) {
 					t.Fatal("DecodeFloat32() modified source bytes")
 				}
@@ -190,15 +199,18 @@ func TestReaderFloatsErrorsFixtures(t *testing.T) {
 			if !errors.Is(err, streamFuzzError(tt.err, len(tt.src))) || math.Float32bits(narrow) != 0 {
 				t.Fatalf("DecodeFloat32(%x) = (%v, %d, %v), want (0, 0, %v)", tt.src, narrow, n, err, tt.err)
 			}
+
 			if !bytes.Equal(tt.src, before) {
 				t.Fatal("DecodeFloat32() modified source bytes")
 			}
+
 			sourceFloat64 := bytes.NewReader(tt.src)
 			wide, err = NewReader(sourceFloat64).DecodeFloat64()
 			n = len(tt.src) - sourceFloat64.Len()
 			if !errors.Is(err, streamFuzzError(tt.err, len(tt.src))) || math.Float64bits(wide) != 0 {
 				t.Fatalf("DecodeFloat64(%x) = (%v, %d, %v), want (0, 0, %v)", tt.src, wide, n, err, tt.err)
 			}
+
 			if !bytes.Equal(tt.src, before) {
 				t.Fatal("DecodeFloat64() modified source bytes")
 			}
@@ -231,18 +243,21 @@ func TestReaderFloatsTruncatedFixtures(t *testing.T) {
 					if length > 0 && tt.wire[0] == 0xcb {
 						narrowErr = ErrTypeMismatch
 					}
+
 					sourceFloat32 := bytes.NewReader(src)
 					narrow, err = NewReader(sourceFloat32).DecodeFloat32()
 					n = len(src) - sourceFloat32.Len()
 					if !errors.Is(err, streamFuzzError(narrowErr, len(src))) || math.Float32bits(narrow) != 0 {
 						t.Fatalf("DecodeFloat32(%x) = (%v, %d, %v), want (0, 0, %v)", src, narrow, n, err, narrowErr)
 					}
+
 					sourceFloat64 := bytes.NewReader(src)
 					wide, err = NewReader(sourceFloat64).DecodeFloat64()
 					n = len(src) - sourceFloat64.Len()
 					if !errors.Is(err, streamFuzzError(errFuzzTruncated, len(src))) || math.Float64bits(wide) != 0 {
 						t.Fatalf("DecodeFloat64(%x) = (%v, %d, %v), want (0, 0, errFuzzTruncated)", src, wide, n, err)
 					}
+
 					if !bytes.Equal(tt.wire, before) {
 						t.Fatal("float reader modified source backing bytes")
 					}

@@ -57,6 +57,7 @@ func TestReaderNilFixtures(t *testing.T) {
 			if err == nil && n != tt.n || !errors.Is(err, streamFuzzError(tt.err, len(tt.src))) {
 				t.Fatalf("DecodeNil(%x) = (%d, %v), want (%d, %v)", tt.src, n, err, tt.n, tt.err)
 			}
+
 			if !bytes.Equal(tt.src, before) {
 				t.Fatal("DecodeNil() modified source bytes")
 			}

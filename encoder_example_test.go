@@ -16,9 +16,11 @@ func ExampleEncoder() {
 	if err = e.Encode(exampleMessage{ID: 42}); err != nil {
 		panic(err)
 	}
+
 	if err = e.Close(); err != nil {
 		panic(err)
 	}
+
 	fmt.Printf("%x\n", output.Bytes())
 	// Output: 81a269642a
 }

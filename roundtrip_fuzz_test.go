@@ -24,6 +24,7 @@ func FuzzRoundTripInt64(f *testing.F) {
 		if err = NewWriter(&output).EncodeInt64(value); err != nil {
 			t.Fatal(err)
 		}
+
 		wire = output.Bytes()
 		sourceInt64 := bytes.NewReader(wire)
 		got, err = NewReader(sourceInt64).DecodeInt64()
@@ -50,6 +51,7 @@ func FuzzRoundTripUint64(f *testing.F) {
 		if err = NewWriter(&output).EncodeUint64(value); err != nil {
 			t.Fatal(err)
 		}
+
 		wire = output.Bytes()
 		sourceUint64 := bytes.NewReader(wire)
 		got, err = NewReader(sourceUint64).DecodeUint64()
@@ -76,6 +78,7 @@ func FuzzRoundTripFloat32(f *testing.F) {
 		if err = NewWriter(&output).EncodeFloat32(math.Float32frombits(bits)); err != nil {
 			t.Fatal(err)
 		}
+
 		wire = output.Bytes()
 		sourceFloat32 := bytes.NewReader(wire)
 		got, err = NewReader(sourceFloat32).DecodeFloat32()
@@ -103,6 +106,7 @@ func FuzzRoundTripFloat64(f *testing.F) {
 		if err = NewWriter(&output).EncodeFloat64(math.Float64frombits(bits)); err != nil {
 			t.Fatal(err)
 		}
+
 		wire = output.Bytes()
 		sourceFloat64 := bytes.NewReader(wire)
 		got, err = NewReader(sourceFloat64).DecodeFloat64()
@@ -123,6 +127,7 @@ func FuzzRoundTripString(f *testing.F) {
 		if len(value) > 4096 {
 			return
 		}
+
 		var (
 			output bytes.Buffer
 			wire   []byte
@@ -130,10 +135,10 @@ func FuzzRoundTripString(f *testing.F) {
 			n      int
 			err    error
 		)
-		err = NewWriter(&output).EncodeString(value)
-		if err != nil {
+		if err = NewWriter(&output).EncodeString(value); err != nil {
 			t.Fatal(err)
 		}
+
 		wire = output.Bytes()
 		sourceString := bytes.NewReader(wire)
 		owned, err = NewReader(sourceString).DecodeString()
@@ -154,6 +159,7 @@ func FuzzRoundTripBytes(f *testing.F) {
 		if len(value) > 4096 {
 			return
 		}
+
 		var (
 			output bytes.Buffer
 			wire   []byte
@@ -161,10 +167,10 @@ func FuzzRoundTripBytes(f *testing.F) {
 			n      int
 			err    error
 		)
-		err = NewWriter(&output).EncodeBytes(value)
-		if err != nil {
+		if err = NewWriter(&output).EncodeBytes(value); err != nil {
 			t.Fatal(err)
 		}
+
 		wire = output.Bytes()
 		sourceBytes := bytes.NewReader(wire)
 		got, err = NewReader(sourceBytes).DecodeBytes()

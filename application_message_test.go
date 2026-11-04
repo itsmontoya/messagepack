@@ -28,10 +28,10 @@ func (m applicationMessage) EncodeMessagePack(w Writer) (err error) {
 // DecodeMessagePack replaces the message only after its strict schema is complete.
 func (m *applicationMessage) DecodeMessagePack(r Reader) (err error) {
 	var value applicationMessage
-	value, err = decodeStreamingApplicationMessage(&r)
-	if err != nil {
+	if value, err = decodeStreamingApplicationMessage(&r); err != nil {
 		return err
 	}
+
 	*m = value
 	return nil
 }
@@ -45,13 +45,14 @@ func readApplicationMessage(src []byte) (message applicationMessage, n int, err 
 
 func readCompleteApplicationMessage(src []byte) (message applicationMessage, err error) {
 	var n int
-	message, n, err = readApplicationMessage(src)
-	if err != nil {
+	if message, n, err = readApplicationMessage(src); err != nil {
 		return applicationMessage{}, err
 	}
+
 	if n != len(src) {
 		return applicationMessage{}, errApplicationTrailing
 	}
+
 	return message, nil
 }
 

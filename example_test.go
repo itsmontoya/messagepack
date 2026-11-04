@@ -18,14 +18,15 @@ func Example() {
 		fmt.Println("encode:", err)
 		return
 	}
+
 	backing := &output.Bytes()[0]
 	// The fixed-schema decoder validates every field name and both container counts.
 	// Requiring full consumption rejects unwanted trailing values.
-	decoded, err = readCompleteApplicationMessage(output.Bytes())
-	if err != nil {
+	if decoded, err = readCompleteApplicationMessage(output.Bytes()); err != nil {
 		fmt.Println("decode:", err)
 		return
 	}
+
 	fmt.Printf("%d %s %t %.1f %x %v\n", decoded.ID, decoded.Name, decoded.Active,
 		decoded.Score, decoded.Payload, decoded.Samples)
 	// Owned payloads remain independent when the encoded source storage is reused.
@@ -36,6 +37,7 @@ func Example() {
 		fmt.Println("reuse:", err)
 		return
 	}
+
 	fmt.Printf("reused: %t, copied payload: %x\n", &output.Bytes()[0] == backing, ownedPayload)
 	// Output:
 	// 7 Ada true 1.5 0102 [-1 2]
@@ -56,18 +58,20 @@ func Example_concatenatedMessages() {
 		fmt.Println("first encode:", err)
 		return
 	}
+
 	message.ID = 8
 	if err = e.Encode(message); err != nil {
 		fmt.Println("second encode:", err)
 		return
 	}
-	wire := output.Bytes()
+
+	var wire = output.Bytes()
 	for index := 0; index < 2; index++ {
-		decoded, n, err = readApplicationMessage(wire)
-		if err != nil {
+		if decoded, n, err = readApplicationMessage(wire); err != nil {
 			fmt.Println("decode:", err)
 			return
 		}
+
 		fmt.Println("id:", decoded.ID)
 		wire = wire[n:]
 	}
@@ -75,6 +79,7 @@ func Example_concatenatedMessages() {
 		fmt.Println("decode:", errApplicationTrailing)
 		return
 	}
+
 	fmt.Println("trailing bytes:", len(wire))
 	// Output:
 	// id: 7

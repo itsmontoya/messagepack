@@ -10,18 +10,19 @@ func decodeFlexibleStreamingApplicationMessage(d *Reader) (message applicationMe
 		required uint8
 		key      string
 	)
-	count, err = d.DecodeMapHeader()
-	if err != nil {
+	if count, err = d.DecodeMapHeader(); err != nil {
 		return applicationMessage{}, err
 	}
+
 	if count < 6 || count > uint32(len(seen)) {
 		return applicationMessage{}, errApplicationSchema
 	}
+
 	for index := uint32(0); index < count; index++ {
-		key, err = d.DecodeString()
-		if err != nil {
+		if key, err = d.DecodeString(); err != nil {
 			return applicationMessage{}, streamingApplicationChildError(err)
 		}
+
 		for earlier := uint32(0); earlier < index; earlier++ {
 			if seen[earlier] == key {
 				return applicationMessage{}, errApplicationSchema
@@ -57,6 +58,7 @@ func decodeFlexibleStreamingApplicationMessage(d *Reader) (message applicationMe
 	if required != 63 {
 		return applicationMessage{}, errApplicationSchema
 	}
+
 	return message, nil
 }
 

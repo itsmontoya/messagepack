@@ -24,6 +24,7 @@ func TestFlexibleStreamingApplicationMessage(t *testing.T) {
 				if err != nil || !reflect.DeepEqual(message, want) || r.position != len(fixture) {
 					t.Fatalf("flexible schema = (%+v, %v), position %d", message, err, r.position)
 				}
+
 				if value, nextErr := d.DecodeBool(); nextErr != nil || !value {
 					t.Fatalf("following value = (%v, %v)", value, nextErr)
 				}
@@ -95,10 +96,12 @@ func TestFlexibleStreamingApplicationTruncation(t *testing.T) {
 			if length == 0 {
 				want = io.EOF
 			}
+
 			message, err := decodeFlexibleStreamingApplicationMessage(d)
 			if !errors.Is(err, want) || !reflect.DeepEqual(message, applicationMessage{}) {
 				t.Fatalf("truncated flexible schema = (%+v, %v), want zero and %v", message, err, want)
 			}
+
 			if length > 0 && errors.Is(err, io.EOF) {
 				t.Fatal("missing child became a clean sequence end")
 			}

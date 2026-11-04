@@ -60,6 +60,7 @@ func TestReaderBoolFixtures(t *testing.T) {
 			if value != tt.value || err == nil && n != tt.n || !errors.Is(err, streamFuzzError(tt.err, len(tt.src))) {
 				t.Fatalf("DecodeBool(%x) = (%t, %d, %v), want (%t, %d, %v)", tt.src, value, n, err, tt.value, tt.n, tt.err)
 			}
+
 			if !bytes.Equal(tt.src, before) {
 				t.Fatal("DecodeBool() modified source bytes")
 			}

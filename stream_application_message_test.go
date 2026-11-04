@@ -11,10 +11,12 @@ func encodeStreamingApplicationMessage(e *Writer, message applicationMessage) (e
 	if err = e.EncodeMapHeader(6); err != nil {
 		return err
 	}
+
 	for _, key := range []string{"id", "name", "active", "score", "data", "samples"} {
 		if err = e.EncodeString(key); err != nil {
 			return err
 		}
+
 		switch key {
 		case "id":
 			err = e.EncodeUint64(message.ID)
@@ -40,6 +42,7 @@ func encodeStreamingApplicationSamples(e *Writer, samples [2]int64) (err error) 
 	if err = e.EncodeArrayHeader(2); err != nil {
 		return err
 	}
+
 	for _, sample := range samples {
 		if err = e.EncodeInt64(sample); err != nil {
 			return err
@@ -55,21 +58,23 @@ func decodeStreamingApplicationMessage(d *Reader) (message applicationMessage, e
 		count uint32
 		key   string
 	)
-	count, err = d.DecodeMapHeader()
-	if err != nil {
+	if count, err = d.DecodeMapHeader(); err != nil {
 		return applicationMessage{}, err
 	}
+
 	if count != 6 {
 		return applicationMessage{}, errApplicationSchema
 	}
+
 	for _, expected := range []string{"id", "name", "active", "score", "data", "samples"} {
-		key, err = d.DecodeString()
-		if err != nil {
+		if key, err = d.DecodeString(); err != nil {
 			return applicationMessage{}, streamingApplicationChildError(err)
 		}
+
 		if key != expected {
 			return applicationMessage{}, errApplicationSchema
 		}
+
 		switch key {
 		case "id":
 			message.ID, err = d.DecodeUint64()
@@ -93,16 +98,16 @@ func decodeStreamingApplicationMessage(d *Reader) (message applicationMessage, e
 
 func decodeStreamingApplicationSamples(d *Reader) (samples [2]int64, err error) {
 	var count uint32
-	count, err = d.DecodeArrayHeader()
-	if err != nil {
+	if count, err = d.DecodeArrayHeader(); err != nil {
 		return [2]int64{}, err
 	}
+
 	if count != 2 {
 		return [2]int64{}, errApplicationSchema
 	}
+
 	for index := range samples {
-		samples[index], err = d.DecodeInt64()
-		if err != nil {
+		if samples[index], err = d.DecodeInt64(); err != nil {
 			return [2]int64{}, err
 		}
 	}
@@ -113,5 +118,6 @@ func streamingApplicationChildError(err error) (out error) {
 	if errors.Is(err, io.EOF) {
 		return fmt.Errorf("example: incomplete application message: %w", io.ErrUnexpectedEOF)
 	}
+
 	return err
 }

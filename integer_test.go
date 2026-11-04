@@ -169,10 +169,11 @@ func TestReaderIntegersFixtures(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			inputs := [][]byte{tt.src}
+			var inputs = [][]byte{tt.src}
 			if len(tt.src) > 0 {
 				inputs = append(inputs, append(append([]byte(nil), tt.src...), 0xc3, 0xc1))
 			}
+
 			for index, src := range inputs {
 				t.Run(fmt.Sprintf("input_%d", index), func(t *testing.T) {
 					var (
@@ -189,24 +190,29 @@ func TestReaderIntegersFixtures(t *testing.T) {
 					if tt.signedErr == nil {
 						wantSignedN = len(tt.src)
 					}
+
 					if tt.unsignedErr == nil {
 						wantUnsignedN = len(tt.src)
 					}
+
 					sourceInt64 := bytes.NewReader(src)
 					signed, signedErr = NewReader(sourceInt64).DecodeInt64()
 					signedCount = len(src) - sourceInt64.Len()
 					if signed != tt.signed || signedErr == nil && signedCount != wantSignedN || !errors.Is(signedErr, streamFuzzError(tt.signedErr, len(src))) {
 						t.Fatalf("DecodeInt64(%x) = (%d, %d, %v), want (%d, %d, %v)", src, signed, signedCount, signedErr, tt.signed, wantSignedN, tt.signedErr)
 					}
+
 					if !bytes.Equal(src, before) {
 						t.Fatal("DecodeInt64() modified source bytes")
 					}
+
 					sourceUint64 := bytes.NewReader(src)
 					unsigned, unsignedErr = NewReader(sourceUint64).DecodeUint64()
 					unsignedCount = len(src) - sourceUint64.Len()
 					if unsigned != tt.unsigned || unsignedErr == nil && unsignedCount != wantUnsignedN || !errors.Is(unsignedErr, streamFuzzError(tt.unsignedErr, len(src))) {
 						t.Fatalf("DecodeUint64(%x) = (%d, %d, %v), want (%d, %d, %v)", src, unsigned, unsignedCount, unsignedErr, tt.unsigned, wantUnsignedN, tt.unsignedErr)
 					}
+
 					if !bytes.Equal(src, before) {
 						t.Fatal("DecodeUint64() modified source bytes")
 					}
@@ -251,12 +257,14 @@ func TestReaderIntegersTruncatedFixtures(t *testing.T) {
 					if signed != 0 || !errors.Is(signedErr, streamFuzzError(errFuzzTruncated, len(src))) {
 						t.Fatalf("DecodeInt64(%x) = (%d, %d, %v), want (0, 0, errFuzzTruncated)", src, signed, signedCount, signedErr)
 					}
+
 					sourceUint64 := bytes.NewReader(src)
 					unsigned, unsignedErr = NewReader(sourceUint64).DecodeUint64()
 					unsignedCount = len(src) - sourceUint64.Len()
 					if unsigned != 0 || !errors.Is(unsignedErr, streamFuzzError(errFuzzTruncated, len(src))) {
 						t.Fatalf("DecodeUint64(%x) = (%d, %d, %v), want (0, 0, errFuzzTruncated)", src, unsigned, unsignedCount, unsignedErr)
 					}
+
 					if !bytes.Equal(tt.src, before) {
 						t.Fatal("integer reader modified source backing bytes")
 					}

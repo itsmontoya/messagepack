@@ -56,7 +56,7 @@ func benchmarkStreamTransfer(b *testing.B, length uint64, encode bool, isString 
 		n            uint64
 		err          error
 		headerSize   int
-		transfer     func() (n uint64, err error)
+		transfer     func() (accepted uint64, transferErr error)
 	)
 	source.Reset(length, isString, true)
 	headerSize = len(source.pending)
@@ -66,30 +66,34 @@ func benchmarkStreamTransfer(b *testing.B, length uint64, encode bool, isString 
 		reader = readerBuffer
 		writer = writerBuffer
 	}
+
 	encoder = NewWriter(writer)
 	decoder = NewReader(reader)
 	if encode {
-		transfer = func() (n uint64, err error) { return encoder.EncodeBytesFrom(length, reader) }
+		transfer = func() (accepted uint64, transferErr error) { return encoder.EncodeBytesFrom(length, reader) }
 		if isString {
-			transfer = func() (n uint64, err error) { return encoder.EncodeStringFrom(length, reader) }
+			transfer = func() (accepted uint64, transferErr error) { return encoder.EncodeStringFrom(length, reader) }
 		}
 	} else {
-		transfer = func() (n uint64, err error) { return decoder.DecodeBytesTo(writer) }
+		transfer = func() (accepted uint64, transferErr error) { return decoder.DecodeBytesTo(writer) }
 		if isString {
-			transfer = func() (n uint64, err error) { return decoder.DecodeStringTo(writer) }
+			transfer = func() (accepted uint64, transferErr error) { return decoder.DecodeStringTo(writer) }
 		}
 	}
+
 	if reuse {
 		source.Reset(length, isString, !encode)
 		if n, err = transfer(); err != nil || n != length {
 			b.Fatalf("warm transfer = %d, %v; want %d, nil", n, err, length)
 		}
+
 		if writerBuffer != nil {
 			if err = writerBuffer.Flush(); err != nil {
 				b.Fatal(err)
 			}
 		}
 	}
+
 	source.reads = 0
 	sink = streamBenchmarkWriter{}
 	b.ReportAllocs()
@@ -100,6 +104,7 @@ func benchmarkStreamTransfer(b *testing.B, length uint64, encode bool, isString 
 		if readerBuffer != nil {
 			readerBuffer.Reset(&source)
 		}
+
 		if encode {
 			if reuse {
 				encoder.Reset(writer)
@@ -115,9 +120,11 @@ func benchmarkStreamTransfer(b *testing.B, length uint64, encode bool, isString 
 				streamBenchmarkReaderSink = decoder
 			}
 		}
+
 		if n, err = transfer(); err != nil || n != length {
 			b.Fatalf("transfer = %d, %v; want %d, nil", n, err, length)
 		}
+
 		if writerBuffer != nil {
 			if err = writerBuffer.Flush(); err != nil {
 				b.Fatal(err)
@@ -125,13 +132,15 @@ func benchmarkStreamTransfer(b *testing.B, length uint64, encode bool, isString 
 		}
 	}
 	b.StopTimer()
-	expected := uint64(b.N) * length
+	var expected = uint64(b.N) * length
 	if encode {
 		expected += uint64(b.N) * uint64(headerSize)
 	}
+
 	if sink.bytes != expected || source.position != length || len(source.pending) != 0 {
 		b.Fatalf("transfer boundary: wrote %d, want %d; source position %d", sink.bytes, expected, source.position)
 	}
+
 	streamBenchmarkCalls(b, source.reads, sink.writes)
 }
 
@@ -139,10 +148,11 @@ func BenchmarkStreamOwned(b *testing.B) {
 	for _, size := range streamBenchmarkSizes {
 		b.Run(size.name, func(b *testing.B) {
 			for _, isString := range []bool{false, true} {
-				name := "Bytes"
+				var name = "Bytes"
 				if isString {
 					name = "String"
 				}
+
 				b.Run(name, func(b *testing.B) {
 					var (
 						source     streamBenchmarkPayloadReader
@@ -163,6 +173,7 @@ func BenchmarkStreamOwned(b *testing.B) {
 						} else {
 							benchmarkBytesSink, err = decoder.DecodeBytes()
 						}
+
 						if err != nil {
 							b.Fatal(err)
 						}
@@ -171,6 +182,7 @@ func BenchmarkStreamOwned(b *testing.B) {
 					if source.position != size.length || len(source.pending) != 0 {
 						b.Fatal("owned read did not consume exactly its payload")
 					}
+
 					streamBenchmarkCalls(b, source.reads, 0)
 				})
 			}
@@ -195,17 +207,20 @@ func BenchmarkStreamGenerator(b *testing.B) {
 			for index := 0; index < b.N; index++ {
 				source.Reset(size.length, false, false)
 				for remaining := size.length; remaining > 0; {
-					chunk := buffer
+					var chunk = buffer
 					if remaining < uint64(len(chunk)) {
 						chunk = chunk[:int(remaining)]
 					}
+
 					n, err = source.Read(chunk)
 					if err != nil || n != len(chunk) {
 						b.Fatalf("generate = %d, %v", n, err)
 					}
+
 					if _, err = sink.Write(chunk[:n]); err != nil {
 						b.Fatal(err)
 					}
+
 					remaining -= uint64(n)
 				}
 			}

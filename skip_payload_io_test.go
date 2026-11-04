@@ -38,13 +38,16 @@ func TestSkipLargePayloadPreflightAndFailures(t *testing.T) {
 			if err := d.SetLimits(ReaderLimits{MaxSkipBytes: tt.byteBudget}); err != nil {
 				t.Fatal(err)
 			}
+
 			err := d.Skip()
 			if !errors.Is(err, tt.want) || payload.read != tt.read || payload.maxRequest > payloadBufferSize {
 				t.Fatalf("Skip() = %v, source bytes %d, max request %d", err, payload.read, payload.maxRequest)
 			}
+
 			if tt.want == ErrLimitExceeded && (d.state.buffer != nil || payload.reads != 0 || end.reads != 0) {
 				t.Fatal("over-budget payload allocated scratch or accessed its source")
 			}
+
 			reads, endReads := payload.reads, end.reads
 			requireSkipFailure(t, d, err)
 			if payload.reads != reads || end.reads != endReads {
