@@ -1,5 +1,7 @@
 package messagepack
 
+import "math"
+
 const (
 	defaultMaxPayloadBytes = 16777216
 	defaultMaxSkipDepth    = 64
@@ -32,21 +34,26 @@ type ReaderLimits struct {
 }
 
 func (l ReaderLimits) normalized() (out ReaderLimits, err error) {
-	if l.MaxPayloadBytes > 4294967295 || l.MaxSkipDepth > maximumSkipDepth {
+	if l.MaxPayloadBytes > math.MaxUint32 || l.MaxSkipDepth > maximumSkipDepth {
 		return ReaderLimits{}, ErrInvalidArgument
 	}
+
 	out = l
 	if out.MaxPayloadBytes == 0 {
 		out.MaxPayloadBytes = defaultMaxPayloadBytes
 	}
+
 	if out.MaxSkipDepth == 0 {
 		out.MaxSkipDepth = defaultMaxSkipDepth
 	}
+
 	if out.MaxSkipValues == 0 {
 		out.MaxSkipValues = defaultMaxSkipValues
 	}
+
 	if out.MaxSkipBytes == 0 {
 		out.MaxSkipBytes = defaultMaxSkipBytes
 	}
+
 	return out, nil
 }

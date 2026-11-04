@@ -50,6 +50,7 @@ func (w *Writer) EncodeBool(value bool) (err error) {
 	if value {
 		w.scratch[0] = 0xc3
 	}
+
 	_, err = w.write("encode bool", w.scratch[:1])
 	return err
 }
@@ -60,19 +61,20 @@ func (w *Writer) EncodeInt64(value int64) (err error) {
 	if value >= 0 {
 		return w.encodeUint64("encode int64", uint64(value))
 	}
+
 	var size int
 	switch {
 	case value >= -32:
 		w.scratch[0] = byte(value)
 		size = 1
-	case value >= -128:
+	case value >= math.MinInt8:
 		w.scratch[0], w.scratch[1] = 0xd0, byte(value)
 		size = 2
-	case value >= -32768:
+	case value >= math.MinInt16:
 		w.scratch[0] = 0xd1
 		binary.BigEndian.PutUint16(w.scratch[1:3], uint16(value))
 		size = 3
-	case value >= -2147483648:
+	case value >= math.MinInt32:
 		w.scratch[0] = 0xd2
 		binary.BigEndian.PutUint32(w.scratch[1:5], uint32(value))
 		size = 5
@@ -90,20 +92,21 @@ func (w *Writer) EncodeUint64(value uint64) (err error) {
 	return w.encodeUint64("encode uint64", value)
 }
 
+// encodeUint64 preserves the operation context for both signed and unsigned callers.
 func (w *Writer) encodeUint64(operation string, value uint64) (err error) {
 	var size int
 	switch {
 	case value <= 127:
 		w.scratch[0] = byte(value)
 		size = 1
-	case value <= 255:
+	case value <= math.MaxUint8:
 		w.scratch[0], w.scratch[1] = 0xcc, byte(value)
 		size = 2
-	case value <= 65535:
+	case value <= math.MaxUint16:
 		w.scratch[0] = 0xcd
 		binary.BigEndian.PutUint16(w.scratch[1:3], uint16(value))
 		size = 3
-	case value <= 4294967295:
+	case value <= math.MaxUint32:
 		w.scratch[0] = 0xce
 		binary.BigEndian.PutUint32(w.scratch[1:5], uint32(value))
 		size = 5
@@ -140,7 +143,7 @@ func (w *Writer) EncodeArrayHeader(count uint32) (err error) {
 	case count <= 15:
 		w.scratch[0] = 0x90 | byte(count)
 		size = 1
-	case count <= 65535:
+	case count <= math.MaxUint16:
 		w.scratch[0] = 0xdc
 		binary.BigEndian.PutUint16(w.scratch[1:3], uint16(count))
 		size = 3
@@ -161,7 +164,7 @@ func (w *Writer) EncodeMapHeader(count uint32) (err error) {
 	case count <= 15:
 		w.scratch[0] = 0x80 | byte(count)
 		size = 1
-	case count <= 65535:
+	case count <= math.MaxUint16:
 		w.scratch[0] = 0xde
 		binary.BigEndian.PutUint16(w.scratch[1:3], uint16(count))
 		size = 3
@@ -180,11 +183,13 @@ func (w *Writer) EncodeString(value string) (err error) {
 	if err = w.writePayloadHeader("encode string", uint64(len(value)), true); err != nil {
 		return err
 	}
+
 	for len(value) > 0 {
 		n := copy(w.payloadBuffer(), value)
 		if _, err = w.write("encode string", w.state.buffer[:n]); err != nil {
 			return err
 		}
+
 		value = value[n:]
 	}
 	return nil
@@ -196,14 +201,17 @@ func (w *Writer) EncodeBytes(value []byte) (err error) {
 	if err = w.writePayloadHeader("encode bytes", uint64(len(value)), false); err != nil {
 		return err
 	}
+
 	for len(value) > 0 {
-		size := len(value)
+		var size = len(value)
 		if size > payloadBufferSize {
 			size = payloadBufferSize
 		}
+
 		if _, err = w.write("encode bytes", value[:size]); err != nil {
 			return err
 		}
+
 		value = value[size:]
 	}
 	return nil
@@ -229,19 +237,21 @@ func (w *Writer) writePayloadHeader(operation string, length uint64, isString bo
 	if err = w.ready(); err != nil {
 		return err
 	}
-	if length > 4294967295 {
+
+	if length > math.MaxUint32 {
 		return ErrOverflow
 	}
+
 	var size int
 	if isString {
 		switch {
 		case length <= 31:
 			w.scratch[0] = 0xa0 | byte(length)
 			size = 1
-		case length <= 255:
+		case length <= math.MaxUint8:
 			w.scratch[0], w.scratch[1] = 0xd9, byte(length)
 			size = 2
-		case length <= 65535:
+		case length <= math.MaxUint16:
 			w.scratch[0] = 0xda
 			binary.BigEndian.PutUint16(w.scratch[1:3], uint16(length))
 			size = 3
@@ -252,10 +262,10 @@ func (w *Writer) writePayloadHeader(operation string, length uint64, isString bo
 		}
 	} else {
 		switch {
-		case length <= 255:
+		case length <= math.MaxUint8:
 			w.scratch[0], w.scratch[1] = 0xc4, byte(length)
 			size = 2
-		case length <= 65535:
+		case length <= math.MaxUint16:
 			w.scratch[0] = 0xc5
 			binary.BigEndian.PutUint16(w.scratch[1:3], uint16(length))
 			size = 3
@@ -265,6 +275,7 @@ func (w *Writer) writePayloadHeader(operation string, length uint64, isString bo
 			size = 5
 		}
 	}
+
 	_, err = w.write(operation, w.scratch[:size])
 	return err
 }
@@ -273,15 +284,19 @@ func (w *Writer) encodeFrom(operation string, length uint64, src io.Reader, isSt
 	if err = w.ready(); err != nil {
 		return 0, err
 	}
-	if length > 4294967295 {
+
+	if length > math.MaxUint32 {
 		return 0, ErrOverflow
 	}
+
 	if length > 0 && src == nil {
 		return 0, ErrInvalidArgument
 	}
+
 	if err = w.writePayloadHeader(operation, length, isString); err != nil {
 		return 0, err
 	}
+
 	return w.copyPayloadFrom(operation, length, src)
 }
 
@@ -298,6 +313,7 @@ func (w *Writer) copyPayloadFrom(operation string, remaining uint64, src io.Read
 		if remaining < uint64(len(chunk)) {
 			chunk = chunk[:int(remaining)]
 		}
+
 		read, readErr = src.Read(chunk)
 		if read > 0 {
 			written, err = w.write(operation, chunk[:read])
@@ -305,21 +321,26 @@ func (w *Writer) copyPayloadFrom(operation string, remaining uint64, src io.Read
 			if err != nil {
 				return n, err
 			}
+
 			remaining -= uint64(read)
 			empty = 0
 		}
+
 		if errors.Is(readErr, io.EOF) {
 			if remaining == 0 {
 				return n, nil
 			}
+
 			readErr = io.ErrUnexpectedEOF
 		}
+
 		if readErr != nil {
 			return n, w.sourceError(operation, readErr)
 		}
+
 		if read == 0 {
 			empty++
-			if empty == 100 {
+			if empty == maximumConsecutiveEmptyReads {
 				return n, w.sourceError(operation, io.ErrNoProgress)
 			}
 		}
@@ -331,6 +352,7 @@ func (w *Writer) payloadBuffer() (buffer []byte) {
 	if w.state.buffer == nil {
 		w.state.buffer = make([]byte, payloadBufferSize)
 	}
+
 	return w.state.buffer
 }
 
@@ -343,12 +365,15 @@ func (w *Writer) ready() (err error) {
 	if w.state == nil {
 		return ErrUninitialized
 	}
+
 	if w.state.err != nil {
 		return w.state.err
 	}
+
 	if w.state.writer == nil {
 		return ErrUninitialized
 	}
+
 	return nil
 }
 
@@ -356,13 +381,16 @@ func (w *Writer) write(operation string, src []byte) (n int, err error) {
 	if err = w.ready(); err != nil {
 		return 0, err
 	}
+
 	n, err = w.state.writer.Write(src)
 	if err == nil && n != len(src) {
 		err = io.ErrShortWrite
 	}
+
 	if err != nil {
 		w.state.err = fmt.Errorf("messagepack: %s destination: %w", operation, err)
 		return n, w.state.err
 	}
+
 	return n, nil
 }

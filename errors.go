@@ -2,6 +2,8 @@ package messagepack
 
 import "errors"
 
+const maximumConsecutiveEmptyReads = 100
+
 var (
 	// ErrInvalidFormat indicates the reserved MessagePack tag 0xc1.
 	ErrInvalidFormat = errors.New("messagepack: invalid format")

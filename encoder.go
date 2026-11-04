@@ -28,9 +28,11 @@ func (e *Encoder) Encode(value any) (err error) {
 	if e.closed {
 		return ErrClosed
 	}
+
 	if err = e.writer.ready(); err != nil {
 		return err
 	}
+
 	var (
 		encodee Encodee
 		ok      bool
@@ -38,14 +40,17 @@ func (e *Encoder) Encode(value any) (err error) {
 	if encodee, ok = value.(Encodee); !ok {
 		return ErrUnsupportedType
 	}
+
 	err = encodee.EncodeMessagePack(e.writer)
 	if e.writer.state.err != nil {
 		return e.writer.state.err
 	}
+
 	if err != nil {
 		e.writer.state.err = fmt.Errorf("messagepack: encode value: %w", err)
 		return e.writer.state.err
 	}
+
 	return nil
 }
 
@@ -56,6 +61,7 @@ func (e *Encoder) Close() (err error) {
 	if e.writer.state == nil {
 		return nil
 	}
+
 	e.writer.state.writer = nil
 	return e.writer.state.err
 }

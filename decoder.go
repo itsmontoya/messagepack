@@ -29,9 +29,11 @@ func (d *Decoder) Decode(value any) (err error) {
 	if d.closed {
 		return ErrClosed
 	}
+
 	if err = d.reader.ready(); err != nil {
 		return err
 	}
+
 	var (
 		decodee Decodee
 		ok      bool
@@ -39,13 +41,16 @@ func (d *Decoder) Decode(value any) (err error) {
 	if decodee, ok = value.(Decodee); !ok {
 		return ErrUnsupportedType
 	}
+
 	err = decodee.DecodeMessagePack(d.reader)
 	if err == nil {
 		return d.reader.state.err
 	}
+
 	if err == d.reader.state.err {
 		return err
 	}
+
 	d.reader.state.err = fmt.Errorf("messagepack: decode value: %w", err)
 	return d.reader.state.err
 }
@@ -57,6 +62,7 @@ func (d *Decoder) Close() (err error) {
 	if d.reader.state == nil {
 		return nil
 	}
+
 	d.reader.state.reader = nil
 	return d.reader.state.err
 }
