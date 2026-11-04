@@ -1,0 +1,1047 @@
+# Streaming-first MessagePack
+
+Build the package around an `Encoder` writing to `io.Writer` and a `Decoder`
+reading from `io.Reader`. Primary use cases are decoding an HTTP response body,
+processing consecutive messages, and writing large objects to files without
+holding an entire encoded message or payload in memory. Keep the implementation
+small, typed, explicit, and standard-library-only.
+
+S01–S11 are complete: the approved streaming contract, implementation, examples,
+verification reports, and streaming-first documentation have recorded handoffs.
+The completed PoC plan and its handoffs are preserved in
+[docs/poc-todo.md](docs/poc-todo.md).
+
+## Instructions for each fresh agent
+
+Read this entire file, [AGENTS.md](AGENTS.md), [STYLEGUIDE.md](STYLEGUIDE.md), the
+current source, and the preceding tasks' handoffs. Execute S01–S11 in order, one
+task per agent; each task depends on all earlier tasks being complete. The shared
+requirements below are part of every task. Do not rely on prior chat history.
+
+**Authorship boundary:** `AGENTS.md` reserves production code and architectural
+decisions for humans. On 2026-11-01 the maintainer approved the reviewed streaming
+contract and authorized agent production work for S01–S11, as recorded with the
+actual reply and its question in [the streaming contract](docs/streaming-contract.md).
+That session-specific authorization covers only these streaming tasks; the
+standing policy and style guide remain unchanged. The old authorization for PoC
+tasks 1–11 is separate. Do not broaden this authority or mark an implementation
+task complete when only its proposal or tests exist.
+
+For each task:
+
+- Inspect the current checkout and preserve unrelated work. Use the existing module
+  and Go version in `go.mod`; a toolchain or dependency change is outside this plan.
+- Add tests and exported GoDoc with the task, not only at the end. Use literal wire
+  fixtures as well as round trips. Follow the style guide: one file per primary
+  type, all methods in that file, constructor immediately above the type, named
+  results where appropriate, explicit returns, early exits, grouped stateful
+  variables, and no shadowing. Keep test helpers explicit and small.
+- Keep `Encoder` methods in `encoder.go` and `Decoder` methods in `decoder.go`.
+  Any additional primary type needs its own file; do not scatter methods across
+  files by wire family. Test cases may be separated by feature.
+- Run `gofmt` on changed Go files, `go test ./...`, `go vet ./...`, and
+  `git diff --check` for implementation/test changes. Documentation-only work needs
+  link and diff checks. Record failures and unavailable checks honestly.
+- Update the task checkbox only when its acceptance criteria pass. Append a
+  **Handoff** under that task with changed files, exact public API and contract
+  decisions, commands/results, remaining limitations, and what the next agent needs.
+- Resolve contract conflicts in the written contract before dependent work proceeds.
+  Never silently change previously established behavior or broaden authorization.
+- If preparing a PR, follow the template required by `AGENTS.md`. At planning time
+  `.github/PULL_REQUEST_TEMPLATE.md` is absent; report that rather than inventing
+  its required structure.
+
+## Current repository context
+
+- `nil.go`, `bool.go`, `integer.go`, and `float.go` implement typed slice appends
+  and reads. `string.go` and `bytes.go` include private payload-header helpers;
+  their public readers require the complete payload in memory.
+- `array.go` and `map.go` handle slice headers only. `encoder.go` and `decoder.go`
+  implement typed streams, owned payload results, known-length transfers,
+  container headers, bounded Skip, and reset/error lifecycle. `decoder_limits.go`
+  defines finite defaults; `skip_state.go` bounds traversal. `errors.go` defines
+  eight sentinels and shared tag classification.
+- [docs/streaming-contract.md](docs/streaming-contract.md) describes the approved
+  implemented stream API. [docs/poc-contract.md](docs/poc-contract.md) preserves
+  the slice wire, conversion, ownership, and error compatibility baseline.
+  Failed slice reads consume zero bytes; arbitrary readers cannot provide that
+  rollback guarantee.
+- `reader_test.go` and `writer_test.go` cover the typed codecs, including payloads,
+  limits, lifecycle, and allocation reuse. `reader_writer_test.go` contains paired
+  wire checks and shared resource bounds. Fuzz targets and benchmarks use dedicated files.
+  `application_message_test.go`, `integration_test.go`, and `example_test.go`
+  demonstrate a six-field map with a nested array and a binary payload.
+- Streaming tests and [executable examples](stream_example_test.go) cover typed
+  schemas, flexible unknown-field skipping, HTTP response bodies, files,
+  incremental delivery, caller buffering, finite framing, and message sequences.
+  [Fuzz](docs/streaming-fuzzing.md) and
+  [measurement](docs/streaming-benchmarks.md) reports record S09/S10 evidence and
+  its platform/workload limits; linux/386 tests were cross-compiled, not executed.
+- Keep the existing exported slice API and its tests compatible in this phase.
+  It can remain a low-level building block and wire oracle. Make streams the
+  primary documented workflow. Do not implement streaming by accumulating a whole
+  value into a buffer and calling the slice API.
+
+## Shared streaming requirements
+
+S01 resolved these requirements in the approved streaming contract. Later agents
+use that contract rather than choosing their own method names or semantics.
+
+### API and supported values
+
+- Concrete `Encoder` and `Decoder`, constructed from `io.Writer` and `io.Reader`.
+  Use typed operations for nil, bool, int64, uint64, float32, float64, strings,
+  binary, and array/map headers. Names include `EncodeBool`, `DecodeBool`,
+  and equivalent names for the other families. All encoding methods can fail.
+- Provide both convenient in-memory string/binary operations and bounded-memory
+  transfers. Transfer names are `EncodeBytesFrom`, `EncodeStringFrom`,
+  `DecodeBytesTo`, and `DecodeStringTo`. Encoders take a known byte length and a
+  source reader; decoders parse the wire length and copy to a destination writer.
+  Specify transferred-payload counts on partial failure, separately from headers.
+- Preserve existing integer width selection, range checks, float bit behavior,
+  string/binary distinction, byte-preserving strings, and nil semantics.
+  Reserved tags and extensions retain their existing classification; extensions
+  and timestamps remain unsupported in this phase, including during skipping.
+- Array counts mean elements and map counts mean pairs. Callers traverse children
+  incrementally and own schema validation. Headers alone do not validate children.
+  Typed calls do not track a whole application object's completeness.
+- Include bounded `Skip` of one complete supported value for unknown fields,
+  including nested arrays/maps. It must leave the next value available.
+- Generic reflection-based `Encode(any)`/`Decode(any)`, struct tags, automatic
+  mapping, extension support, code generation, pooling, and concurrent use of a
+  single codec remain outside this phase. Application objects use explicit typed
+  calls; no generic dispatch framework is needed to demonstrate the use cases.
+
+### Memory, buffering, and lengths
+
+- Codec working memory on transfer paths must be independent of payload length
+  and total object size. Fixed-size scalar/header scratch and bounded copy buffers
+  are acceptable. There must be no `io.ReadAll` or whole-message staging in these
+  paths, including through convenience fast paths or helper interfaces.
+- MessagePack requires payload lengths and container counts before their contents.
+  Unknown-length input requires an application-level sequence/chunk schema or
+  external staging/counting. Do not silently spool, seek back, invent indefinite
+  encodings, or buffer an unknown-length object inside the codec.
+- A single string/binary length and container count fit the existing uint32 wire
+  limit. Stream larger datasets as multiple values or suitable containers, with
+  each count/length valid. Use wide arithmetic for counters and map child counts;
+  check before narrowing to `int`, especially on 32-bit platforms.
+- Recommend no hidden read-ahead or output buffering initially. Callers may supply
+  `bufio.Reader`/`bufio.Writer`; those wrappers must remain in use for subsequent
+  access. The codec must not flush or close caller-owned streams. A successful
+  encode means its writer accepted the bytes, not that a file is durable.
+- Owned decode results must remain stable after the next call or stream reuse.
+  Do not expose borrowed views into a Decoder's reusable scratch storage.
+  Convenient materializing reads require an explicit, finite size policy checked
+  before allocation. Transfer APIs must not inherit a small materialization cap.
+- Define finite skip depth/work limits and caller controls. Reject hostile lengths
+  before allocating; do not allocate containers from advertised counts. Explain
+  how callers bound response bytes and apply deadlines/cancellation through their
+  own readers, transports, or contexts. Do not add hidden background goroutines.
+
+### I/O and failure semantics
+
+- Read exactly the bytes needed for the current operation. Handle fragmented reads
+  and readers returning bytes together with an error. A final `(n, io.EOF)` that
+  supplies all requested bytes must not falsely truncate the value. Specify when
+  a simultaneous non-EOF error is observed. Bound repeated zero-progress reads.
+- Return `io.EOF` when no byte of the next requested value is available. Report
+  `io.ErrUnexpectedEOF` for an incomplete header or payload. Decide explicitly
+  whether that error also matches `ErrTruncated`; retain old slice semantics.
+  When callers have already started a container/schema, they must interpret EOF
+  between required child calls as an incomplete application message, not success.
+- Treat a short write with nil error as `io.ErrShortWrite`. Honor partial writes
+  with errors, stop emitting on failure, and do not retry a whole value after a
+  prefix has escaped. Check argument/length errors before emitting its header.
+- Recommend sticky terminal errors after stream-consuming decode failures or
+  output failures: later operations perform no more I/O and report the stored
+  failure. Specify EOF, pre-I/O validation errors, reset, and all retry exceptions
+  explicitly. No rollback or automatic resynchronization is promised.
+- Wrap external I/O errors with operation context using `%w`, preserving
+  `errors.Is` identity. Return descriptive codec/state sentinels directly as the
+  style guide requires. Distinguish malformed data, unsupported types, overflow,
+  configured limits, source failures, and destination failures.
+- Define zero-value behavior, nil interface handling, `Reset` semantics if exposed,
+  and ownership. Reset cannot repair a partially written message or rewind a
+  partially consumed source. Do not imply codecs are safe for concurrent use.
+
+## S01 — Establish the streaming contract
+
+- [x] Complete S01.
+
+**Read:** this file, `AGENTS.md`, `STYLEGUIDE.md`, `go.mod`,
+`docs/poc-contract.md`, `errors.go`, and all existing exported functions.
+
+**Deliverables:** `docs/streaming-contract.md` with exact public
+signatures, method placement, ownership rules, error/state transition tables,
+limits/defaults, and the compatibility strategy. Clearly label approval and
+implementation authorization status; approval must be recorded when it occurs.
+
+**Work:**
+
+- Resolve every shared requirement above, including concrete payload method
+  signatures/count types, materialization limits and how callers configure them,
+  skip limits, EOF matching, sticky error policy, and reset lifecycle.
+- Choose the smallest surface that supports both small typed values and huge
+  streamed payloads. Specify uninitialized/nil behavior and whether `Reset` is
+  present. Keep existing slice APIs unchanged.
+- Document fixed-length source behavior: consume exactly the declared payload,
+  fail on early EOF, and leave extra source bytes unread. Define zero-length
+  transfers and partial-progress reporting in both directions.
+- Record an error matrix covering empty input, truncated tag/body, mismatched
+  family, numeric overflow, limits, and source/destination I/O failures. Separate
+  stream consumption from the old slice API's zero-consumption guarantee.
+- Describe the HTTP-body and file-writing workflows and which task proves each.
+  Confirm the wire choices against the official specification linked in the PoC
+  contract; record any compatibility issue before implementation.
+
+**Acceptance:** no unresolved API/lifecycle/limit choices remain for downstream
+agents; a maintainer has settled architectural decisions and the applicable
+production-work authority is recorded before S02 begins. Documentation preparation
+alone does not imply that approval or authorization has occurred.
+
+**Historical handoff (documentation proposal, 2026-11-01; superseded by approval below):**
+
+- Added [the proposed streaming contract](docs/streaming-contract.md); changed
+  files are `docs/streaming-contract.md` and this handoff in `TODO.md`. No
+  production code, tests, dependencies, `AGENTS.md`, or `STYLEGUIDE.md` changed.
+- Proposed exact Encoder/Decoder typed methods, reset, `DecoderLimits` and
+  `SetLimits`, uint64 transfer progress, owned decode results, and direct
+  `ErrUninitialized`/`ErrInvalidArgument`/`ErrLimitExceeded` sentinels. Proposed
+  defaults are a 16 MiB materialization cap and Skip limits of 64 container levels,
+  1048576 values, and 64 MiB wire bytes, with a hard depth ceiling of 256.
+- Specified 32 KiB bounded payload transfers, fixed-length source behavior,
+  destination-accepted progress, simultaneous I/O-error precedence, pending EOF,
+  sticky failures, retry/reset boundaries, checked Skip accounting, nil-interface
+  handling, caller-owned buffering/lifetimes, and HTTP/file proof obligations.
+- Checked proposed wire choices against the official MessagePack specification
+  linked in the contract on 2026-11-01. No wire compatibility issue was identified;
+  existing slice APIs and their distinct ownership/error behavior remain the
+  compatibility baseline.
+- Validation: `git diff --check` and `git diff --cached --check` pass. The
+  following local-link check passes with `8 local links: PASS`; opening the linked
+  official specification also succeeded. Go tests/vet were not rerun for this
+  documentation-only task, and no implementation behavior is claimed.
+
+  ```sh
+  python3 -c 'from pathlib import Path; import re; p=[Path("TODO.md"),Path("docs/streaming-contract.md")]; links=[f.parent/t for f in p for t in re.findall(r"\[[^\]]+\]\(([^)]+)\)",f.read_text()) if "://" not in t]; assert all(f.exists() for f in links); print(len(links),"local links: PASS")'
+  ```
+
+- **At this draft handoff, S01 remained incomplete.** The contract was unapproved,
+  and no explicit production-work authorization for S01–S11 had been recorded.
+  The maintainer still needed to settle the proposed architectural choices and
+  record applicable authority before S01 could be checked or S02 could begin.
+  Approval did not follow from the earlier PoC authorization or the draft commit.
+
+**Handoff (approved S01 completion, 2026-11-01):**
+
+- Recorded the maintainer's “Please continue” reply to the explicit question
+  asking for contract approval and production-code authorization for S01–S11.
+  The streaming contract now records the actual exchange, scope, and date.
+  `AGENTS.md` and `STYLEGUIDE.md` remain unchanged; unrelated work is not authorized.
+- Recorded approval of the exact public API, ownership, limits, I/O/error
+  precedence, reset, and Skip accounting without behavioral revisions. Updated
+  current approval/authorship wording and checked S01. Changed files are
+  `docs/streaming-contract.md` and `TODO.md`; implementation is still pending.
+- Validation: the local-link `python3 -c` command above reports
+  `10 local links: PASS`;
+  `git diff --check` and `git diff --cached --check` pass. No Go files changed,
+  so Go tests/vet were not rerun for this documentation-only completion.
+- No unresolved API, lifecycle, limit, or authorization choice blocks S02. The
+  next fresh agent must implement only the S02 Encoder foundation/scalar surface,
+  with tests and GoDoc under the approved contract, then validate and commit its
+  own handoff before S03 begins. S02–S11 remain unchecked until their criteria pass.
+
+## S02 — Encoder foundation and scalar writes
+
+- [x] Complete S02.
+
+**Read:** S01 contract; `nil.go`, `bool.go`, `integer.go`, `float.go`, their tests,
+and `errors.go`. **Deliverables:** `encoder.go`, scalar/I/O tests, and required
+error documentation under the established authority.
+
+**Work:** implement construction, bounded scratch storage, write/error lifecycle,
+and typed nil, bool, integer, and float operations. Reuse existing small scalar
+encoding helpers where clear; never grow scratch with total output size. Add the
+chosen reset/uninitialized behavior now. Do not add payload or container methods
+before their tasks.
+
+**Acceptance:** literal fixtures cover all integer transitions, signed/unsigned
+extremes, float widths, signed zero, infinities, and NaNs. Consecutive operations
+produce consecutive values. Fault writers cover errors before output, partial
+writes with errors, short writes with nil error, and zero progress. Verify stored
+failure behavior and that the writer is never closed/flushed by the Encoder.
+
+**Handoff (2026-11-01):**
+
+- Added `encoder.go`, `encoder_test.go`, and `encoder_test_writer_test.go`;
+  extended `errors.go` with documented `ErrUninitialized`; updated this task.
+  Production work uses the S01–S11 authority recorded in the approved contract.
+- Public API added: `NewEncoder(w io.Writer) (e *Encoder)`, `Encoder`,
+  `(*Encoder).Reset(w io.Writer)`, and `EncodeNil`, `EncodeBool(bool)`,
+  `EncodeInt64(int64)`, `EncodeUint64(uint64)`, `EncodeFloat32(float32)`, and
+  `EncodeFloat64(float64)`, each returning `(err error)`.
+- Scalars reuse existing append primitives with fixed nine-byte scratch. There
+  is no accumulated output, hidden buffering, retry, flush, or close. The private
+  write helper retains destination-accepted counts even on failure for S04's
+  future transfer paths. Short nil-error writes become wrapped `io.ErrShortWrite`;
+  every writer error, including a full-count error, is contextual and terminal.
+  Later calls return the identical stored error without I/O. Unattached calls
+  return direct `ErrUninitialized`; reset clears errors and attaches its argument
+  without repairing the previous stream. No contract changes were required.
+- Literal fixtures cover every integer-width transition, extrema, float widths,
+  signed zero, subnormals, infinities, and NaN payload bits. Tests also check
+  immediate consecutive output, partial/full/error/zero writes, sticky errors
+  across all scalar methods, zero/nil/typed-nil initialization, reset isolation,
+  and caller-owned writer lifetimes. Existing slice tests remain unchanged.
+- Validation passed: `gofmt -w encoder.go errors.go encoder_test.go
+  encoder_test_writer_test.go`; `GOCACHE=/private/tmp/messagepack-go-cache go test
+  ./...`; `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `git diff --check`; and `git diff --cached --check`. Reviewed the staged changes.
+- S03 can add the Decoder foundation using this lifecycle and the approved
+  contract. Payload/container methods and their associated decoder-limit and
+  argument sentinels remain for the dependent tasks. `AGENTS.md`, `STYLEGUIDE.md`,
+  the Go version, and dependencies are unchanged.
+
+## S03 — Decoder foundation and scalar reads
+
+- [x] Complete S03.
+
+**Read:** S01 contract, S02 handoff, scalar implementations/tests,
+`errors.go`, and `read_fuzz_test.go`. **Deliverables:** `decoder.go` and scalar,
+fragmentation, error-state, and lifecycle tests.
+
+**Work:** implement construction, exact incremental reads, bounded scratch,
+scalar decoding/conversion, and the chosen terminal-error/reset policy. Retain
+wire classification precedence without promising to undo consumed bytes. Use
+small literal fixtures and existing slice readers as complementary references.
+
+**Acceptance:** test one-byte readers, every scalar truncation offset, EOF before
+and after values, data plus EOF/error, temporary and repeated `(0, nil)` results,
+and injected errors with `errors.Is`. Decode concatenated mixed scalars without
+requesting bytes from the following value. Prove mismatch/overflow/error follow-up
+behavior, stable zero-valued results on failure, and reset isolation if supported.
+
+**Handoff (2026-11-01):**
+
+- Added `decoder.go`, `decoder_limits.go`, `decoder_test.go`,
+  `decoder_lifecycle_test.go`, and `decoder_test_reader_test.go`; extended
+  `errors.go` with documented `ErrInvalidArgument`; updated this task. Production
+  work uses the S01–S11 authority recorded in the approved contract.
+- Public API added: `NewDecoder(r io.Reader) (d *Decoder)`, `Decoder`,
+  `(*Decoder).Reset(r io.Reader)`, `SetLimits(limits DecoderLimits) (err error)`,
+  `DecodeNil() (err error)`, and `DecodeBool`, `DecodeInt64`, `DecodeUint64`,
+  `DecodeFloat32`, and `DecodeFloat64`, each returning its typed `(value, err)`.
+  `DecoderLimits` exposes `MaxPayloadBytes uint64`, `MaxSkipDepth uint32`,
+  `MaxSkipValues uint64`, and `MaxSkipBytes uint64` with the contract's finite
+  defaults, payload maximum, and depth ceiling. No payload/container/Skip methods
+  were added early; their limits are configured now for the reset lifecycle.
+- The decoder uses fixed nine-byte scratch, reads a tag before classifying its
+  accepted family, and requests only the remaining scalar body. Complete scalar
+  conversions reuse the slice readers. Classification and overflow sentinels are
+  direct and terminal. Source errors are contextual and terminal, and every
+  subsequent scalar call returns the identical error without I/O or nonzero
+  results. Unattached calls are direct, nonterminal `ErrUninitialized` failures.
+- Clean boundary EOF is wrapped `io.EOF`; incomplete scalars are wrapped
+  `io.ErrUnexpectedEOF` without matching `ErrTruncated` or `io.EOF`. Complete
+  bytes accompanied by EOF succeed with pending EOF; any non-EOF error fails the
+  current operation even with complete bytes. One hundred consecutive empty
+  reads become wrapped `io.ErrNoProgress`, resetting the counter on progress.
+  Reset clears failure/EOF, preserves limits, and never reads, closes, or drains.
+  Valid/invalid `SetLimits` is atomic and cannot clear a terminal failure.
+- Literal tests cover integer width boundaries/extremes, accepted wider signed
+  and unsigned encodings, conversion overflow, float bits and widening, every
+  accepted scalar form's truncation offsets, one-byte fragments, data/error/EOF
+  combinations, transport-versus-classification precedence, temporary and
+  terminal empty reads, precise mixed-scalar requests, sticky failures,
+  zero/nil/typed-nil initialization, reset isolation, and stream ownership.
+  Existing slice tests remain unchanged; no contract changes were required.
+- Validation passed: `gofmt -w decoder.go decoder_limits.go decoder_test.go
+  decoder_test_reader_test.go decoder_lifecycle_test.go errors.go`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `git diff --check`; and `git diff --cached --check`. Reviewed the staged changes.
+- S04 can proceed with encoder payloads. For S05, the private decoder helper
+  `readFull(operation, dst, started) (n int, err error)` preserves partial counts
+  and contextual errors without latching them; the current operation finalizes
+  through `fail(err)`. This permits forwarding source bytes before selecting a
+  simultaneous destination error. Header/body callers must use `started = true`
+  after the tag, while new root tags use false. Payload/Skip work and performance
+  evidence remain for later tasks. Policy, style, Go version, and dependencies
+  are unchanged.
+
+## S04 — Encode strings and binary without payload staging
+
+- [x] Complete S04.
+
+**Read:** S01 payload contract, S02 handoff, `string.go`, `bytes.go`, and their
+boundary tests. **Deliverables:** payload methods in `encoder.go` plus tests.
+
+**Work:** add in-memory string/byte writes and known-length reader-to-writer
+payload transfers. Emit the appropriate header, then transfer in bounded chunks.
+Avoid a string-to-byte conversion proportional to a large string's full size.
+Validate wire lengths before output. Preserve invalid UTF-8, NULs, and the
+empty-binary versus nil distinction.
+
+**Acceptance:** check string thresholds 31/32, 255/256, 65535/65536 and binary
+thresholds 255/256, 65535/65536. Validate oversized lengths without allocating a
+huge object. Test empty, exact, short, and longer-than-declared sources; the extra
+byte must remain unread. Inject failures in headers and mid-payload at both ends,
+including partial progress counts. A generated large source and counting writer
+prove bounded read requests and output before the entire source is consumed.
+
+**Handoff (2026-11-01):**
+
+- Extended `encoder.go` with the four payload methods and private bounded-copy
+  helpers; broadened `ErrOverflow` GoDoc in `errors.go` to include streaming
+  payloads without changing the sentinel. Added `encoder_payload_test.go`,
+  `encoder_payload_writer_test.go`, `encoder_generated_reader_test.go`, and
+  `encoder_counting_writer_test.go`; updated this task. Production work uses
+  the S01–S11 authority recorded in the approved contract.
+- Public API added: `(*Encoder).EncodeString(value string) (err error)`,
+  `EncodeBytes(value []byte) (err error)`,
+  `EncodeStringFrom(length uint64, src io.Reader) (n uint64, err error)`, and
+  `EncodeBytesFrom(length uint64, src io.Reader) (n uint64, err error)`.
+  Methods and helpers remain in `encoder.go`; no container methods were added.
+- Headers reuse the existing slice header helpers and fixed nine-byte scratch.
+  Binary slices are written in chunks no larger than 32768 bytes. String and
+  reader transfers use a lazily allocated reusable 32768-byte copy buffer;
+  no complete string-to-byte conversion, whole-payload staging, hidden output
+  buffering, fast-path I/O delegation, flush, or close occurs. Reset may reuse
+  this bounded scratch and retains no input reference.
+- The stored terminal failure and attachment checks precede argument validation.
+  Lengths above uint32 return direct nonterminal `ErrOverflow` before I/O,
+  followed by a positive-length nil-source check. Zero length permits nil source
+  and never reads it. Transfers consume exactly the declared payload and leave
+  extra source bytes unread. Early EOF is wrapped `io.ErrUnexpectedEOF`; complete
+  bytes plus EOF succeed, and source EOF is not retained between transfer calls.
+- Progress counts only destination-accepted payload bytes, including partial or
+  full writes accompanied by errors. Source-error bytes are offered to the
+  destination first; a simultaneous destination error takes precedence. Source
+  and destination failures are contextual and terminal, with no further I/O or
+  drain. One hundred consecutive empty reads yield wrapped `io.ErrNoProgress`;
+  short nil-error writes remain wrapped `io.ErrShortWrite`. No contract changed.
+- Literal fixtures cover every string/binary header transition, raw invalid UTF-8
+  and NUL bytes, nil versus empty binary, and consecutive payload/scalar values.
+  Tests cover zero/exact/short/extra sources, huge declared lengths without huge
+  allocations, argument/sticky/reset/typed-nil behavior, header and first/later
+  payload-chunk faults at both ends, simultaneous error precedence, partial counts,
+  zero progress, bounded requests, and caller ownership. An 8 MiB + 7-byte
+  generated payload is validated incrementally without a payload-sized fixture;
+  the first payload output occurs before the source is fully consumed.
+- Validation passed: `gofmt -w encoder.go errors.go encoder_payload_test.go
+  encoder_payload_writer_test.go encoder_generated_reader_test.go
+  encoder_counting_writer_test.go`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `git diff --check`; and `git diff --cached --check`. Reviewed the staged changes.
+- S05 can add owned and writer-transfer decoding under the approved limits and
+  use S03's count-preserving `readFull` helper before selecting the terminal
+  source/destination error. `payloadBufferSize` is the shared private 32768-byte
+  bound. Allocation/retained-memory measurements remain S10 work; these tests
+  establish bounded requests and incremental output without a throughput or
+  blanket zero-allocation claim. Policies, Go version, dependencies, and all
+  slice implementations remain unchanged.
+
+## S05 — Decode owned payloads and stream payloads to writers
+
+- [x] Complete S05.
+
+**Read:** S01 payload/limits/error contract, S03–S04 handoffs, `string.go`,
+`bytes.go`, and their tests. **Deliverables:** payload methods in `decoder.go`
+and ownership, size-limit, and transfer tests.
+
+**Work:** parse lengths incrementally. Add convenience reads with owned storage
+and configured allocation limits, plus transfers to a supplied writer using
+bounded memory. Validate lengths and representability before allocating. Keep
+payload caps for materializing results separate from streaming transfer controls.
+
+**Acceptance:** cover all payload header forms, empty values, invalid UTF-8,
+header/payload truncation, advertised huge lengths backed by tiny input, and
+configured-limit boundaries. Owned results survive later decodes/reset. Streaming
+an accepted payload leaves the next encoded value untouched; destination failure
+reports correct progress and terminal state without draining the remaining input.
+Exercise source and destination faults, zero-length transfers, and small fragments.
+Demonstrate a large transfer without allocating a payload-sized result or fixture.
+
+**Handoff (2026-11-01):**
+
+- Extended `decoder.go` and `errors.go`; added `decoder_payload_test.go`,
+  `decoder_payload_io_test.go`, and `decoder_counting_writer_test.go`; updated
+  this task. Production work uses the authority recorded in the S01 contract.
+- Public API added: `(*Decoder).DecodeString() (value string, err error)`,
+  `DecodeBytes() (value []byte, err error)`, and `DecodeStringTo(dst io.Writer)`
+  and `DecodeBytesTo(dst io.Writer)`, both returning `(n uint64, err error)`.
+  Added documented direct sentinel `ErrLimitExceeded` without changing existing
+  sentinels, slice APIs, or the approved contract.
+- Payload headers are parsed incrementally without consuming following values.
+  Owned results check `MaxPayloadBytes` before platform `int` representability
+  and allocation, return zero values on failure, and remain stable across source
+  mutation, later decodes, scratch reuse, and reset. Empty binary returns a non-nil
+  empty slice. Owned reads use requests of at most 32768 bytes; owned strings use
+  safe conversion and intentionally may allocate proportionally to payload size.
+- Writer transfers ignore materialization/Skip limits and lazily reuse at most
+  32768 bytes of payload scratch. A required nil destination is rejected before
+  reading any header, even for empty values, after existing failure/attachment
+  checks. Empty transfers do not write or allocate payload scratch. Counts exclude
+  headers and include bytes accepted with destination errors. Source-error bytes
+  are forwarded first; simultaneous destination errors take precedence. Failures
+  are contextual and sticky, without retries, extra value reads, or draining.
+- Literal tests cover all payload header forms, thresholds, wider encodings,
+  empty values, invalid UTF-8/NULs, and every truncation offset of small fixtures.
+  Tests cover ownership, cap boundaries, huge advertised lengths with tiny input,
+  reserved/extensions/mismatches, nil/typed-nil destinations, pending EOF,
+  source/destination faults, partial/full/short writes, simultaneous errors,
+  first/later chunk progress, and the 99/100 empty-read boundary. Generated
+  8 MiB + 7-byte transfers validate every byte incrementally with a one-byte
+  materialization cap, bounded requests, output before full source consumption,
+  and an intact following value. Failed generated transfers stop after the
+  failed chunk without draining the remaining source.
+- Validation passed: `gofmt -w decoder.go errors.go decoder_counting_writer_test.go
+  decoder_payload_test.go decoder_payload_io_test.go`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -run
+  'TestDecoderOwnedPayloadIntOverflow|TestDecoderGeneratedPayloadTransfer|TestDecoderPayload'
+  -v ./...`; `git diff --check`; and `git diff --cached --check`.
+  The explicit owned-length/int-overflow test skips on this 64-bit platform,
+  where all uint32 lengths fit `int`; 32-bit execution remains S09 work.
+- S06 can add container headers and streaming-schema tests using these typed
+  payload operations. Buffer/allocation measurements remain S10 work; current
+  tests establish bounded requests and incremental behavior without a blanket
+  allocation claim. Policies, Go version, dependencies, and slice implementations
+  remain unchanged.
+
+## S06 — Stream container contents and complete typed messages
+
+- [x] Complete S06.
+
+**Read:** S01 contract, S02–S05 handoffs, `array.go`, `map.go`,
+`application_message_test.go`, and `integration_test.go`. **Deliverables:** header
+methods on Encoder/Decoder and new explicit streaming-schema integration tests.
+
+**Work:** add array/map header methods and encode/decode the existing six-field
+application fixture through typed stream calls. Process children as they arrive;
+do not create a generic object tree. Keep the original slice-based fixture/tests.
+Add a generated large array whose elements can be processed one at a time.
+
+**Acceptance:** exact bytes match the existing fixture, and stream/slice decoding
+interoperate both ways. Test empty containers, 15/16 and 65535/65536 boundaries,
+uint32 maximum headers without constructing their contents, nested containers,
+and multiple complete messages on one stream. Missing children must fail the
+schema decoder even if the header succeeds. Show missing map values, wrong counts,
+and truncation between fields. Demonstrate processing before the entire container
+is available, without collecting all elements. Check map arithmetic on 32-bit.
+
+**Handoff (2026-11-01):**
+
+- Extended `encoder.go` and `decoder.go`; added `stream_container_test.go`,
+  `stream_application_message_test.go`, `stream_integration_test.go`,
+  `stream_array_reader_test.go`, and `stream_array_writer_test.go`; updated
+  this task under the production authority recorded in the S01 contract.
+- Public API added: `(*Encoder).EncodeArrayHeader(count uint32) (err error)`,
+  `EncodeMapHeader(count uint32) (err error)`, and
+  `(*Decoder).DecodeArrayHeader() (count uint32, err error)` and
+  `DecodeMapHeader() (count uint32, err error)`. All methods remain in their
+  type's prescribed file. Existing slice helpers select/interpret wire headers
+  with fixed scalar scratch and exact reads; no child values are allocated,
+  inspected, or required, and Skip limits do not apply to these methods.
+- Added explicit strict-schema streaming helpers for the existing six-field
+  application message. Exact stream output equals the existing literal fixture;
+  stream and slice codecs interoperate in both directions. The schema retains
+  its ordered-field policy and rejects unknown, duplicate, reordered, or missing
+  fields, wrong counts, and wrong value families. EOF before a root can end a
+  sequence; EOF between required child calls becomes an incomplete application
+  message matching `io.ErrUnexpectedEOF`. Owned payloads survive following
+  messages, source mutation, and reset. Original slice examples/tests are intact.
+- Tests cover empty/15/16/65535/65536/uint32-maximum headers, wider valid forms,
+  header-only success, exact next-value boundaries, every header truncation,
+  classification/I/O failures, sticky follow-ups, initialization/reset, nested
+  maps/arrays, consecutive messages, missing map values, and every truncation
+  offset of the application fixture. A generated 100000-element array is written
+  and checked one scalar at a time without collecting values. Its reader creates
+  elements only on demand; the first element is processed while the remaining
+  99999 have not been generated. Reader/writer state stays fixed-size and neither
+  codec creates a payload buffer for this workload.
+- Validation passed: `gofmt -w encoder.go decoder.go
+  stream_application_message_test.go stream_array_reader_test.go
+  stream_array_writer_test.go stream_container_test.go stream_integration_test.go`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -run
+  'TestStreamContainer|TestStreamNested|TestStreamGenerated|TestStreamingApplication'
+  -v ./...`; `git diff --check`; and `git diff --cached --check`.
+- Portability: `GOCACHE=/private/tmp/messagepack-go-cache GOOS=linux GOARCH=386
+  go test -c -o /private/tmp/messagepack-s06-linux-386.test` passed. Headers retain
+  uint32 counts without multiplying them; the maximum map's caller-side child
+  arithmetic is checked as `uint64(count) * 2 == 8589934590`. This is a
+  cross-compilation result, not 32-bit execution. Runtime discovery found no
+  `qemu-i386`, no running Docker daemon (`docker version --format
+  '{{.Server.Version}}'` could not connect), and a stopped Podman VM (`podman
+  machine list --format '{{.Name}} {{.Running}}'` reported false). These read-only
+  probes needed sandbox escalation; no runtime/service was started or installed.
+  S09 retains the full portability verification/reporting task.
+- No contract changes or unresolved behavioral issues. S07 can build bounded
+  `Skip` and a separate forward-compatible schema example on these typed
+  operations while preserving the strict schema and its tests. Allocation and
+  throughput measurements remain S10 work. Policies, toolchain, dependencies,
+  and all slice implementations remain unchanged.
+
+## S07 — Skip unknown supported values with bounded work
+
+- [x] Complete S07.
+
+**Read:** S01 skip limits, S03/S05/S06 parsing and handoffs, `errors.go`, and
+current application-schema tests. **Deliverables:** `Decoder.Skip` per the
+contract, nested skip tests, and a forward-compatible schema example/test.
+
+**Work:** consume exactly one supported value, including nested containers and
+payloads, without materializing it. Enforce the contracted depth and work/byte
+limits with checked counters. Use bounded traversal state; recursion, if chosen,
+must be depth-checked before descending. Skip map keys and values, not just pairs
+as single child values. Keep extension rejection consistent with typed decoding.
+
+**Acceptance:** cover every supported family, all payload/container header widths,
+empty/nested values, truncated children, maximum declared counts, limits at and
+above boundaries, reserved/extension tags, and I/O errors. A sentinel value after
+the skipped value must decode intact. The new schema example accepts reordered
+fields and skips unknown fields while explicitly rejecting duplicates and missing
+required fields. Preserve the old strict-schema tests as examples of that policy.
+
+**Handoff (2026-11-01):**
+
+- Extended `decoder.go`; added `skip_state.go`, `skip_test.go`,
+  `skip_payload_io_test.go`, `skip_repeating_reader_test.go`,
+  `stream_flexible_schema_test.go`, and `stream_flexible_integration_test.go`;
+  updated this task under the S01–S11 authority recorded in the contract.
+- Public API added: `(*Decoder).Skip() (err error)`. All Decoder methods remain
+  in `decoder.go`. Skip consumes exactly one complete supported value, including
+  every array element and both map keys and values, leaving the next value intact.
+  Integer/float bodies are skipped without conversion; extensions and reserved
+  tags retain direct `ErrUnsupportedType`/`ErrInvalidFormat` classification.
+- Traversal uses one local fixed 256-frame stack, checked uint64 budgets, and
+  the existing lazily allocated 32768-byte payload scratch. No advertised count
+  allocates a container or count-sized stack; payloads are not materialized and
+  owned-result caps do not apply. Each call starts fresh depth/value/wire-byte
+  budgets. Empty containers count toward depth; scalars under the deepest allowed
+  container do not add a level. Frames retain ancestor depth while a last child
+  is itself a container, then unwind before visiting ancestor siblings.
+- Every read segment is checked against remaining bytes before I/O. Known
+  payload lengths are rejected before scratch allocation/read if over budget.
+  Declared children use uint64 map multiplication and subtraction-based checks
+  against remaining values/bytes, including all outstanding ancestor siblings,
+  before descent. Root EOF is wrapped `io.EOF`; missing bodies/children are
+  wrapped `io.ErrUnexpectedEOF`. Non-EOF source failures, repeated empty reads,
+  classification failures, and limits are terminal with no further I/O; Reset
+  preserves configured limits and clears the terminal state. No contract changed.
+- Tests cover every supported family and payload/container header width, wider
+  and empty forms, literal boundaries, every small-form truncation, nested
+  last-child containers and container map keys, untouched following sentinels,
+  exact/over value/byte/depth limits through the hard depth ceiling, ancestor
+  sibling accounting, byte-budget precedence, max uint32 map counts and maximal
+  uint64 budgets, all extension tags, source/error/EOF combinations, 99/100 empty
+  reads, sticky failures and reset. Generated 8 MiB + 7-byte payloads,
+  65536-element arrays, and 65536-pair maps verify bounded reads without full-size
+  fixtures; late-chunk faults stop without additional reads. Portability-sensitive count
+  tests use wide arithmetic and compile for linux/386.
+- Added a separate explicit forward-compatible six-field schema example. It
+  accepts reordered fields, skips nested unknown supported values, rejects
+  duplicate known and unknown names, requires every known field, and owns its
+  decoded results. This application example limits maps to **16 entries** and
+  tracks names in a fixed array; that policy is separate from the codec's uint32
+  header support. Exact-six/exact-sixteen, excess-count, missing/duplicate,
+  unknown-value error, and every fixture truncation tests pass. Original strict
+  schema helpers and tests remain unchanged.
+- Validation passed: `gofmt -w decoder.go skip_state.go skip_test.go
+  skip_payload_io_test.go skip_repeating_reader_test.go
+  stream_flexible_schema_test.go stream_flexible_integration_test.go`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache GOOS=linux GOARCH=386 go test -c
+  -o /private/tmp/messagepack-s07-linux-386.test`;
+  `git diff --check`; and `git diff --cached --check`. The local Markdown link
+  check reports `10 local links: PASS`. Reviewed the staged changes.
+- The installed toolchain remains `go1.27.2 darwin/arm64`. The linux/386 result
+  is cross-compilation, not execution; the unavailable runtimes recorded in S06
+  were not restarted or reprobed. S09 retains portability execution/reporting.
+  S08 can now prove HTTP/file/backpressure and sequence/framing workflows using
+  the completed typed API and Skip. Actual allocation/retained-memory and
+  throughput evidence remains S10 work. Policies, toolchain, dependencies, and
+  slice implementations remain unchanged.
+
+## S08 — Prove HTTP, file, and backpressure workflows
+
+- [x] Complete S08.
+
+**Read:** streaming contract and S02–S07 handoffs, `example_test.go`,
+`integration_test.go`, and the application fixture. **Deliverables:** executable
+streaming examples and integration tests, with helpers in appropriate test files.
+
+**Work:**
+
+- Use a local `httptest` server/client to decode directly from `resp.Body`, including
+  an incrementally delivered response and a large binary value copied to a sink.
+  The caller closes the body and controls cancellation/deadlines.
+- Write a large generated array/object and a known-length binary payload to a file
+  under `t.TempDir`, using caller-owned buffering where useful. Check encode,
+  caller flush, and close errors; reopen and process incrementally for validation.
+- Use `io.Pipe` or an equivalent deterministic gated stream to prove a consumer
+  receives fields/chunks before the producer finishes. Use deadlines/cleanup to
+  prevent hangs and release every goroutine on failures; avoid timing-only sleeps.
+- Show both a sequence of application messages and an application requiring exactly
+  one message. Trailing-data checks need a finite body or external framing; do not
+  wait for EOF after each value on a persistent stream.
+
+**Acceptance:** examples compile and produce verified output; network tests remain
+local; large data is generated/checked incrementally without full-size buffers.
+No body-wide `ReadAll` or whole-object encode buffer is used in the stream examples.
+Test truncated responses, failing destinations, cancellation, caller ownership,
+and continued use of supplied buffering. Run examples and `go test -race ./...`.
+
+**Handoff (2026-11-01):**
+
+- Added `stream_example_test.go`, `stream_http_integration_test.go`,
+  `stream_boundary_workflow_test.go`, `stream_file_workflow_test.go`,
+  `stream_payload_schema_test.go`, `stream_checking_writer_test.go`,
+  `stream_gated_reader_test.go`, `stream_http_writer_test.go`,
+  `stream_owned_body_test.go`, and `stream_file_writer_test.go`; updated this
+  task. Every new primary helper type and all its methods share its own file.
+  No production code, public API, streaming contract, slice implementations,
+  policies, toolchain, or dependencies changed.
+- Added four executable examples with verified output: direct HTTP response-body
+  decoding of a generated 1 MiB + 7-byte payload to a checking sink, a generated
+  file dataset, a sequence of complete application messages, and exactly one
+  flexible-schema message on finite input. Examples reuse the strict/flexible
+  six-field application schema, preserving its original tests and the flexible
+  schema's separate 16-entry application limit. The payload variant explicitly
+  uses `EncodeBytesFrom`/`DecodeBytesTo`, retaining only small metadata fields;
+  failed transfers may already have delivered a sink prefix.
+- Local HTTP integration tests deliver an 8 MiB + 7-byte payload incrementally,
+  with only a 16-byte materialization cap for small fields. The producer withholds
+  everything after its first 32768 payload bytes until a channel gate is released.
+  A sink notification proves data arrived while the producer was incomplete.
+  Success validates every byte and the following schema fields. Other cases
+  validate a destination rejecting after three bytes, cancellation after the first
+  complete chunk, an already expired caller deadline, truncated schema responses,
+  and a generated payload ending at 32775 bytes despite a 1 MiB declaration.
+  Errors retain their identities/progress and transfer failures stay terminal.
+  The caller closes response bodies; the Decoder never closes them.
+- The temporary-file test writes `[generated integer array, known-length binary]`
+  with 100000 integers and an 8 MiB + 7-byte payload through caller-owned 4096-byte
+  buffering, then reopens and validates each integer/byte incrementally with a
+  one-byte materialization cap. Encode, caller flush, and close errors are checked
+  separately; injected encode/flush/close failures include simultaneous encode
+  and close failures without losing either error identity. Large data is generated
+  and checked incrementally without a whole-object encode buffer; there is no
+  `io.ReadAll` or payload-sized fixture allocation.
+- A gated `io.Pipe` proves a complete first schema message is received before
+  producer completion, then proves the second message respects pipe backpressure.
+  The consumer uses one supplied buffered reader and waits for EOF only when
+  requesting the next root after both messages. Separate finite-body/frame tests
+  check exactly one message using the same buffered reader, reject complete or
+  partial trailing values, explicitly discard a rejected finite frame remainder,
+  and preserve a following value outside the frame. Caller buffering tests prove
+  no codec flush/close and successful subsequent access through the wrappers.
+- HTTP request contexts, server write deadlines, cancelable producer gates, body
+  closure, and server shutdown release HTTP work on every exit. Pipe cleanup
+  closes both ends, cancels the gate wait, joins its producer, and joins an already
+  running deadline callback. Channel synchronization supplies progress evidence;
+  no timing-only sleep is used.
+- Validation passed: `gofmt -w` on all ten new Go files;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -run '^Example' -v ./...`
+  (all six examples pass, including the two existing slice examples);
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -race ./...`;
+  `git diff --check`; and `git diff --cached --check`. The sandbox's initial
+  test attempt failed because it denied a localhost listener (`bind: operation
+  not permitted`); the authorized local-network reruns, examples, and race check
+  passed with sandbox escalation. The local Markdown link check passes.
+- No discovered codec defect or contract conflict remains. S09 can now fuzz the
+  completed streaming surface and these workflows, retaining bounded inputs and
+  explicit terminal-state/ownership checks. The S06/S07 linux/386 result remains
+  cross-compilation only; no runtime was started or portability probe repeated.
+  Runtime portability remains S09 work, measured allocation/retained-memory and
+  throughput evidence remains S10 work, and streaming-first public documentation
+  remains S11 work. This task proves workflows without adding performance claims.
+
+## S09 — Fuzz stream boundaries and verify portability
+
+- [x] Complete S09.
+
+**Read:** S01 error/state rules, new stream tests, `read_fuzz_test.go`,
+`roundtrip_fuzz_test.go`, and `docs/poc-fuzzing.md`. **Deliverables:** stream fuzz
+targets and `docs/streaming-fuzzing.md` with reproducible results.
+
+**Work:** fuzz typed decoding, transfer/skip, valid typed round trips, and fragmented
+I/O schedules. Seed from literal boundaries, malformed tags, nested containers,
+truncated lengths, and consecutive values. Bound input size, depth, work, and
+materialized output so fuzzing cannot allocate from hostile lengths or hang.
+Compare successful values/wire bytes with the existing slice API where semantics
+match; compare errors only where the contracts intentionally match.
+
+**Acceptance:** invariants cover no panic/unbounded allocation, correct value
+boundaries, error identity, terminal-state behavior, ownership, and bounded work.
+Run each new fuzz target separately for at least 30 seconds; record commands,
+durations, toolchain, platform, and failures. Run tests on a supported 32-bit target
+when available; otherwise record cross-compilation separately from execution.
+Preserve reproducing inputs and resolve discovered defects under the applicable
+authority before completion. Existing fuzz seed tests must still pass.
+
+**Handoff (2026-11-02):**
+
+- Added `stream_decode_fuzz_test.go`, `stream_transfer_fuzz_test.go`,
+  `stream_skip_fuzz_test.go`, `stream_roundtrip_fuzz_test.go`,
+  `stream_fuzz_test.go`, `stream_fuzz_reader_test.go`, and
+  `stream_fuzz_writer_test.go`; added [the reproducible fuzz/portability report](docs/streaming-fuzzing.md)
+  and [complete timed-run output](docs/streaming-fuzz-results.txt); updated this
+  task. Each primary I/O helper type and its methods share one file. No production
+  code, public API, contract, slice implementation, policy, toolchain, or dependency
+  changed. No codec defect or failing input was found; no failure corpus was needed.
+- Added four targets: `FuzzStreamTypedDecode` covers all ten typed decoders;
+  `FuzzStreamPayloadTransfer` covers both string/binary transfers in both
+  directions; `FuzzStreamSkip` covers bounded traversal; `FuzzStreamRoundTrip`
+  covers an explicit mixed typed schema with nested containers and a following
+  value. Literal seeds include numeric/header boundaries, hostile maximum lengths
+  and counts, malformed/extensions, nested values, every small-fixture truncation
+  prefix, and consecutive values. Successful values/wire/boundaries use slice
+  readers/appends as oracles. Skip also uses an independent bounded recursive
+  slice walk. Intentional stream/slice EOF, failure consumption, materialization
+  limit precedence, and header-only semantics are explicit in the report.
+- Arbitrary inputs are capped at 4096 bytes and control schedules at 32 bytes.
+  Owned results are capped at 4096; Skip varies finite depth (1–16), values
+  (1–4096), and wire-byte (1–4096) budgets. The slice oracle has its own finite
+  depth/work guard. Reader/writer helpers bound requests, output, calls, and
+  zero-progress schedules without retaining I/O logs. Fuzz invariants check exact
+  next-value boundaries, partial accepted counts, source/destination `errors.Is`
+  identity and precedence, zero failure results, identical terminal errors with
+  no further I/O, limits/reset isolation, pending EOF, input preservation, and
+  owned-result stability through later calls, mutation, scratch reuse, and reset.
+- Each target ran in its own command for at least 30 seconds, with at most two
+  commands concurrent and two workers each. The exact command for each was
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -run '^$' -fuzz '^TARGET$'
+  -fuzztime=30s -parallel=2 ./...`, with `TARGET` respectively
+  `FuzzStreamTypedDecode`, `FuzzStreamPayloadTransfer`, `FuzzStreamSkip`, and
+  `FuzzStreamRoundTrip`; the report records full commands including log capture.
+  November 1 results: typed decode PASS, 925477 executions, 30.422 s package
+  elapsed; payload transfer PASS, 919866 executions, 31.551 s. November 2 results:
+  Skip PASS, 793024 executions, 31.872 s; round trip PASS, 496034 executions,
+  31.665 s. Final Go-reported elapsed times were 30/31/31/31 s respectively.
+- Validation passed: `gofmt -w` on all seven new Go files;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -run '^Fuzz' -count=1 ./...`
+  (all old/new seeds, 0.452 s); `GOCACHE=/private/tmp/messagepack-go-cache go test
+  ./...` (0.656 s); `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`;
+  formatting, Markdown local-link, `git diff --check`, and
+  `git diff --cached --check` checks. The full suite's localhost HTTP listeners
+  required authorized sandbox escalation. A November 1 full-test attempt did not
+  execute because automatic approval review hit a usage limit; the authorized
+  November 2 rerun passed. No sandbox or review workaround was used.
+- Portability: `GOCACHE=/private/tmp/messagepack-go-cache GOOS=linux GOARCH=386
+  CGO_ENABLED=0 go test -c -o /private/tmp/messagepack-s09-linux-386.test` passed;
+  `file /private/tmp/messagepack-s09-linux-386.test` identifies a statically linked
+  32-bit Intel 80386 ELF. This is compilation, not execution. Read-only November 2
+  probes again found no userspace i386 emulator, a Docker daemon that could not be
+  reached, and a stopped Podman VM. System-mode QEMU cannot directly run the ELF.
+  No service/VM was started or tooling installed. The 32-bit runtime/int-overflow
+  check remains unexecuted; the report states this limitation explicitly.
+- The platform remains `go1.27.2 darwin/arm64`. No unresolved contract or codec
+  issue blocks S10. S10 should measure actual transfer allocation bytes and
+  retained working memory across at least three sizes, plus owned-result costs,
+  call counts, buffered/unbuffered I/O, reuse, and at least five benchmark samples.
+  The bounded harnesses and fuzz execution rates make no performance or blanket
+  zero-allocation claim. S11 documentation/final verification remains pending.
+
+## S10 — Measure streaming memory and throughput
+
+- [x] Complete S10.
+
+**Read:** streaming implementation, `benchmark_test.go`, `allocation_test.go`,
+`docs/poc-benchmarks.md`, and S08/S09 handoffs. **Deliverables:** stream benchmarks,
+justified memory regression tests, and `docs/streaming-benchmarks.md`.
+
+**Work:** measure primitive sequences, small messages, large containers, owned
+payload reads, and reader-to-writer payload transfers. Compare caller-buffered
+and unbuffered I/O. Separate construction from reuse/reset where supported.
+Include at least three substantially different payload sizes using generated
+sources and counting/discard sinks; avoid measuring a giant fixture buffer.
+
+**Acceptance:** report throughput, B/op, allocs/op, and read/write call counts
+with workload and environment. Use at least five benchmark samples. For transfer
+paths, show retained working memory and allocation bytes do not grow with payload
+length; allocation count alone is insufficient evidence. Explain any profiles or
+measurement limits, and keep owned-result allocation proportionality explicit.
+Retain the existing slice allocation guarantees. Do not claim blanket zero
+allocations or add speculative pooling/unsafe optimizations to meet a target.
+
+**Handoff (2026-11-02):**
+
+- Added `stream_benchmark_test.go`, `stream_payload_benchmark_test.go`,
+  `stream_memory_test.go`, `stream_benchmark_source_test.go`, and the four
+  single-type helpers `stream_benchmark_array_reader_test.go`,
+  `stream_benchmark_fixture_reader_test.go`,
+  `stream_benchmark_payload_reader_test.go`, and
+  `stream_benchmark_writer_test.go`. Added [the measurement report](docs/streaming-benchmarks.md)
+  and [complete raw benchmark/memory output](docs/streaming-benchmark-results.txt);
+  updated this task. Every new primary type and its methods share one file.
+  **Public API changes: none.** Production code, the approved streaming contract,
+  existing slice tests/implementations, policies, Go version, and dependencies
+  remain unchanged. No production optimization or discovered defect was involved.
+- Added 91 benchmark cases covering six consecutive primitive values, the literal
+  57-byte application message, generated 1024/65536-element integer arrays,
+  owned string/binary reads, and all four payload transfer methods at **1 KiB,
+  64 KiB, and 8 MiB**. Large input/wire data is generated on demand; sinks count
+  calls/bytes without retaining output. Small source fixtures have literal tests.
+  Separate payload/array generator baselines expose generation overhead. Timings
+  include schema/element checks, generator work, counters, and harness calls;
+  no baseline is subtracted or described as isolated codec throughput.
+- Record and transfer cases compare unbuffered with caller-owned 4096-byte
+  buffering and fresh escaping codec construction with prewarmed reuse/Reset.
+  Caller wrappers are prepared outside timing; transfer buffering wraps **both**
+  ends. Timed caller Flush completes each finite record/transfer. Results report
+  wire MB/s, ns/op, B/op, allocs/op, and underlying read/write calls per operation.
+  Fresh transfer Encoder/Decoder cases measured **32848/32880 B/op and 2 allocs/op**
+  respectively at every size/family/buffering mode. Warm Reset transfers measured
+  **0 B/op, 0 allocs/op** for these successful workloads. Owned binary allocates
+  approximately its payload size; safe owned-string conversion allocates about
+  twice its payload size. The report preserves ranges and limits these claims.
+- Independent TotalAlloc experiments measured 16 transfers per batch for every
+  size/family/direction/lifecycle, repeated five times: 120 batches total.
+  Fresh Encoder batches measured 32848–32849 B/transfer; fresh Decoder batches
+  measured 32880 B/transfer; warmed batches measured zero. Regression tests use
+  generous 128 KiB per-transfer and 64 KiB cross-size-spread bounds instead of
+  freezing exact counts or zero allocations. Repeated Reset tests bound retained
+  scratch capacities without asserting private buffer identity.
+- Retained-memory experiments cover both string/binary families at every size,
+  keeping 32 Encoder/Decoder pairs live through GC using KeepAlive, after
+  detaching streams with Reset(nil). All 30 measured cohorts retained **2097152 B**
+  of observed scratch capacity; post-GC process heap deltas ranged
+  **2062640–2063584 B**, without payload-length scaling. Those noisy deltas are
+  observations, not exact object sizes. The independent retained-heap regression
+  allows 5 MiB per cohort (twice bounded scratch plus 1 MiB noise), detecting
+  payload-sized retention without brittle exact heap assertions. No heap profile
+  was needed for these scoped byte/capacity measurements.
+- Exact benchmark command: `GOCACHE=/private/tmp/messagepack-go-cache go test
+  -run '^$' -bench '^BenchmarkStream' -benchmem -benchtime=100ms -count=5 ./...`.
+  All **455 samples** (five per case) passed in **61.525 s**. The deliberate
+  100 ms target lets Go calibrate iteration counts; it is not a fixed operation
+  count or an exact elapsed-time limit. The audited memory command was
+  `GOCACHE=/private/tmp/messagepack-go-cache go test -run
+  '^Test(StreamTransferAllocationBytes|StreamRetainedWorkingMemory|StreamTransferScratchBounds|StreamBenchmark|ZeroAllocations|OwnedStringAllocations)'
+  -v -count=5 ./...`; all repetitions passed in **3.284 s**, preserving the
+  existing slice allocation checks unchanged. Raw output includes commands,
+  environment, samples, and verbose memory evidence.
+- Validation passed: `gofmt -w` on the eight new Go files;
+  `GOCACHE=/private/tmp/messagepack-go-cache go test ./...` (**1.119 s**);
+  `GOCACHE=/private/tmp/messagepack-go-cache go vet ./...`; formatting and local
+  Markdown link checks; `git diff --check`; and `git diff --cached --check`.
+  Full tests required authorized sandbox escalation for existing local httptest
+  listeners; benchmarks and memory-only checks required no network access.
+  Reviewed the staged changes and verified all 91 cases have exactly five samples.
+- Environment remains **go1.27.2 darwin/arm64**, Darwin 25.5.0, Apple M3,
+  eight default logical CPUs. Synthetic generation/counting sinks do not measure
+  real sockets/files/durability. Buffering reduced large-array calls from 65537
+  writes/130946 reads to 48 each, but was slower with these cheap endpoints.
+  Transfer throughput near the generator baseline reflects generation cost.
+  Short sample duration, GC/process noise, and local scheduling limit inference;
+  no blanket zero-allocation or cross-platform performance claim is made. S09's
+  32-bit result remains compilation only. S11 should publish streaming-first
+  documentation and perform its final build/test/example/race/link checks using
+  these scoped measurements, preserving those limitations. S11 remains unchecked.
+
+## S11 — Publish streaming-first documentation and final review
+
+- [x] Complete S11.
+
+**Read:** every handoff, `docs/streaming-contract.md`, new examples/reports,
+`README.md`, `doc.go`, and the archived PoC contract. **Deliverables:** updated
+README/package GoDoc and a completed plan with verification evidence.
+
+**Work:** lead with Encoder/Decoder use on response bodies and files, then explain
+small typed operations, container traversal, large payload transfers, and skipping.
+Describe exact lengths/counts, buffering and ownership, limits, partial failures,
+EOF versus incomplete objects, terminal-state/reset rules, and how a caller checks
+complete-message consumption. Present the slice API as an available lower-level
+option with its distinct ownership/error behavior. Keep historical PoC reports
+clearly historical and fix claims that streaming is still deferred.
+
+**Acceptance:** examples use actual implemented APIs; documentation matches tests;
+all S01–S10 handoffs exist; supported and deferred formats/features are explicit.
+Run `go build ./...`, `go test ./...`, `go vet ./...`, executable examples,
+`go test -race ./...`, formatting and link checks, and `git diff --check`. Confirm
+both requested use cases work with bounded codec memory and without regressing the
+slice API. Record remaining platform/measurement limitations without marking
+unverified claims as proven. Preserve `AGENTS.md` and `STYLEGUIDE.md` unchanged.
+
+**Handoff (2026-11-04):**
+
+- Replaced `README.md` with streaming-first usage led by complete HTTP response-body
+  and incremental file functions using public APIs. Expanded package GoDoc in
+  `doc.go`; clarified only the `ErrTruncated` comment in `errors.go` as slice-only.
+  Updated current status/context in this file and `docs/streaming-contract.md`.
+  Added archive/current-document notices to `docs/poc-contract.md`,
+  `docs/poc-todo.md`, `docs/poc-fuzzing.md`, and `docs/poc-benchmarks.md`.
+  **Public API, signatures, types, and production logic changes: none.**
+- Documented typed scalar/payload/container methods, `Skip`, exact byte lengths
+  and uint32 limits, container/schema responsibilities, and unknown-length
+  application chunking/staging. Explained owned-result lifetime and the finite
+  16 MiB default, atomic `SetLimits`, independent per-Skip budgets, caller buffering,
+  flush/close/durability, deadlines/cancellation, partial accepted-payload counts,
+  error identity/precedence, terminal failures, clean EOF versus incomplete schemas,
+  reset/alignment, zero/nil/typed-nil behavior, and concurrency/copying boundaries.
+  Exactly-one-message checks require finite input/framing and the same buffering;
+  persistent sequences use schema boundaries. The flexible schema's 16-entry cap
+  is explicitly application policy. Lower-level slice ownership, buffer reuse,
+  borrowed-view lifetimes, and zero-consumption failures remain documented.
+- Reviewed the complete exported source, S01–S10 handoffs, test coverage, executable
+  examples/schema helpers, both streaming reports, and the archived PoC evidence.
+  Every S01–S10 task has a completed checkbox and handoff. No unresolved contract
+  conflict, codec defect, or unnecessary exported convenience API requiring removal
+  was identified. Streaming transfers and Skip are documented as implemented;
+  generic/reflection/mapping, extensions/timestamps, and the other deferred features
+  remain outside scope. Approval records and historical handoffs remain intact.
+- Final checks passed with `GOCACHE=/private/tmp/messagepack-go-cache`:
+
+  ```sh
+  GOCACHE=/private/tmp/messagepack-go-cache go build ./...
+  GOCACHE=/private/tmp/messagepack-go-cache go test ./...
+  GOCACHE=/private/tmp/messagepack-go-cache go vet ./...
+  GOCACHE=/private/tmp/messagepack-go-cache go test -run '^Example' -v ./...
+  GOCACHE=/private/tmp/messagepack-go-cache go test -race ./...
+  GOCACHE=/private/tmp/messagepack-go-cache go doc .
+  gofmt -l .
+  git diff --check
+  git diff --cached --check
+  ```
+
+  Build/vet passed; the full suite passed in **1.199 s**, all **six executable
+  examples** passed in **0.244 s**, and the race suite, including S10 memory
+  regression tests, passed in **12.173 s**. Full tests, examples, and race checks
+  used authorized sandbox escalation for existing localhost `httptest` listeners.
+  GoDoc output was inspected; formatting output was empty and both diff checks pass.
+- Extracted both complete README Go blocks unchanged into
+  `/private/tmp/messagepack-s11-readme-yc4y2t8b/snippet1.go` and `snippet2.go` in a
+  temporary module with a local module replacement. Their formatting check was
+  empty. `GOCACHE=/private/tmp/messagepack-go-cache go test -v ./...` there passed
+  in **0.276 s**, with authorized localhost access. The temporary harness executed
+  `FetchBinary` against a local server, checked payload/count, ran `WriteDataset`
+  with 100000 generated integers and a known-length payload, decoded every element,
+  verified extra source bytes remained unread, and checked finite-file EOF through
+  the same buffered reader. No test harness or generated source was added to the repo.
+  The repository-wide local Markdown path/anchor check passed **64 links** before
+  this handoff; the S01–S10 completion/handoff audit also passed.
+- Final compatibility review: `git diff e363472 -- AGENTS.md STYLEGUIDE.md go.mod
+  nil.go bool.go integer.go float.go string.go bytes.go array.go map.go` is empty.
+  The streaming contract's approved API/semantics and raw historical fuzz/benchmark
+  outputs are unchanged. Prior S08 incremental HTTP/file/backpressure proofs,
+  S09 November 1–2 fuzz runs, and S10 November 2 measurement evidence substantiate
+  bounded streaming without full-message staging. Final tests preserve the original
+  slice wire/ownership/allocation checks. Timed fuzzing and benchmarks were not
+  repeated for documentation-only edits; their original dates/results are retained.
+- Remaining limits: linux/386 tests were cross-compiled only; neither a compatible
+  userspace emulator nor a running Docker/Podman runtime was available in S09, and
+  no service/tooling was started or portability claim expanded here. Measurements
+  cover local synthetic endpoints, three payload sizes, and 100 ms sample targets;
+  process/GC noise and owned-result allocations remain explicit. No blanket zero-
+  allocation, real socket/file throughput, durability, or shared-codec concurrency
+  guarantee is claimed. S11 acceptance is complete, all streaming tasks are checked,
+  and no deferred feature or unrelated work is required for this plan.
