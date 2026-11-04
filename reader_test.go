@@ -1841,6 +1841,9 @@ func TestReaderPayloadWire(t *testing.T) {
 	}{
 		{name: "empty", stringHeader: []byte{0xa0}, binaryHeader: []byte{0xc4, 0}},
 		{name: "one", length: 1, stringHeader: []byte{0xa1}, binaryHeader: []byte{0xc4, 1}},
+		{name: "8", length: 8, stringHeader: []byte{0xa8}, binaryHeader: []byte{0xc4, 8}},
+		{name: "9", length: 9, stringHeader: []byte{0xa9}, binaryHeader: []byte{0xc4, 9}},
+		{name: "10", length: 10, stringHeader: []byte{0xaa}, binaryHeader: []byte{0xc4, 10}},
 		{name: "31", length: 31, stringHeader: []byte{0xbf}, binaryHeader: []byte{0xc4, 31}},
 		{name: "32", length: 32, stringHeader: []byte{0xd9, 32}, binaryHeader: []byte{0xc4, 32}},
 		{name: "255", length: 255, stringHeader: []byte{0xd9, 0xff}, binaryHeader: []byte{0xc4, 0xff}},
@@ -1974,6 +1977,8 @@ func TestReaderPayloadTruncation(t *testing.T) {
 		isString bool
 	}{
 		{wire: []byte{0xa2, 1, 2}, header: 1, isString: true},
+		{wire: []byte{0xa9, 1, 2, 3, 4, 5, 6, 7, 8, 9}, header: 1, isString: true},
+		{wire: []byte{0xaa, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, header: 1, isString: true},
 		{wire: []byte{0xd9, 2, 1, 2}, header: 2, isString: true},
 		{wire: []byte{0xda, 0, 2, 1, 2}, header: 3, isString: true},
 		{wire: []byte{0xdb, 0, 0, 0, 2, 1, 2}, header: 5, isString: true},
@@ -2177,6 +2182,61 @@ func TestReaderPayloadOwnership(t *testing.T) {
 
 	if text != "abc" || !bytes.Equal(value, []byte{1, 2, 3}) {
 		t.Fatalf("owned values changed after source/result/scratch/reset reuse: %q, %x", text, value)
+	}
+}
+
+func TestReaderShortStringOwnership(t *testing.T) {
+	for _, length := range []int{1, 8, 9, 10} {
+		t.Run(fmt.Sprintf("length_%d", length), func(t *testing.T) {
+			var (
+				want  = strings.Repeat("\xff", length)
+				wire  = append([]byte{0xa0 | byte(length)}, []byte(want)...)
+				input bytes.Reader
+				r     = NewReader(&input)
+				value string
+				err   error
+			)
+
+			input.Reset(wire)
+			if value, err = r.DecodeString(); err != nil || value != want {
+				t.Fatalf("DecodeString = (%q, %v), want %q", value, err, want)
+			}
+
+			wire[1] = 0
+			input.Reset([]byte{0xa9, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+			r.Reset(&input)
+			if _, err = r.DecodeString(); err != nil {
+				t.Fatal(err)
+			}
+
+			if value != want {
+				t.Fatalf("owned string changed after source mutation and scratch reuse: %q", value)
+			}
+		})
+	}
+}
+
+func TestReaderShortStringAllocations(t *testing.T) {
+	for _, length := range []int{0, 1, 2, 8, 9} {
+		t.Run(fmt.Sprintf("length_%d", length), func(t *testing.T) {
+			var (
+				wire  = append([]byte{0xa0 | byte(length)}, bytes.Repeat([]byte{0xff}, length)...)
+				input bytes.Reader
+				r     = NewReader(&input)
+			)
+
+			allocations := testing.AllocsPerRun(1000, func() {
+				input.Reset(wire)
+				r.Reset(&input)
+				var err error
+				if benchmarkStringSink, err = r.DecodeString(); err != nil {
+					t.Fatal(err)
+				}
+			})
+			if allocations > 1 {
+				t.Fatalf("short string decoding allocated %g times, want at most one owned string allocation", allocations)
+			}
+		})
 	}
 }
 

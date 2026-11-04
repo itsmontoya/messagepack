@@ -27,7 +27,7 @@ func BenchmarkAllocationStringEncode(b *testing.B) {
 }
 
 func BenchmarkAllocationOwnedSmall(b *testing.B) {
-	for _, length := range []uint64{0, 1, 8, 31, 32, 256} {
+	for _, length := range []uint64{0, 1, 2, 8, 9, 10, 31, 32, 256} {
 		b.Run(fmt.Sprintf("Bytes%d", length), func(b *testing.B) {
 			for _, isString := range []bool{false, true} {
 				var name = "Binary"
