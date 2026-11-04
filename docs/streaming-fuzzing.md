@@ -1,5 +1,11 @@
 # Streaming fuzz and portability checks
 
+> These recorded runs predate the 2026-11-04 removal of the slice API. Current
+> typed targets compare Reader results under contiguous and fragmented input with
+> matching limits. Round-trip targets use Writer and Reader, and literal wire
+> fixtures verify canonical encodings. Skip retains an independent bounded wire
+> span scanner; transfers retain independent header and accepted-prefix checks.
+
 S09 verification ran on 2026-11-01 and 2026-11-02 using
 `go1.27.2 darwin/arm64` on macOS (Darwin 25.5.0). The module and toolchain were
 unchanged. These bounded smoke runs exercise the implemented streaming contract;

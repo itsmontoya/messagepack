@@ -2,34 +2,23 @@
 
 ## Status and authority
 
-**Approved by the maintainer on 2026-11-01. S01–S11 are complete.**
-The API, lifecycle, limits, and implementation constraints below are the approved
-S01 contract for [streaming tasks S01–S11](../TODO.md).
+**S01–S11 were approved on 2026-11-01 and are complete. API revised on 2026-11-04.**
+The original streaming tasks and their implementation evidence remain recorded in
+their [handoffs](../TODO.md). The maintainer subsequently requested that the typed
+Encoder become a concrete Writer, with Encoder exposing only Encode and Close.
+Encode accepts only Encodee for now; reflection remains deferred. Close leaves
+the supplied output open. The maintainer also requested moving all Append encoding
+logic into Writer methods and removing the package-level Append functions.
+The maintainer then requested the same decoding split: concrete Reader, Decoder
+with Decode and Close, Decodee hooks, and removal of the package-level Read API.
+The public surface and lifecycle below reflect those revisions.
 
-The initial review draft was committed as `8044d3d` without production changes.
-The assistant then asked: “Do you approve this contract and explicitly authorize
-agents to modify production code for S01–S11?” The maintainer replied:
-
-> Please continue
-
-That reply approves the reviewed contract and grants the scoped production-work
-authorization requested in the question. Agents may make the production changes,
-tests, and documentation needed to complete S01–S11 under this contract, using
-one fresh agent per task and committing the changes as requested. This permission
-is limited to those streaming tasks; it does not authorize unrelated production
-changes or expand the deferred scope below.
-
-The standing [agent policy](../AGENTS.md) and [style guide](../STYLEGUIDE.md) remain
-unchanged. This session-specific authorization overrides the production-code
-restriction only for S01–S11. The earlier authority in the [PoC contract](poc-contract.md)
-still covers only its archived tasks 1–11 and is not the basis for streaming work.
-S01–S11 are complete with implementation, examples, tests, measurement evidence,
-user documentation, and final review in their [handoffs](../TODO.md). Approval
-itself was separate from that implementation evidence.
+The maintainer also requested updating the [agent policy](../AGENTS.md) to permit
+production work. The [style guide](../STYLEGUIDE.md) still applies.
 
 The module remains `github.com/itsmontoya/messagepack`, package `messagepack`,
 using the existing Go 1.27.2 baseline and standard library only. Toolchain,
-dependency, policy, and style-guide changes remain outside this authorization.
+dependency, and style-guide changes are outside this refactor.
 
 ## Scope and compatibility
 
@@ -37,69 +26,89 @@ Add typed streaming operations for nil, bool, signed/unsigned 64-bit integers,
 float32/float64, strings, binary, and container headers. Add bounded copying and
 skipping of one complete supported value. Callers retain responsibility for their
 schemas and for iterating container children. There is no generic object tree,
-reflection, `Encode(any)`/`Decode(any)`, automatic mapping, struct tags, extension
+reflection, automatic mapping, struct tags, extension
 support, pooling, code generation, or shared-codec concurrency in this phase.
 
-Keep every existing exported slice function, sentinel, wire choice, conversion,
-ownership guarantee, and test compatible with the PoC contract. Scalar/header
-helpers may be reused with fixed scratch storage. Streaming a payload or complete
-object must not first accumulate it for a slice operation. Stream EOF and failure
-consumption have their own rules below; slice failures still consume zero bytes.
+Writer and Reader methods own encoding and decoding directly. The package-level
+Append and Read functions and their slice-only helpers are removed. ReaderLimits
+replaces DecoderLimits. Scalar and header operations use fixed scratch storage;
+streaming a payload or complete object must not first accumulate it in memory.
+Reader payload results own their storage, and stream failures may consume a prefix.
+ErrTruncated is removed; clean and incomplete input use the EOF rules below.
 
 The streaming APIs do not validate container completeness, required fields,
 duplicates, ordering, or trailing data. A schema decoder must count and validate
 children explicitly. A complete container header can succeed with no children
-present, as it does in the slice API.
+present.
 
 ## Public surface and file placement
 
-`Encoder` and `Decoder` are concrete exported types with unexported state.
+`Encoder`, `Decoder`, `Writer`, and `Reader` are concrete exported types with unexported state.
 Constructors sit immediately above their type declarations. All methods belonging
-to `Encoder` live in `encoder.go`; all `Decoder` methods live in `decoder.go`,
-including private helpers. Exported symbols receive concise GoDoc. New
-sentinels live with the existing sentinels in `errors.go`.
+to `Writer` live in `writer.go`; all `Reader` methods live in `reader.go`,
+including private helpers. Encoder methods live in `encoder.go`; Encodee lives
+in `encodee.go`. Decoder methods live in `decoder.go`, and Decodee lives in
+`decodee.go`. Shared private state lives in `writer_state.go` and `reader_state.go`.
+Exported symbols receive concise GoDoc. New sentinels live with the existing
+sentinels in `errors.go`.
 
 ```go
 func NewEncoder(w io.Writer) (e *Encoder)
-func (e *Encoder) Reset(w io.Writer)
+func (e *Encoder) Encode(value any) (err error)
+func (e *Encoder) Close() (err error)
 
-func (e *Encoder) EncodeNil() (err error)
-func (e *Encoder) EncodeBool(value bool) (err error)
-func (e *Encoder) EncodeInt64(value int64) (err error)
-func (e *Encoder) EncodeUint64(value uint64) (err error)
-func (e *Encoder) EncodeFloat32(value float32) (err error)
-func (e *Encoder) EncodeFloat64(value float64) (err error)
-func (e *Encoder) EncodeString(value string) (err error)
-func (e *Encoder) EncodeBytes(value []byte) (err error)
-func (e *Encoder) EncodeStringFrom(length uint64, src io.Reader) (n uint64, err error)
-func (e *Encoder) EncodeBytesFrom(length uint64, src io.Reader) (n uint64, err error)
-func (e *Encoder) EncodeArrayHeader(count uint32) (err error)
-func (e *Encoder) EncodeMapHeader(count uint32) (err error)
+type Encodee interface {
+    EncodeMessagePack(Writer) error
+}
 
-func NewDecoder(r io.Reader) (d *Decoder)
-func (d *Decoder) Reset(r io.Reader)
-func (d *Decoder) SetLimits(limits DecoderLimits) (err error)
+func NewWriter(dst io.Writer) (w *Writer)
+func (w *Writer) Reset(dst io.Writer)
 
-func (d *Decoder) DecodeNil() (err error)
-func (d *Decoder) DecodeBool() (value bool, err error)
-func (d *Decoder) DecodeInt64() (value int64, err error)
-func (d *Decoder) DecodeUint64() (value uint64, err error)
-func (d *Decoder) DecodeFloat32() (value float32, err error)
-func (d *Decoder) DecodeFloat64() (value float64, err error)
-func (d *Decoder) DecodeString() (value string, err error)
-func (d *Decoder) DecodeBytes() (value []byte, err error)
-func (d *Decoder) DecodeStringTo(dst io.Writer) (n uint64, err error)
-func (d *Decoder) DecodeBytesTo(dst io.Writer) (n uint64, err error)
-func (d *Decoder) DecodeArrayHeader() (count uint32, err error)
-func (d *Decoder) DecodeMapHeader() (count uint32, err error)
-func (d *Decoder) Skip() (err error)
+func (w *Writer) EncodeNil() (err error)
+func (w *Writer) EncodeBool(value bool) (err error)
+func (w *Writer) EncodeInt64(value int64) (err error)
+func (w *Writer) EncodeUint64(value uint64) (err error)
+func (w *Writer) EncodeFloat32(value float32) (err error)
+func (w *Writer) EncodeFloat64(value float64) (err error)
+func (w *Writer) EncodeString(value string) (err error)
+func (w *Writer) EncodeBytes(value []byte) (err error)
+func (w *Writer) EncodeStringFrom(length uint64, src io.Reader) (n uint64, err error)
+func (w *Writer) EncodeBytesFrom(length uint64, src io.Reader) (n uint64, err error)
+func (w *Writer) EncodeArrayHeader(count uint32) (err error)
+func (w *Writer) EncodeMapHeader(count uint32) (err error)
+
+func NewDecoder(src io.Reader) (d *Decoder)
+func (d *Decoder) Decode(value any) (err error)
+func (d *Decoder) Close() (err error)
+
+type Decodee interface {
+    DecodeMessagePack(Reader) error
+}
+
+func NewReader(src io.Reader) (r *Reader)
+func (r *Reader) Reset(src io.Reader)
+func (r *Reader) SetLimits(limits ReaderLimits) (err error)
+
+func (r *Reader) DecodeNil() (err error)
+func (r *Reader) DecodeBool() (value bool, err error)
+func (r *Reader) DecodeInt64() (value int64, err error)
+func (r *Reader) DecodeUint64() (value uint64, err error)
+func (r *Reader) DecodeFloat32() (value float32, err error)
+func (r *Reader) DecodeFloat64() (value float64, err error)
+func (r *Reader) DecodeString() (value string, err error)
+func (r *Reader) DecodeBytes() (value []byte, err error)
+func (r *Reader) DecodeStringTo(dst io.Writer) (n uint64, err error)
+func (r *Reader) DecodeBytesTo(dst io.Writer) (n uint64, err error)
+func (r *Reader) DecodeArrayHeader() (count uint32, err error)
+func (r *Reader) DecodeMapHeader() (count uint32, err error)
+func (r *Reader) Skip() (err error)
 ```
 
-`DecoderLimits` has its own `decoder_limits.go` file. Its entire public
+`ReaderLimits` has its own `reader_limits.go` file. Its entire public
 shape is:
 
 ```go
-type DecoderLimits struct {
+type ReaderLimits struct {
     MaxPayloadBytes uint64
     MaxSkipDepth    uint32
     MaxSkipValues   uint64
@@ -107,22 +116,61 @@ type DecoderLimits struct {
 }
 ```
 
-No configuration framework, exported option functions, error accessor, flush,
-close, or whole-object method is included. Each operation reports its own error.
-`Reset` and `SetLimits` are the only lifecycle/configuration operations.
+No configuration framework, exported option functions, error accessor, or flush
+is included. Each operation reports its own error. Writer and Reader retain
+Reset; Reader also exposes SetLimits. Encoder exposes only Encode and Close;
+Decoder exposes only Decode and Close.
+
+## Custom value encoding
+
+- `Encode` checks closure and stream readiness before dispatching to
+  `EncodeMessagePack(Writer)`. Unsupported inputs, including nil and built-in
+  scalars, return `ErrUnsupportedType` directly without I/O or a terminal failure.
+- The concrete Writer passed by value shares output, payload buffering, and error
+  state with its Encoder. Typed nil Encodee pointers retain normal Go method behavior.
+- Hook errors are wrapped with encode context and retained as terminal failures.
+  A stored Writer I/O failure takes precedence, including when the hook ignores
+  it or returns a different error. Later calls return the stored error without
+  invoking the hook or performing I/O.
+- Close releases the output, prevents subsequent Encode calls with `ErrClosed`,
+  and returns the stored encoding failure, if any. Repeated Close calls return
+  the same result. Close never flushes or closes the supplied output.
+- A zero-value Encoder or NewEncoder(nil) returns ErrUninitialized from Encode.
+  Encoder has no Reset; create a new Encoder to attach or replace an output.
+
+## Custom value decoding
+
+- Decode checks closure and stream readiness before dispatching to
+  DecodeMessagePack(Reader). Targets without Decodee return ErrUnsupportedType
+  directly, without I/O or a terminal failure. Reflection remains deferred.
+- Initialized Reader copies share input, EOF, limits, buffering, and failure state.
+  A hook can configure ReaderLimits through SetLimits. Typed nil Decodee pointers
+  retain normal Go method behavior.
+- Returned hook errors preserve schema context, including an incomplete-message
+  error replacing EOF before a required child. Reader errors returned unchanged
+  keep their identity; other hook errors gain decode context. All hook failures
+  are terminal. If the hook returns nil after a Reader failure, that failure is
+  still returned. Later Decode calls perform no I/O or hook dispatch.
+- Close releases the input and makes later Decode calls return ErrClosed. It
+  returns any stored decoding failure and never drains or closes the input.
+  Repeated Close calls return the same result.
+- Zero-value Decoders and NewDecoder(nil) are unattached. Decoder has no Reset;
+  construct a new Decoder to attach or replace input.
 
 ## Initialization, ownership, and reset
 
+The following reset rules apply to Writer and Reader.
+
 - A zero-value codec is unattached. A constructor attaches its argument and starts
-  with no terminal failure. `NewDecoder` uses the defaults below. Constructors
+  with no terminal failure. `NewReader` uses the defaults below. Constructors
   return usable codec pointers even when given a nil interface; such instances
   remain unattached until reset with a non-nil stream.
 - Encoding/decoding/skipping on an unattached instance returns
   `ErrUninitialized` directly, performs no I/O, and does not latch a failure.
-  `SetLimits` is allowed on an unattached Decoder.
+  `SetLimits` is allowed on an unattached Reader.
 - `Reset` clears the terminal error, pending EOF, per-operation progress, and
   traversal state, and attaches the new stream. A nil interface leaves the codec
-  unattached. Decoder limits survive reset; resetting a never-configured zero
+  unattached. Reader limits survive reset; resetting a never-configured zero
   value initializes default limits. Scratch storage may be reused.
 - Reset does not read, write, flush, close, rewind, drain, or repair either stream.
   Resetting onto a partially consumed/written message does not restore alignment;
@@ -134,7 +182,11 @@ close, or whole-object method is included. Each operation reports its own error.
   the supported unattached form.
 - The caller owns every supplied reader/writer and its lifetime. The codec never
   closes or flushes them, launches background goroutines, or supplies concurrent
-  safety. Codec instances must not be copied after first use or used concurrently.
+  safety. Initialized Writer copies share their output, payload buffer, and failure
+  state. Reader copies share input, EOF, limits, payload buffering, and failure
+  state. Reset or SetLimits through one copy affects all copies. Zero-value copies are
+  independent until initialized. Encoder and Decoder must not be copied after
+  first use. Shared instances must not be used concurrently.
 - `DecodeString` and `DecodeBytes` return owned results stable across subsequent
   calls and reset. Failed materializing reads return `""` or nil. Successful empty
   binary returns a non-nil empty slice. There are no borrowed stream results.
@@ -142,7 +194,7 @@ close, or whole-object method is included. Each operation reports its own error.
 
 ## Limits and bounded memory
 
-Each zero field in a `DecoderLimits` argument selects that field's default.
+Each zero field in a `ReaderLimits` argument selects that field's default.
 Zero never means unlimited. `SetLimits` validates and replaces the complete
 configuration atomically, without I/O; it is allowed before initialization and
 after terminal failure. It cannot clear a terminal failure. Invalid configuration
@@ -198,7 +250,7 @@ source interface returns `ErrInvalidArgument` before I/O. Length validation take
 precedence over that nil-source check. For zero length the nil source is allowed:
 write the empty-family header, do not call the source, and return `n == 0`.
 `EncodeString` and `EncodeBytes` apply the same wire-length validation before any
-output, retaining the existing slice encoder's rejection of oversized payloads.
+output, preserving rejection of oversized payloads.
 
 For a positive declared length, emit the smallest family header, then read and
 write exactly that many payload bytes on success. Never probe beyond the declared
@@ -206,7 +258,7 @@ length, even to check EOF. Extra source bytes remain unread. Early source EOF is
 `io.ErrUnexpectedEOF`, including when no payload byte was supplied after the
 header. Source failure after a header is terminal; the escaped prefix stays written.
 Source bytes accompanied by `io.EOF` complete successfully if they supply exactly
-the remaining declared payload. Encoder source EOF is not retained across separate
+the remaining declared payload. Writer source EOF is not retained across separate
 transfer calls, each of which receives its own source argument.
 
 `DecodeStringTo` and `DecodeBytesTo` require a non-nil destination interface before
@@ -257,10 +309,10 @@ this contract.
 | Underlying read result | Observation by the current operation |
 | --- | --- |
 | Bytes with nil error, segment complete | Continue parsing or complete the operation. |
-| Bytes with `io.EOF`, enough for the entire requested value | Complete successfully; Decoder retains pending EOF for the next operation without an extra underlying read. Encoder transfers retain no source EOF across calls. |
+| Bytes with `io.EOF`, enough for the entire requested value | Complete successfully; Reader retains pending EOF for the next operation without an extra underlying read. Writer transfers retain no source EOF across calls. |
 | Bytes with `io.EOF`, enough for a segment but not the entire requested value | Use the segment; the next required read observes EOF and the operation fails as incomplete. |
-| `io.EOF` before any byte of a new typed operation/Skip root | Return context-wrapped `io.EOF`; no `ErrTruncated` match. |
-| `io.EOF` after the current operation began, including a missing Skip child | Return context-wrapped `io.ErrUnexpectedEOF`; no `io.EOF` or `ErrTruncated` match. |
+| `io.EOF` before any byte of a new typed operation/Skip root | Return context-wrapped `io.EOF`. |
+| `io.EOF` after the current operation began, including a missing Skip child | Return context-wrapped `io.ErrUnexpectedEOF`; no `io.EOF` match. |
 | Bytes with a non-EOF error, even enough for the entire operation | Fail the current operation with that context-wrapped error. Transfer methods first offer those bytes to their destination as specified above. |
 | Non-EOF error without bytes | Fail immediately with the context-wrapped error. |
 
@@ -277,20 +329,22 @@ remember its root's completeness, so missing children there are unexpected EOF.
 
 ## Error identity, precedence, and state transitions
 
-Keep the five existing slice sentinels unchanged. Add three additional direct
-sentinels, each with GoDoc: `ErrUninitialized` for no attached stream,
-`ErrInvalidArgument` for invalid limits or required nil transfer interfaces, and
-`ErrLimitExceeded` for consumed values exceeding configured decoder limits.
+The codec sentinels, each with
+GoDoc, are `ErrUninitialized` for no attached stream, `ErrInvalidArgument` for
+invalid limits or required nil transfer interfaces, `ErrLimitExceeded` for consumed
+values exceeding configured reader limits, and `ErrClosed` for a closed Encoder
+or Decoder. ErrUnsupportedType also covers values without the required Encodee
+or Decodee hook.
 Error strings are not part of the contract.
 
 Wrap external source/destination errors with operation and side context using
 `%w`, preserving `errors.Is`. This includes EOF, unexpected EOF, short writes,
 and no progress. Return codec/state sentinels directly. In particular, stream
-unexpected EOF does **not** also match the existing slice-only `ErrTruncated`.
+unexpected EOF does **not** also match clean `io.EOF`.
 
-Value operations first return an existing terminal failure, then check attachment,
-then validate pre-I/O arguments in the order described above. The following table
-defines whether subsequent value operations can proceed:
+Typed Writer/Reader operations first return an existing terminal failure, then
+check attachment, then validate pre-I/O arguments in the order described above.
+The following table defines whether subsequent value operations can proceed:
 
 | Event | Result/state | Later value operations |
 | --- | --- | --- |
@@ -310,7 +364,7 @@ value-operation failure that leaves an attached healthy codec ready. Even a
 zero-byte transport error is terminal because transport recovery is caller-owned.
 
 After a tag was obtained without a non-EOF transport error, classification order
-matches the slice API: reserved `0xc1`, then extension tags, then supported-family
+follows the wire classification: reserved `0xc1`, then extension tags, then supported-family
 mismatch. A mismatch is terminal after consuming only the tag; it does not parse
 the wrong family's length or body. Expected-family truncation precedes numeric
 overflow. Limits are checked only once the necessary accepted header exists.
@@ -385,7 +439,7 @@ remain distinct, byte-preserving families with no UTF-8 normalization.
 
 ## HTTP, files, and complete-message workflows
 
-For an HTTP response, the caller constructs a Decoder directly on `resp.Body`,
+For an HTTP response, the caller constructs a Reader directly on `resp.Body`,
 sets an appropriate materialization cap for small fields, and traverses a known
 schema using typed calls. It copies a large binary/string directly to a sink with
 `DecodeBytesTo`/`DecodeStringTo`. The caller closes the body and supplies request
@@ -396,7 +450,7 @@ For files, the caller opens a file, optionally wraps it in `bufio.Writer`, and
 encodes headers and children incrementally. A known-length payload streams from
 a reader through `EncodeBytesFrom`/`EncodeStringFrom`. The caller checks encode,
 flush, and close errors separately; durability requires caller-owned file policy.
-Reopening with a Decoder permits incremental validation without a whole-file
+Reopening with a Reader permits incremental validation without a whole-file
 buffer. S04 proves payload output bounds; S06 proves generated arrays; S08 proves
 temporary-file buffering, ownership, and processing before producer completion.
 

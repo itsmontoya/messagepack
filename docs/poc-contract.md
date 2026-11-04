@@ -1,9 +1,11 @@
 # MessagePack PoC contract
 
-> Archived contract for the completed slice PoC. Its slice API remains the
-> compatibility baseline. Streaming I/O and bounded Skip, deferred at that stage,
-> are now implemented under the [streaming contract](streaming-contract.md).
-> See the [current README](../README.md) for response-body and file workflows.
+> Archived contract for the completed slice PoC. On 2026-11-04, package-level
+> Append and Read functions and ErrTruncated were removed; Writer and Reader
+> methods now own all codec logic. ReaderLimits replaces DecoderLimits, and
+> stream reads return owned payloads and use EOF errors. The historical text below
+> records the former API. See the [streaming contract](streaming-contract.md) and
+> [current README](../README.md) for the current API and workflows.
 
 ## Status and environment
 

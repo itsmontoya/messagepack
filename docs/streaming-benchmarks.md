@@ -1,5 +1,9 @@
 # Streaming memory and throughput measurements
 
+> These recorded samples predate the 2026-11-04 Reader/Writer refactor and slice API removal.
+> Current benchmark fixtures generate headers and integers through Writer methods;
+> rerun the benchmarks to measure the current implementation and harness.
+
 Measured on 2026-11-02 with `go1.27.2 darwin/arm64`, Darwin 25.5.0,
 and an Apple M3. Go used its default eight logical CPUs (`-8` result suffix).
 The module, toolchain, dependencies, and production code were unchanged.

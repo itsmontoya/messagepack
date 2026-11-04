@@ -1,7 +1,9 @@
 # MessagePack
 
 A small, typed MessagePack codec for Go 1.27.2 or later, using only the standard
-library. `Encoder` writes to an `io.Writer`; `Decoder` reads from an `io.Reader`.
+library. `Writer` writes typed values to an `io.Writer`; `Reader` reads typed values
+from an `io.Reader`. `Encoder` and `Decoder` handle custom values implementing
+`Encodee` and `Decodee`.
 Process HTTP response bodies, file datasets, and consecutive messages without
 holding an entire encoded object in memory. Known-length payload transfers use
 bounded codec memory; convenient owned payload reads have finite size limits.
@@ -10,7 +12,78 @@ The package supports nil, booleans, signed/unsigned 64-bit integers,
 float32/float64, strings, binary, array/map headers, and bounded `Skip`.
 Extensions, including timestamps, are unsupported. The
 [approved streaming contract](docs/streaming-contract.md) records the exact API
-and behavior. The [slice API](#lower-level-slice-api) is also available.
+and behavior. [In-memory workflows](#encode-and-decode-in-memory) use the same typed API.
+
+## Encode custom values
+
+`Encoder` exposes `Encode(value any)` and `Close()`. For now, `Encode` accepts only
+values implementing this interface; all other values return `ErrUnsupportedType`.
+Reflection is deferred.
+
+```go
+type Encodee interface {
+	EncodeMessagePack(Writer) error
+}
+```
+
+Implement an explicit schema with the typed `Writer` methods:
+
+```go
+type Record struct {
+	ID uint64
+}
+
+// EncodeMessagePack writes Record's one-field map schema.
+func (r Record) EncodeMessagePack(w messagepack.Writer) (err error) {
+	if err = w.EncodeMapHeader(1); err != nil {
+		return err
+	}
+	if err = w.EncodeString("id"); err != nil {
+		return err
+	}
+	return w.EncodeUint64(r.ID)
+}
+```
+
+Pass the record to `messagepack.NewEncoder(dst).Encode(record)`.
+The [executable example](encoder_example_test.go) keeps the Encoder and calls
+`Close` after encoding. `Close` is idempotent, prevents further encoding with
+`ErrClosed`, and returns any stored encoding failure. It neither flushes nor closes
+the supplied output. A zero-value Encoder or `NewEncoder(nil)` is unattached;
+construct a new Encoder to attach an output.
+
+The by-value `Writer` passed to `EncodeMessagePack` shares its output, payload
+buffer, and failure state with the Encoder. Hook failures are terminal, including
+errors returned after partial output. Unsupported values perform no I/O and leave
+a healthy Encoder usable. Typed nil pointers implementing `Encodee` receive the
+normal Go method call.
+
+## Decode custom values
+
+`Decoder` exposes `Decode(value any)` and `Close()`. Decode accepts only values
+implementing this interface; other targets return `ErrUnsupportedType` without
+reading input or making the Decoder terminal. Reflection is deferred.
+
+```go
+type Decodee interface {
+	DecodeMessagePack(Reader) error
+}
+```
+
+Targets usually implement this method on a pointer receiver. Pass the target to
+`messagepack.NewDecoder(src).Decode(&record)`; the
+[executable example](decoder_example_test.go) validates a map schema and fills its
+record through typed Reader methods.
+
+The concrete Reader passed by value shares input, EOF, limits, payload buffering,
+and failure state with the Decoder. Call `Reader.SetLimits` in the hook when a
+schema requires custom limits. Hook errors preserve schema context and become
+terminal. If a hook ignores a Reader failure, Decode still returns that failure.
+
+`Close` is idempotent, prevents further decoding with `ErrClosed`, and returns any
+stored failure. It neither drains nor closes the supplied reader. A zero-value
+Decoder or `NewDecoder(nil)` is unattached; construct a new Decoder to attach input.
+Typed nil pointers implementing Decodee receive the normal Go method call.
 
 ## Decode an HTTP response body
 
@@ -54,7 +127,7 @@ func FetchBinary(ctx context.Context, client *http.Client, url string, dst io.Wr
 	if response.StatusCode != http.StatusOK {
 		return 0, fmt.Errorf("fetch binary: HTTP %s", response.Status)
 	}
-	d := messagepack.NewDecoder(response.Body)
+	d := messagepack.NewReader(response.Body)
 	n, err = d.DecodeBytesTo(dst)
 	return n, err
 }
@@ -62,7 +135,7 @@ func FetchBinary(ctx context.Context, client *http.Client, url string, dst io.Wr
 
 For a structured response, read its map/array header, decode small fields with
 typed calls, and send large fields to `DecodeBytesTo` or `DecodeStringTo`.
-The executable `ExampleDecoder_httpResponse` in
+The executable `ExampleReader_httpResponse` in
 [stream_example_test.go](stream_example_test.go) does this with a six-field map
 and a generated 1 MiB + 7-byte payload. Its schema helpers are test code, not
 package APIs. [HTTP integration tests](stream_http_integration_test.go) prove
@@ -101,7 +174,7 @@ func WriteDataset(path string, count uint32, length uint64, src io.Reader) (err 
 	}()
 	var (
 		buffered = bufio.NewWriter(file)
-		e        = messagepack.NewEncoder(buffered)
+		e        = messagepack.NewWriter(buffered)
 	)
 	if err = e.EncodeArrayHeader(2); err != nil {
 		return err
@@ -124,8 +197,8 @@ func WriteDataset(path string, count uint32, length uint64, src io.Reader) (err 
 }
 ```
 
-Reopen with `NewDecoder`, optionally on a `bufio.Reader`, and process each array
-element before reading the next. `ExampleEncoder_file` in
+Reopen with `NewReader`, optionally on a `bufio.Reader`, and process each array
+element before reading the next. `ExampleWriter_file` in
 [the executable examples](stream_example_test.go) and the
 [file workflow tests](stream_file_workflow_test.go) write and validate 100000
 integers plus an 8 MiB + 7-byte payload without collecting either dataset.
@@ -134,7 +207,7 @@ remain caller responsibilities; a failed write may leave a partial file.
 
 ## Typed operations and containers
 
-| Value | Encoder method | Decoder method |
+| Value | Writer method | Reader method |
 | --- | --- | --- |
 | Nil | `EncodeNil` | `DecodeNil` |
 | Boolean | `EncodeBool` | `DecodeBool` |
@@ -165,7 +238,7 @@ uint32 count support. The [strict schema example](stream_application_message_tes
 retains its ordered six-field policy.
 
 Integer encoders choose the smallest representation; nonnegative signed values
-encode identically to unsigned values. Decoders accept wider integer encodings
+encode identically to unsigned values. Readers accept wider integer encodings
 when the value fits, rejecting negative-to-unsigned and overflowing
 unsigned-to-signed conversions. Float encoders preserve width and bits.
 `DecodeFloat64` also widens float32; widened NaN payload bits are unspecified.
@@ -199,16 +272,16 @@ buffering, and retained application data have their own memory costs.
 
 `DecodeString` and `DecodeBytes` return owned results stable after subsequent
 calls or `Reset`. They intentionally allocate in proportion to accepted payloads.
-`Decoder.SetLimits` configures their cap and independent per-call Skip budgets:
+`Reader.SetLimits` configures their cap and independent per-call Skip budgets:
 
-| `DecoderLimits` field | Default | Meaning |
+| `ReaderLimits` field | Default | Meaning |
 | --- | --- | --- |
 | `MaxPayloadBytes` | 16 MiB | Each owned string/binary result; maximum configurable cap is uint32 maximum. |
 | `MaxSkipDepth` | 64 | Nested container levels; hard maximum 256, including empty containers. |
 | `MaxSkipValues` | 1048576 | Values per Skip, including its root, containers, and each map key/value. |
 | `MaxSkipBytes` | 64 MiB | Wire bytes per Skip, including tags and headers. |
 
-For example, `d.SetLimits(messagepack.DecoderLimits{MaxPayloadBytes: 1024})`
+For example, `d.SetLimits(messagepack.ReaderLimits{MaxPayloadBytes: 1024})`
 sets a 1 KiB owned-result cap and selects defaults for every other field; check
 the returned error. Zero fields always mean finite defaults. `SetLimits`
 replaces the entire configuration atomically; invalid settings leave it unchanged.
@@ -230,13 +303,14 @@ are returned directly.
 | Result | Meaning |
 | --- | --- |
 | `io.EOF` | No byte of the next requested value was available. |
-| `io.ErrUnexpectedEOF` | The current header, scalar, payload, or skipped value was incomplete. Stream errors do not match `ErrTruncated`. |
+| `io.ErrUnexpectedEOF` | The current header, scalar, payload, or skipped value was incomplete. |
 | `ErrInvalidFormat` | Reserved tag `0xc1`. |
-| `ErrUnsupportedType` | Extension tag, including timestamps; also rejected by Skip. |
+| `ErrUnsupportedType` | Extension tag, including timestamps, or a value lacking the required Encodee/Decodee hook. |
 | `ErrTypeMismatch` | A supported wire family rejected by the requested typed decoder. |
 | `ErrOverflow` | Numeric conversion overflow, encode length above uint32, or owned length above platform `int`. |
 | `ErrLimitExceeded` | A consumed header/value exceeds an owned-result or Skip limit. |
 | `ErrUninitialized` | No attached reader/writer. |
+| `ErrClosed` | Encode or Decode called after its codec was closed. |
 | `ErrInvalidArgument` | Invalid limits or a required nil transfer interface. |
 
 After a tag is read successfully, reserved/extension classification precedes
@@ -252,7 +326,7 @@ ends fail on the same bytes, the destination error takes precedence. A complete
 count can accompany a failure.
 
 Bytes accompanied by EOF complete successfully when they supply the entire
-operation. A Decoder retains that EOF for the next operation without an extra
+operation. A Reader retains that EOF for the next operation without an extra
 read. Any simultaneous non-EOF read error fails the current operation, even
 with complete bytes; transfers first offer those bytes to the sink. Short
 nil-error writes become `io.ErrShortWrite`; 100 consecutive `(0, nil)` reads
@@ -264,13 +338,17 @@ encode-length errors are nonterminal on a healthy attached codec. Existing
 failure and attachment checks precede argument checks. `SetLimits` cannot clear
 a terminal failure.
 
-`Reset` clears failure/pending EOF and attaches a new stream, preserving Decoder
-limits and possibly reusing scratch. It cannot rewind, drain, or repair a partial
-message: the caller supplies a known boundary. Zero-value codecs and constructors
-given nil interfaces are unattached until reset. Typed nil pointers inside
-interfaces retain ordinary Go behavior; nil codec receivers are unsupported.
-Do not copy a codec after first use or use it concurrently. Shared mutable
-buffers require caller synchronization; passing race tests does not change this.
+`Writer.Reset` and `Reader.Reset` clear failure/pending EOF and attach a new stream,
+preserving Reader limits and possibly reusing scratch. They cannot rewind, drain,
+or repair a partial message: the caller supplies a known boundary. Zero-value
+Writers and Readers and their constructors given nil interfaces are unattached
+until reset. Typed nil pointers inside interfaces retain ordinary Go behavior;
+nil codec receivers are unsupported.
+Initialized Writer copies share output and failure state; Reader copies share
+input, EOF, limits, and failure state. Both share their payload buffers;
+Reset through one copy affects every copy. Do not copy an Encoder or Decoder after
+first use. Shared instances and mutable buffers require caller synchronization;
+passing race tests does not change this.
 
 ## Complete messages and persistent streams
 
@@ -292,27 +370,18 @@ A rejected frame's remainder is the caller's responsibility; resetting the
 codec does not discard it. [Executable examples](stream_example_test.go) and
 [boundary tests](stream_boundary_workflow_test.go) demonstrate both policies.
 
-## Lower-level slice API
+## Encode and decode in memory
 
-Typed `Append*`/`Read*` functions remain available for complete in-memory input;
-their exact signatures and compatibility rules are in the
-[archived slice contract](docs/poc-contract.md). The original
-[slice examples](example_test.go) demonstrate buffer reuse and concatenated
-messages. Retain the returned append slice; appends preserve its prefix, reuse
-capacity, and may allocate on growth. Payload and destination storage must be
-disjoint. A returned append error preserves the original backing storage.
+Attach a Writer or Encoder to a `bytes.Buffer` for in-memory output. For input,
+attach a Reader or Decoder to `bytes.NewReader(data)`. The
+[executable examples](example_test.go) demonstrate buffer reuse and consecutive
+messages. Reader payload results own their storage and survive input mutation and
+reuse. Keep encoding input separate from output storage being overwritten.
 
-Slice reads never modify input, leave trailing bytes at `src[n:]`, and return
-zero values with `n == 0` on failure. Empty or incomplete expected input returns
-`ErrTruncated`. This zero-consumption guarantee applies to slices; stream reads
-can consume a prefix on failure.
-
-`ReadBytes` and `ReadStringBytes` borrow source storage with capacity equal to
-length. Source mutation changes the view, and retaining it retains the backing
-array. Copy before independent ownership or source reuse. Appending to the view
-cannot overwrite following values, but its existing elements remain mutable.
-`ReadString` returns an owned string. Use `err` to distinguish empty borrowed
-success from failure, rather than relying on slice nilness.
+The package-level `Append*` and `Read*` functions, including borrowed
+`ReadStringBytes`, are removed. `ReaderLimits` replaces `DecoderLimits`, and stream
+EOF errors replace the former `ErrTruncated` sentinel. The
+[archived slice contract](docs/poc-contract.md) records the former API.
 
 ## Verification and remaining scope
 
@@ -341,7 +410,7 @@ zero-allocation promise or real file/socket throughput measurement. The
 [historical slice fuzz](docs/poc-fuzzing.md) and
 [allocation reports](docs/poc-benchmarks.md) preserve their separate evidence.
 
-Generic marshal/unmarshal, reflection, `Encode(any)`/`Decode(any)`, automatic
+Generic marshal/unmarshal, reflection, automatic
 struct mapping, struct tags, extensions/timestamps, code generation, map sorting,
 pooling, concurrency machinery, unsafe conversions, assembly, and speculative
 fast paths remain deferred. Application schemas use explicit typed calls.
@@ -349,9 +418,6 @@ Streaming transfers and bounded Skip are implemented.
 
 ## Contributions
 
-[AGENTS.md](AGENTS.md) reserves production code for human contributors and limits
-AI assistance. The maintainer granted scoped session authorization for
-[streaming tasks S01–S11](docs/streaming-contract.md) and, separately, the
-[archived PoC tasks 1–11](docs/poc-todo.md). These approvals do not change the
-standing policy. Follow [STYLEGUIDE.md](STYLEGUIDE.md) for comments,
-documentation, and tests.
+[AGENTS.md](AGENTS.md) permits AI assistance with production code, refactoring,
+documentation, and tests within the requested scope. Human maintainers guide
+design and review. Follow [STYLEGUIDE.md](STYLEGUIDE.md) for all contributions.
