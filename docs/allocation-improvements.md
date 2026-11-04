@@ -11,7 +11,9 @@ On 2026-11-04, two changes were applied to production code following the
 Together these add ten lines to the implementation. Both keep the same wire bytes,
 I/O boundaries, limits, and terminal error behavior. Larger payloads use the
 existing bounded buffer. No public API, shared state layout, or pooling was added.
-Owned string decoding and the broader hook-scratch refactor remain future work.
+Short owned string decoding was subsequently optimized in the
+[follow-up profiling pass](allocation-followup.md). The broader hook-scratch
+refactor remains deferred.
 
 ## Before and after
 

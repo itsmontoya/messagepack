@@ -430,6 +430,8 @@ measurements after the November 4 Reader/Writer refactor, including small string
 hooks, Skip, allocation profiles, and isolated optimization experiments. It
 led to the applied short-string and Skip optimizations, recorded with
 [before and after timings](docs/allocation-improvements.md).
+A [follow-up profiling pass](docs/allocation-followup.md) also removes temporary
+payload allocations when decoding strings of at most nine bytes.
 
 Generic marshal/unmarshal, reflection, automatic
 struct mapping, struct tags, extensions/timestamps, code generation, map sorting,
