@@ -357,9 +357,16 @@ Other architectures and CPUs without the required instructions use scalar decodi
 See [Go's experimental SIMD support](https://go.dev/doc/go1.27) and
 [the SIMD measurements](docs/numeric-simd-benchmarks.md).
 
+Cached reflection handlers use these batches for arrays and slices of built-in
+`int64`, `uint64`, and `float64`, including named collections and struct fields.
+They stage at most 64 values at a time. Array prefixes update on failure; slices
+publish replacement storage only after complete success. Hooks retain priority.
+Named element types, pointer/interface elements, narrower integers, float32
+targets, and byte slices keep their existing paths.
+
 Values must be consecutive on the wire: map keys separate struct field values,
-so adjacent numeric Go fields alone do not form a batch. The batch API also
-provides a target for future generated decoders.
+so adjacent numeric Go fields alone do not form a batch. Structs remain maps,
+and decoding follows their keys without assuming declaration order.
 
 Strings preserve bytes, including invalid UTF-8 and NULs, without validation or
 normalization. Strings and binary are distinct families. `EncodeBytes(nil)`
@@ -546,6 +553,8 @@ The [numeric batch baseline](docs/numeric-batch-benchmarks.md) compares the init
 scalar batch methods with per-value calls for 1–1024 values.
 The [SIMD follow-up](docs/numeric-simd-benchmarks.md) measures the optional vector
 paths and separates contiguous conversion kernels from complete Reader calls.
+It also compares reflection workloads through `Decoder.Decode` before and after
+the batch integration, separately for ordinary and SIMD builds.
 
 Package-level marshal/unmarshal functions, struct tags, extensions/timestamps,
 code generation, map sorting, pooling, concurrency machinery, unsafe conversions,

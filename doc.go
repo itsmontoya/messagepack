@@ -67,6 +67,9 @@
 // GOEXPERIMENT=simd builds enable standard-library SIMD for supported numeric
 // prefixes on arm64 and AVX-capable amd64, inspecting in-memory inputs or bytes
 // already available in caller-supplied bufio.Reader buffers. Other cases use scalars.
+// Cached reflection plans use these batches for arrays and slices of built-in
+// int64, uint64, and float64 elements, including nested and named collections.
+// Hooks retain priority; named element types and other numeric targets stay scalar.
 //
 // # Failures and message boundaries
 //

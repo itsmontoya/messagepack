@@ -225,12 +225,38 @@ first key prefix. Cached prefixes use bounded writes of at most 32 KiB.
 Encoder owns and reuses its reflection context and Writer scratch across calls.
 Field values remain reflective; no generator or additional build step is used.
 
+Decoding plans select numeric batch handlers once for arrays and slices whose
+elements are the built-in int64, uint64, or float64 types. This includes named
+collection types and collections nested inside structs. Both value and pointer
+Decodee methods are checked before selecting a handler; hooks on collections
+also retain priority. Named element types, pointer/interface elements, narrower
+integers, float32 targets, and byte-slice binary handling keep scalar traversal.
+Plan initialization inspects child types without initializing child plans, so
+recursive types remain deadlock-free. Cached plans contain no destinations,
+scratch buffers, or stream state.
+
+After accepting the array header, decoding checks the child visit budget and
+exact fixed-array length in the existing order, then checks nonempty batch
+children's depth before reading any child. Numeric handlers use the Reader batch
+APIs with at most 64 elements (512 bytes) of typed stack scratch. This staging
+bound is independent of SIMD eligibility. They do not peek individual tags;
+Reader decides whether the actual wire bytes and available input permit vector
+processing. Completed values update fixed-array prefixes even if the batch
+fails. Slices grow private typed storage only from completed children and publish
+it after full success, leaving the original slice and aliases untouched on
+failure. Empty collections and nil remain distinct. Visits include completed
+children and the attempted failing child. Conversion rules, first errors,
+terminal state, missing-child EOF translation, and stream read boundaries remain
+the same as scalar reflection traversal.
+
 Structs encode maps with exact exported Go field names in declaration order;
 embedded fields keep their own names. Unexported fields and tags are ignored.
 Unknown fields are consumed with Skip, missing fields retain their values, and
 the last duplicate field wins. Map iteration order is unspecified. Arrays require
 exact lengths. Numeric conversions retain typed Reader rules and check the
 target Go type's range.
+Decoding still follows map keys, including reordered and duplicate keys; no
+numeric batch crosses keys or combines adjacent Go struct fields.
 
 Byte slices use binary and nil byte slices encode empty binary. Other nil slices,
 maps, pointers, and interfaces encode nil. Wire nil clears nullable targets.
