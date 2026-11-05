@@ -1,7 +1,9 @@
 package messagepack
 
 import (
+	"bufio"
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +12,510 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestDecoderNumericCollections(t *testing.T) {
+	type signed int64
+	type unsigned uint64
+	type floating float64
+	tests := []struct {
+		name   string
+		typ    reflect.Type
+		wire   [][]byte
+		values []any
+	}{
+		{name: "signed compact", typ: reflect.TypeFor[int64](), wire: [][]byte{{7}}, values: []any{int64(7)}},
+		{name: "unsigned compact", typ: reflect.TypeFor[uint64](), wire: [][]byte{{7}}, values: []any{uint64(7)}},
+		{name: "signed wide", typ: reflect.TypeFor[int64](), wire: [][]byte{{0xd3, 0x80, 0, 0, 0, 0, 0, 0, 0}}, values: []any{int64(math.MinInt64)}},
+		{name: "unsigned wide", typ: reflect.TypeFor[uint64](), wire: [][]byte{{0xcf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}}, values: []any{uint64(math.MaxUint64)}},
+		{name: "signed mixed", typ: reflect.TypeFor[int64](),
+			wire:   [][]byte{{7}, {0xff}, {0xcc, 128}, {0xcd, 1, 0}, {0xce, 0, 1, 0, 0}, {0xcf, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, {0xd0, 0x80}, {0xd1, 0x80, 0}, {0xd2, 0x80, 0, 0, 0}, {0xd3, 0x80, 0, 0, 0, 0, 0, 0, 0}},
+			values: []any{int64(7), int64(-1), int64(128), int64(256), int64(65536), int64(math.MaxInt64), int64(-128), int64(-32768), int64(math.MinInt32), int64(math.MinInt64)}},
+		{name: "unsigned mixed", typ: reflect.TypeFor[uint64](),
+			wire:   [][]byte{{7}, {0xcc, 128}, {0xcd, 1, 0}, {0xce, 0, 1, 0, 0}, {0xcf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, {0xd0, 7}, {0xd1, 0, 7}, {0xd2, 0, 0, 0, 7}, {0xd3, 0, 0, 0, 0, 0, 0, 0, 7}},
+			values: []any{uint64(7), uint64(128), uint64(256), uint64(65536), uint64(math.MaxUint64), uint64(7), uint64(7), uint64(7), uint64(7)}},
+		{name: "float wide NaN", typ: reflect.TypeFor[float64](), wire: [][]byte{{0xcb, 0x7f, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc}}, values: []any{math.Float64frombits(0x7ff0123456789abc)}},
+		{name: "float mixed", typ: reflect.TypeFor[float64](),
+			wire:   [][]byte{{0xca, 0x3f, 0xc0, 0, 0}, {0xcb, 0x80, 0, 0, 0, 0, 0, 0, 0}, {0xcb, 0xff, 0xf8, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc}, {0xca, 0x7f, 0x80, 0, 1}},
+			values: []any{float64(1.5), math.Float64frombits(1 << 63), math.Float64frombits(0xfff8123456789abc), float64(math.Float32frombits(0x7f800001))}},
+		{name: "named signed", typ: reflect.TypeFor[signed](), wire: [][]byte{{0xff}}, values: []any{signed(-1)}},
+		{name: "named unsigned", typ: reflect.TypeFor[unsigned](), wire: [][]byte{{7}}, values: []any{unsigned(7)}},
+		{name: "named float", typ: reflect.TypeFor[floating](), wire: [][]byte{{0xcb, 0x80, 0, 0, 0, 0, 0, 0, 0}}, values: []any{floating(math.Float64frombits(1 << 63))}},
+	}
+
+	for _, tt := range tests {
+		for _, size := range []int{0, 1, 2, 15, 16, 17, 63, 64, 65, 257} {
+			for _, shape := range []string{"Array", "Slice", "StructArray", "StructSlice"} {
+				for _, input := range []string{"Reader", "Buffer", "Buffered", "Fragmented"} {
+					t.Run(fmt.Sprintf("%s/%d/%s/%s", tt.name, size, shape, input), func(t *testing.T) {
+						var (
+							output bytes.Buffer
+							writer = NewWriter(&output)
+							typ    = reflect.SliceOf(tt.typ)
+							err    error
+						)
+
+						if shape == "Array" || shape == "StructArray" {
+							typ = reflect.ArrayOf(size, tt.typ)
+						}
+
+						if shape == "StructArray" || shape == "StructSlice" {
+							typ = reflect.StructOf([]reflect.StructField{{Name: "Values", Type: typ}})
+							output.Write([]byte{0x81, 0xa6, 'V', 'a', 'l', 'u', 'e', 's'})
+						}
+
+						if err = writer.EncodeArrayHeader(uint32(size)); err != nil {
+							t.Fatal(err)
+						}
+
+						for index := 0; index < size; index++ {
+							output.Write(tt.wire[index%len(tt.wire)])
+						}
+						var (
+							length           = output.Len()
+							data             = append(output.Bytes(), 0xc3)
+							target           = reflect.New(typ)
+							source, position = decoderNumericInput(t, data, input)
+						)
+
+						var decoder = NewDecoder(source)
+						if err = decoder.Decode(target.Interface()); err != nil || position() != length {
+							t.Fatalf("Decode = %v, position %d, want %d", err, position(), length)
+						}
+
+						var values = target.Elem()
+						if values.Kind() == reflect.Struct {
+							values = values.Field(0)
+						}
+
+						if values.Len() != size || values.Kind() == reflect.Slice && values.IsNil() {
+							t.Fatalf("decoded length %d, want non-nil collection of length %d", values.Len(), size)
+						}
+
+						for index := 0; index < size; index++ {
+							var (
+								got  = values.Index(index)
+								want = reflect.ValueOf(tt.values[index%len(tt.values)])
+							)
+
+							if tt.typ.Kind() == reflect.Float64 {
+								if math.Float64bits(got.Float()) != math.Float64bits(want.Float()) {
+									t.Fatalf("element %d bits = %x, want %x", index, math.Float64bits(got.Float()), math.Float64bits(want.Float()))
+								}
+							} else if !reflect.DeepEqual(got.Interface(), want.Interface()) {
+								t.Fatalf("element %d = %v, want %v", index, got, want)
+							}
+						}
+						var tail bool
+						if err = decoder.Decode(&tail); err != nil || !tail {
+							t.Fatalf("Decode tail = (%v, %v)", tail, err)
+						}
+					})
+				}
+			}
+		}
+	}
+}
+
+func TestDecoderNumericNamedCollections(t *testing.T) {
+	type signedArray [2]int64
+	type unsignedArray [2]uint64
+	type floatArray [2]float64
+	type signedSlice []int64
+	type unsignedSlice []uint64
+	type floatSlice []float64
+	tests := []struct {
+		name string
+		want any
+	}{
+		{name: "signed array", want: signedArray{-1, 2}},
+		{name: "unsigned array", want: unsignedArray{1, 2}},
+		{name: "float array", want: floatArray{1.5, -2.5}},
+		{name: "signed slice", want: signedSlice{-1, 2}},
+		{name: "unsigned slice", want: unsignedSlice{1, 2}},
+		{name: "float slice", want: floatSlice{1.5, -2.5}},
+		{name: "nil signed slice", want: signedSlice(nil)},
+		{name: "nil unsigned slice", want: unsignedSlice(nil)},
+		{name: "nil float slice", want: floatSlice(nil)},
+		{name: "empty signed slice", want: signedSlice{}},
+		{name: "empty unsigned slice", want: unsignedSlice{}},
+		{name: "empty float slice", want: floatSlice{}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				wire   bytes.Buffer
+				target = reflect.New(reflect.TypeOf(tt.want))
+				err    error
+			)
+
+			if err = NewEncoder(&wire).Encode(tt.want); err != nil {
+				t.Fatal(err)
+			}
+
+			if err = NewDecoder(&wire).Decode(target.Interface()); err != nil || !reflect.DeepEqual(target.Elem().Interface(), tt.want) {
+				t.Fatalf("Decode = (%v, %v), want %v", target.Elem(), err, tt.want)
+			}
+		})
+	}
+}
+
+func TestDecoderNumericCollectionFailures(t *testing.T) {
+	for _, typ := range []reflect.Type{reflect.TypeFor[int64](), reflect.TypeFor[uint64](), reflect.TypeFor[float64]()} {
+		var (
+			body     = []byte{0xd3, 0, 0, 0, 0, 0, 0, 0, 7}
+			good any = int64(7)
+		)
+
+		if typ.Kind() == reflect.Uint64 {
+			body[0], good = 0xcf, uint64(7)
+		} else if typ.Kind() == reflect.Float64 {
+			body = []byte{0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}
+			good = float64(1.5)
+		}
+
+		type testcase struct {
+			name     string
+			bad      []byte
+			consumed int
+			wantErr  error
+		}
+
+		tests := []testcase{
+			{name: "wrong family", bad: []byte{0xa1, 'x'}, consumed: 1, wantErr: ErrTypeMismatch},
+			{name: "reserved", bad: []byte{0xc1, 7}, consumed: 1, wantErr: ErrInvalidFormat},
+			{name: "extension", bad: []byte{0xd4, 0, 7}, consumed: 1, wantErr: ErrUnsupportedType},
+			{name: "missing child", wantErr: io.ErrUnexpectedEOF},
+			{name: "truncated child", bad: body[:5], consumed: 5, wantErr: io.ErrUnexpectedEOF},
+		}
+
+		if typ.Kind() == reflect.Int64 {
+			tests = append(tests, testcase{name: "overflow", bad: []byte{0xcf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 7}, consumed: 9, wantErr: ErrOverflow})
+		} else if typ.Kind() == reflect.Uint64 {
+			tests = append(tests, testcase{name: "negative", bad: []byte{0xff, 7}, consumed: 1, wantErr: ErrOverflow})
+		}
+
+		for _, tt := range tests {
+			for _, prefix := range []int{0, 1, 2, 15, 16, 63, 64, 65} {
+				for _, shape := range []string{"Array", "Slice"} {
+					for _, input := range []string{"Reader", "Buffer", "Buffered", "Fragmented"} {
+						t.Run(fmt.Sprintf("%s/%s/%d/%s/%s", typ, tt.name, prefix, shape, input), func(t *testing.T) {
+							var (
+								wire   = []byte{0xdc, 0, 67}
+								target reflect.Value
+								want   reflect.Value
+							)
+
+							for index := 0; index < prefix; index++ {
+								wire = append(wire, body...)
+							}
+							wire = append(wire, tt.bad...)
+							if shape == "Array" {
+								target = reflect.New(reflect.ArrayOf(67, typ))
+								want = reflect.New(target.Elem().Type()).Elem()
+							} else {
+								target = reflect.New(reflect.SliceOf(typ))
+								target.Elem().Set(reflect.MakeSlice(target.Elem().Type(), 67, 100))
+								want = reflect.MakeSlice(target.Elem().Type(), 67, 67)
+							}
+
+							for index := 0; index < 67; index++ {
+								target.Elem().Index(index).Set(reflect.ValueOf(9).Convert(typ))
+								want.Index(index).Set(target.Elem().Index(index))
+								if shape == "Array" && index < prefix {
+									want.Index(index).Set(reflect.ValueOf(good))
+								}
+							}
+							var (
+								alias            = target.Elem().Interface()
+								source, position = decoderNumericInput(t, wire, input)
+								decoder          = NewDecoder(source)
+								first            = decoder.Decode(target.Interface())
+								consumed         = 3 + prefix*len(body) + tt.consumed
+								tail             bool
+								err              error
+							)
+
+							if !errors.Is(first, tt.wantErr) || position() != consumed || !reflect.DeepEqual(target.Elem().Interface(), want.Interface()) {
+								t.Fatalf("Decode = (%v, %v), position %d; want (%v, %v), position %d", target.Elem(), first, position(), want, tt.wantErr, consumed)
+							}
+
+							if tt.wantErr == io.ErrUnexpectedEOF && errors.Is(first, io.EOF) {
+								t.Fatal("missing required child matches clean EOF")
+							}
+
+							if shape == "Slice" && !reflect.DeepEqual(alias, want.Interface()) {
+								t.Fatal("failed slice decode changed an alias")
+							}
+
+							if err = decoder.Decode(&tail); err != first || position() != consumed {
+								t.Fatalf("terminal Decode = %v, position %d", err, position())
+							}
+
+							if err = decoder.Close(); err != first {
+								t.Fatalf("Close = %v, want %v", err, first)
+							}
+						})
+					}
+				}
+			}
+		}
+	}
+}
+
+func decoderNumericInput(t *testing.T, data []byte, mode string) (source io.Reader, position func() int) {
+	t.Helper()
+	switch mode {
+	case "Reader":
+		var memory = bytes.NewReader(data)
+		return memory, func() (n int) { return len(data) - memory.Len() }
+	case "Buffer":
+		var buffer = bytes.NewBuffer(data)
+		return buffer, func() (n int) { return len(data) - buffer.Len() }
+	case "Buffered":
+		var buffered = bufio.NewReaderSize(bytes.NewReader(data), len(data))
+		if _, err := buffered.Peek(len(data)); err != nil {
+			t.Fatal(err)
+		}
+
+		return buffered, func() (n int) { return len(data) - buffered.Buffered() }
+	default:
+		var fragmented = &decoderTestReader{data: data, maxRead: 1, endErr: io.EOF}
+		return fragmented, func() (n int) { return fragmented.position }
+	}
+}
+
+func TestDecoderNumericScalarFallbacks(t *testing.T) {
+	tests := []struct {
+		name     string
+		wire     []byte
+		initial  any
+		want     any
+		wantErr  error
+		consumed int
+	}{
+		{name: "narrow signed", wire: []byte{0x93, 7, 0xcd, 1, 0, 8}, initial: [3]int8{9, 9, 9}, want: [3]int8{7, 9, 9}, wantErr: ErrOverflow, consumed: 5},
+		{name: "narrow unsigned", wire: []byte{0x93, 7, 0xcd, 1, 0, 8}, initial: [3]uint16{9, 9, 9}, want: [3]uint16{7, 256, 8}, consumed: 6},
+		{name: "narrow unsigned overflow", wire: []byte{0x93, 7, 0xce, 0, 1, 0, 0, 8}, initial: [3]uint16{9, 9, 9}, want: [3]uint16{7, 9, 9}, wantErr: ErrOverflow, consumed: 7},
+		{name: "float32 mismatch", wire: []byte{0x92, 0xca, 0x3f, 0xc0, 0, 0, 0xcb, 7}, initial: [2]float32{9, 9}, want: [2]float32{1.5, 9}, wantErr: ErrTypeMismatch, consumed: 7},
+		{name: "pointers", wire: []byte{0x92, 7, 8}, initial: [2]*int64{}, want: [2]*int64{new(int64(7)), new(int64(8))}, consumed: 3},
+		{name: "interfaces", wire: []byte{0x92, 7, 8}, initial: [2]any{}, want: [2]any{uint64(7), uint64(8)}, consumed: 3},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				target = reflect.New(reflect.TypeOf(tt.initial))
+				source = bytes.NewReader(tt.wire)
+				err    error
+			)
+
+			target.Elem().Set(reflect.ValueOf(tt.initial))
+			err = NewDecoder(source).Decode(target.Interface())
+			if err != tt.wantErr || len(tt.wire)-source.Len() != tt.consumed || !reflect.DeepEqual(target.Elem().Interface(), tt.want) {
+				t.Fatalf("Decode = (%v, %v), consumed %d; want (%v, %v), consumed %d", target.Elem(), err, len(tt.wire)-source.Len(), tt.want, tt.wantErr, tt.consumed)
+			}
+		})
+	}
+}
+
+func TestDecoderNumericAdvertisedCounts(t *testing.T) {
+	for _, typ := range []reflect.Type{reflect.TypeFor[[]int64](), reflect.TypeFor[[]uint64](), reflect.TypeFor[[]float64](), reflect.TypeFor[[2]int64](), reflect.TypeFor[[2]uint64](), reflect.TypeFor[[2]float64]()} {
+		for _, count := range []uint32{1, maximumReflectionVisits, math.MaxUint32} {
+			t.Run(fmt.Sprintf("%s/%d", typ, count), func(t *testing.T) {
+				var (
+					wire                = []byte{0xdd, 0, 0, 0, 0, 0xc3}
+					target              = reflect.New(typ)
+					wantErr       error = ErrLimitExceeded
+					wantRemaining       = 1
+				)
+
+				binary.BigEndian.PutUint32(wire[1:5], count)
+				if count == 1 {
+					wantErr = ErrTypeMismatch
+					if typ.Kind() == reflect.Slice {
+						wantRemaining = 0
+					}
+				}
+
+				var (
+					source = bytes.NewReader(wire)
+					err    = NewDecoder(source).Decode(target.Interface())
+				)
+
+				if err != wantErr || source.Len() != wantRemaining {
+					t.Fatalf("Decode = %v, remaining %d, want (%v, %d)", err, source.Len(), wantErr, wantRemaining)
+				}
+			})
+		}
+	}
+	for _, typ := range []reflect.Type{reflect.TypeFor[[]int64](), reflect.TypeFor[[]uint64](), reflect.TypeFor[[]float64]()} {
+		var (
+			wire   = []byte{0xdd, 0, 0, 0, 0}
+			target = reflect.New(typ)
+			err    error
+		)
+
+		binary.BigEndian.PutUint32(wire[1:], maximumReflectionVisits-1)
+		if err = NewDecoder(bytes.NewReader(wire)).Decode(target.Interface()); !errors.Is(err, io.ErrUnexpectedEOF) || !target.Elem().IsNil() {
+			t.Fatalf("Decode allowed count without children for %s = (%v, %v)", typ, target.Elem(), err)
+		}
+	}
+}
+
+func TestDecoderNumericSlicePublication(t *testing.T) {
+	for _, typ := range []reflect.Type{reflect.TypeFor[int64](), reflect.TypeFor[uint64](), reflect.TypeFor[float64]()} {
+		for _, form := range []string{"nil", "empty", "values"} {
+			t.Run(typ.String()+"/"+form, func(t *testing.T) {
+				var (
+					target     = reflect.New(reflect.SliceOf(typ))
+					storage    = reflect.MakeSlice(target.Elem().Type(), 8, 8)
+					wire       = []byte{0x92, 7, 8}
+					wantLength = 2
+					err        error
+				)
+
+				for index := 0; index < storage.Len(); index++ {
+					storage.Index(index).Set(reflect.ValueOf(9).Convert(typ))
+				}
+				target.Elem().Set(storage)
+				if typ.Kind() == reflect.Float64 {
+					wire = []byte{0x92, 0xca, 0x3f, 0xc0, 0, 0, 0xca, 0x40, 0, 0, 0}
+				}
+
+				if form == "nil" {
+					wire, wantLength = []byte{0xc0}, 0
+				} else if form == "empty" {
+					wire, wantLength = []byte{0x90}, 0
+				}
+
+				if err = NewDecoder(bytes.NewReader(wire)).Decode(target.Interface()); err != nil || target.Elem().Len() != wantLength || target.Elem().IsNil() != (form == "nil") {
+					t.Fatalf("Decode = (%v, %v)", target.Elem(), err)
+				}
+
+				for index := 0; index < storage.Len(); index++ {
+					if !reflect.DeepEqual(storage.Index(index).Interface(), reflect.ValueOf(9).Convert(typ).Interface()) {
+						t.Fatal("successful slice decode overwrote original storage")
+					}
+				}
+			})
+		}
+	}
+}
+
+func TestDecoderNumericTransportPrecedence(t *testing.T) {
+	var sourceFailure = errors.New("test: numeric source failure")
+	for _, typ := range []reflect.Type{reflect.TypeFor[int64](), reflect.TypeFor[uint64](), reflect.TypeFor[float64]()} {
+		for _, failure := range []string{"complete body", "reserved tag", "EOF"} {
+			t.Run(typ.String()+"/"+failure, func(t *testing.T) {
+				var (
+					body       = []byte{0xd3, 0, 0, 0, 0, 0, 0, 0, 7}
+					good   any = int64(7)
+					wire       = []byte{0x92}
+					target     = reflect.New(reflect.ArrayOf(2, typ))
+					want       = reflect.New(target.Elem().Type()).Elem()
+				)
+
+				if typ.Kind() == reflect.Uint64 {
+					body[0], good = 0xcf, uint64(7)
+				} else if typ.Kind() == reflect.Float64 {
+					body, good = []byte{0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}, float64(1.5)
+				}
+
+				wire = append(wire, body...)
+				if failure == "reserved tag" {
+					wire = append(wire, 0xc1)
+				} else {
+					wire = append(wire, body...)
+				}
+
+				for index := 0; index < 2; index++ {
+					target.Elem().Index(index).Set(reflect.ValueOf(9).Convert(typ))
+					want.Index(index).Set(reflect.ValueOf(good))
+				}
+				var (
+					source  = &decoderTestReader{data: wire, maxRead: 1, endErr: sourceFailure}
+					decoder = NewDecoder(source)
+					first   error
+					tail    bool
+					err     error
+				)
+
+				if failure == "EOF" {
+					source.endErr = io.EOF
+				} else {
+					want.Index(1).Set(reflect.ValueOf(9).Convert(typ))
+				}
+
+				first = decoder.Decode(target.Interface())
+				if failure == "EOF" && first != nil || failure != "EOF" && !errors.Is(first, sourceFailure) || !reflect.DeepEqual(target.Elem().Interface(), want.Interface()) {
+					t.Fatalf("Decode = (%v, %v), want %v", target.Elem(), first, want)
+				}
+
+				var reads = source.reads
+				err = decoder.Decode(&tail)
+				if failure == "EOF" {
+					if !errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+						t.Fatalf("next root = %v, want clean EOF", err)
+					}
+				} else if err != first {
+					t.Fatalf("terminal Decode = %v, want %v", err, first)
+				}
+
+				if source.reads != reads {
+					t.Fatal("terminal or pending EOF performed additional I/O")
+				}
+			})
+		}
+	}
+}
+
+func TestDecoderNumericStructKeys(t *testing.T) {
+	for _, input := range []string{"Reader", "Buffer", "Buffered", "Fragmented"} {
+		t.Run(input, func(t *testing.T) {
+			var (
+				value = struct {
+					First   int64
+					Second  uint64
+					Values  [2]float64
+					Slice   []int64
+					Missing int64
+				}{Missing: 9}
+				wire = []byte{0x86,
+					0xa6, 'S', 'e', 'c', 'o', 'n', 'd', 2,
+					0xa5, 'S', 'l', 'i', 'c', 'e', 0x92, 7, 8,
+					0xa5, 'F', 'i', 'r', 's', 't', 0xff,
+					0xa6, 'V', 'a', 'l', 'u', 'e', 's', 0x92, 0xca, 0x3f, 0xc0, 0, 0, 0xcb, 0x40, 4, 0, 0, 0, 0, 0, 0,
+					0xa1, 'x', 0x90,
+					0xa5, 'F', 'i', 'r', 's', 't', 42, 0xc3}
+				source, position = decoderNumericInput(t, wire, input)
+				err              = NewDecoder(source).Decode(&value)
+			)
+
+			if err != nil || position() != len(wire)-1 || value.First != 42 || value.Second != 2 || value.Values != [2]float64{1.5, 2.5} || !reflect.DeepEqual(value.Slice, []int64{7, 8}) || value.Missing != 9 {
+				t.Fatalf("Decode keyed numeric fields = (%+v, %v), position %d", value, err, position())
+			}
+		})
+	}
+}
+
+func TestDecoderNumericNestedFailure(t *testing.T) {
+	var (
+		value = struct {
+			Array [2]int64
+			Slice []float64
+		}{Array: [2]int64{9, 9}, Slice: []float64{9, 9}}
+		alias = value.Slice
+		wire  = []byte{0x82, 0xa5, 'A', 'r', 'r', 'a', 'y', 0x92, 7, 8,
+			0xa5, 'S', 'l', 'i', 'c', 'e', 0x92, 0xca, 0x3f, 0xc0, 0, 0}
+		decoder = NewDecoder(bytes.NewReader(wire))
+		err     = decoder.Decode(&value)
+	)
+
+	if !errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF) || value.Array != [2]int64{7, 8} || !reflect.DeepEqual(value.Slice, []float64{9, 9}) || &value.Slice[0] != &alias[0] {
+		t.Fatalf("Decode nested failure = (%+v, %v)", value, err)
+	}
+}
 
 func TestDecoderDecodee(t *testing.T) {
 	var (

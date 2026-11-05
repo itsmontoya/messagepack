@@ -8,6 +8,7 @@ import (
 const (
 	maximumReflectionDepth  = 256
 	maximumReflectionVisits = 1048576
+	reflectionBatchElements = 64
 )
 
 var reflectionPlans sync.Map

@@ -25,6 +25,7 @@ type reflectionPlan struct {
 	decodeAddressHook bool
 	encode            func(*reflectedEncoder, reflect.Value, int) error
 	decode            func(*reflectedDecoder, reflect.Value, byte, int) error
+	decodeElements    func(*reflectedDecoder, reflect.Value, uint32) error
 	fields            []reflectionField
 	fieldsByName      map[string]int
 	prefix            []byte
@@ -95,11 +96,30 @@ func (p *reflectionPlan) initializeArray() {
 	}
 
 	p.element = lookupReflectionPlan(p.typ.Elem())
+	p.initializeNumericElements()
 	p.encode = func(e *reflectedEncoder, value reflect.Value, depth int) (err error) {
 		return e.encodeArray(value, p.element, depth)
 	}
 	p.decode = func(d *reflectedDecoder, value reflect.Value, _ byte, depth int) (err error) {
-		return d.decodeArray(value, p.element, depth)
+		return d.decodeArray(value, p.element, p.decodeElements, depth)
+	}
+}
+
+func (p *reflectionPlan) initializeNumericElements() {
+	var element = p.typ.Elem()
+	// Inspect the type directly: initializing a child here can deadlock recursive plans.
+	if element.Implements(reflect.TypeFor[Decodee]()) || reflect.PointerTo(element).Implements(reflect.TypeFor[Decodee]()) {
+		return
+	}
+
+	// Named elements retain scalar setters; named collections of these types can batch.
+	switch element {
+	case reflect.TypeFor[int64]():
+		p.decodeElements = (*reflectedDecoder).decodeInt64s
+	case reflect.TypeFor[uint64]():
+		p.decodeElements = (*reflectedDecoder).decodeUint64s
+	case reflect.TypeFor[float64]():
+		p.decodeElements = (*reflectedDecoder).decodeFloat64s
 	}
 }
 

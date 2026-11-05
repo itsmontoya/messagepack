@@ -148,7 +148,7 @@ func (d *reflectedDecoder) decodeBytes(value reflect.Value, _ byte, _ int) (err 
 	return nil
 }
 
-func (d *reflectedDecoder) decodeArray(value reflect.Value, element *reflectionPlan, depth int) (err error) {
+func (d *reflectedDecoder) decodeArray(value reflect.Value, element *reflectionPlan, decodeElements func(*reflectedDecoder, reflect.Value, uint32) error, depth int) (err error) {
 	var count uint32
 	if count, err = d.reader.DecodeArrayHeader(); err != nil {
 		return err
@@ -158,11 +158,19 @@ func (d *reflectedDecoder) decodeArray(value reflect.Value, element *reflectionP
 		return d.reader.fail(ErrLimitExceeded)
 	}
 
-	if value.Kind() == reflect.Array {
-		if uint64(count) != uint64(value.Len()) {
-			return d.reader.fail(ErrTypeMismatch)
+	if value.Kind() == reflect.Array && uint64(count) != uint64(value.Len()) {
+		return d.reader.fail(ErrTypeMismatch)
+	}
+
+	if decodeElements != nil {
+		if count != 0 && depth+1 == maximumReflectionDepth {
+			return d.reader.fail(ErrLimitExceeded)
 		}
 
+		return decodeElements(d, value, count)
+	}
+
+	if value.Kind() == reflect.Array {
 		for index := 0; index < value.Len(); index++ {
 			if err = d.decodePlanned(value.Index(index), element, depth+1); err != nil {
 				return err
@@ -183,6 +191,120 @@ func (d *reflectedDecoder) decodeArray(value reflect.Value, element *reflectionP
 	}
 	value.Set(decoded)
 	return nil
+}
+
+func (d *reflectedDecoder) decodeInt64s(value reflect.Value, count uint32) (err error) {
+	var (
+		scratch [reflectionBatchElements]int64
+		decoded = []int64{}
+	)
+
+	for offset := uint32(0); offset < count; {
+		var (
+			requested = int(min(count-offset, reflectionBatchElements))
+			completed int
+		)
+
+		completed, err = d.reader.DecodeInt64s(scratch[:requested])
+		d.visitNumericBatch(completed, requested, err)
+		if value.Kind() == reflect.Array {
+			for index := 0; index < completed; index++ {
+				value.Index(int(offset) + index).SetInt(scratch[index])
+			}
+		} else {
+			decoded = append(decoded, scratch[:completed]...)
+		}
+
+		if err != nil {
+			return err
+		}
+
+		offset += uint32(completed)
+	}
+	if value.Kind() == reflect.Slice {
+		value.Set(reflect.ValueOf(decoded))
+	}
+
+	return nil
+}
+
+func (d *reflectedDecoder) decodeUint64s(value reflect.Value, count uint32) (err error) {
+	var (
+		scratch [reflectionBatchElements]uint64
+		decoded = []uint64{}
+	)
+
+	for offset := uint32(0); offset < count; {
+		var (
+			requested = int(min(count-offset, reflectionBatchElements))
+			completed int
+		)
+
+		completed, err = d.reader.DecodeUint64s(scratch[:requested])
+		d.visitNumericBatch(completed, requested, err)
+		if value.Kind() == reflect.Array {
+			for index := 0; index < completed; index++ {
+				value.Index(int(offset) + index).SetUint(scratch[index])
+			}
+		} else {
+			decoded = append(decoded, scratch[:completed]...)
+		}
+
+		if err != nil {
+			return err
+		}
+
+		offset += uint32(completed)
+	}
+	if value.Kind() == reflect.Slice {
+		value.Set(reflect.ValueOf(decoded))
+	}
+
+	return nil
+}
+
+func (d *reflectedDecoder) decodeFloat64s(value reflect.Value, count uint32) (err error) {
+	var (
+		scratch [reflectionBatchElements]float64
+		decoded = []float64{}
+	)
+
+	for offset := uint32(0); offset < count; {
+		var (
+			requested = int(min(count-offset, reflectionBatchElements))
+			completed int
+		)
+
+		completed, err = d.reader.DecodeFloat64s(scratch[:requested])
+		d.visitNumericBatch(completed, requested, err)
+		if value.Kind() == reflect.Array {
+			for index := 0; index < completed; index++ {
+				value.Index(int(offset) + index).SetFloat(scratch[index])
+			}
+		} else {
+			decoded = append(decoded, scratch[:completed]...)
+		}
+
+		if err != nil {
+			return err
+		}
+
+		offset += uint32(completed)
+	}
+	if value.Kind() == reflect.Slice {
+		value.Set(reflect.ValueOf(decoded))
+	}
+
+	return nil
+}
+
+// visitNumericBatch charges successful children and the attempted failing child.
+// decodeArray has already checked the whole count and the children's depth.
+func (d *reflectedDecoder) visitNumericBatch(completed, requested int, err error) {
+	d.remainingVisits -= uint64(completed)
+	if err != nil && completed < requested {
+		d.remainingVisits--
+	}
 }
 
 func (d *reflectedDecoder) decodeMap(value reflect.Value, key, element *reflectionPlan, depth int) (err error) {

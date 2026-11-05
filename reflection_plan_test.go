@@ -34,8 +34,12 @@ func TestReflectionPlanCache(t *testing.T) {
 
 func TestReflectionPlanConcurrentRecursiveStruct(t *testing.T) {
 	type node struct {
-		ID   uint64
-		Next *node
+		ID       uint64
+		Signed   [2]int64
+		Unsigned []uint64
+		Floats   []float64
+		Children []node
+		Next     *node
 	}
 	type result struct {
 		plan *reflectionPlan
@@ -52,7 +56,7 @@ func TestReflectionPlanConcurrentRecursiveStruct(t *testing.T) {
 			<-start
 			var (
 				cached = loadReflectionPlan(reflect.TypeFor[node]())
-				value  = node{ID: id, Next: &node{ID: id + 1}}
+				value  = node{ID: id, Signed: [2]int64{-1, 2}, Unsigned: []uint64{3, 4}, Floats: []float64{1.5, 2.5}, Children: []node{{ID: id + 2}}, Next: &node{ID: id + 1}}
 				output bytes.Buffer
 				target node
 				err    error
@@ -88,6 +92,58 @@ func TestReflectionPlanConcurrentRecursiveStruct(t *testing.T) {
 
 		if completed.plan != plan {
 			t.Errorf("concurrent lookup = %p, want %p", completed.plan, plan)
+		}
+	}
+}
+
+func TestReflectionPlanRecursiveCollections(t *testing.T) {
+	type recursiveSlice []recursiveSlice
+	type recursiveArray [1]*recursiveArray
+	tests := []struct {
+		typ  reflect.Type
+		wire []byte
+	}{
+		{typ: reflect.TypeFor[recursiveSlice](), wire: []byte{0x91, 0xc0}},
+		{typ: reflect.TypeFor[recursiveArray](), wire: []byte{0x91, 0xc0}},
+	}
+
+	for _, tt := range tests {
+		var (
+			target = reflect.New(tt.typ)
+			err    = NewDecoder(bytes.NewReader(tt.wire)).Decode(target.Interface())
+		)
+
+		if err != nil {
+			t.Fatalf("recursive %s: %v", tt.typ, err)
+		}
+	}
+}
+
+func TestReflectionPlanNumericElements(t *testing.T) {
+	type namedSlice []int64
+	type namedNumber int64
+	tests := []struct {
+		typ   reflect.Type
+		batch bool
+	}{
+		{typ: reflect.TypeFor[[2]int64](), batch: true},
+		{typ: reflect.TypeFor[[]uint64](), batch: true},
+		{typ: reflect.TypeFor[[]float64](), batch: true},
+		{typ: reflect.TypeFor[namedSlice](), batch: true},
+		{typ: reflect.TypeFor[[]namedNumber]()},
+		{typ: reflect.TypeFor[[]reflectionValueNumber]()},
+		{typ: reflect.TypeFor[[]reflectionPointerNumber]()},
+		{typ: reflect.TypeFor[[]*int64]()},
+		{typ: reflect.TypeFor[[]any]()},
+		{typ: reflect.TypeFor[[]int32]()},
+		{typ: reflect.TypeFor[[]float32]()},
+		{typ: reflect.TypeFor[[]byte]()},
+	}
+
+	for _, tt := range tests {
+		var plan = loadReflectionPlan(tt.typ)
+		if (plan.decodeElements != nil) != tt.batch {
+			t.Errorf("batch handler for %s = %v, want %v", tt.typ, plan.decodeElements != nil, tt.batch)
 		}
 	}
 }
