@@ -10,11 +10,15 @@ type reflectedDecoder struct {
 }
 
 func (d *reflectedDecoder) decode(value reflect.Value, depth int) (err error) {
+	return d.decodePlanned(value, lookupReflectionPlan(value.Type()), depth)
+}
+
+func (d *reflectedDecoder) decodePlanned(value reflect.Value, plan *reflectionPlan, depth int) (err error) {
 	if err = d.visit(depth); err != nil {
 		return err
 	}
 
-	var plan = loadReflectionPlan(value.Type())
+	plan.once.Do(plan.initialize)
 	if plan.kind == reflect.Pointer && value.IsNil() && value.CanSet() {
 		value.Set(reflect.New(value.Type().Elem()))
 	}
@@ -58,8 +62,8 @@ func (d *reflectedDecoder) visit(depth int) (err error) {
 	return nil
 }
 
-func (d *reflectedDecoder) decodePointer(value reflect.Value, _ byte, depth int) (err error) {
-	return d.decode(value.Elem(), depth+1)
+func (d *reflectedDecoder) decodePointer(value reflect.Value, element *reflectionPlan, depth int) (err error) {
+	return d.decodePlanned(value.Elem(), element, depth+1)
 }
 
 func (d *reflectedDecoder) decodeBool(value reflect.Value, _ byte, _ int) (err error) {
@@ -144,7 +148,7 @@ func (d *reflectedDecoder) decodeBytes(value reflect.Value, _ byte, _ int) (err 
 	return nil
 }
 
-func (d *reflectedDecoder) decodeArray(value reflect.Value, _ byte, depth int) (err error) {
+func (d *reflectedDecoder) decodeArray(value reflect.Value, element *reflectionPlan, depth int) (err error) {
 	var count uint32
 	if count, err = d.reader.DecodeArrayHeader(); err != nil {
 		return err
@@ -160,7 +164,7 @@ func (d *reflectedDecoder) decodeArray(value reflect.Value, _ byte, depth int) (
 		}
 
 		for index := 0; index < value.Len(); index++ {
-			if err = d.decode(value.Index(index), depth+1); err != nil {
+			if err = d.decodePlanned(value.Index(index), element, depth+1); err != nil {
 				return err
 			}
 		}
@@ -170,18 +174,18 @@ func (d *reflectedDecoder) decodeArray(value reflect.Value, _ byte, depth int) (
 	// Grow only after children arrive; a declared count alone never sizes storage.
 	var decoded = reflect.MakeSlice(value.Type(), 0, 0)
 	for index := uint32(0); index < count; index++ {
-		var element = reflect.New(value.Type().Elem()).Elem()
-		if err = d.decode(element, depth+1); err != nil {
+		var child = reflect.New(value.Type().Elem()).Elem()
+		if err = d.decodePlanned(child, element, depth+1); err != nil {
 			return err
 		}
 
-		decoded = reflect.Append(decoded, element)
+		decoded = reflect.Append(decoded, child)
 	}
 	value.Set(decoded)
 	return nil
 }
 
-func (d *reflectedDecoder) decodeMap(value reflect.Value, _ byte, depth int) (err error) {
+func (d *reflectedDecoder) decodeMap(value reflect.Value, key, element *reflectionPlan, depth int) (err error) {
 	var count uint32
 	if count, err = d.reader.DecodeMapHeader(); err != nil {
 		return err
@@ -194,29 +198,29 @@ func (d *reflectedDecoder) decodeMap(value reflect.Value, _ byte, depth int) (er
 	var decoded = reflect.MakeMap(value.Type())
 	for index := uint32(0); index < count; index++ {
 		var (
-			key     = reflect.New(value.Type().Key()).Elem()
-			element = reflect.New(value.Type().Elem()).Elem()
+			decodedKey   = reflect.New(value.Type().Key()).Elem()
+			decodedValue = reflect.New(value.Type().Elem()).Elem()
 		)
 
-		if err = d.decode(key, depth+1); err != nil {
+		if err = d.decodePlanned(decodedKey, key, depth+1); err != nil {
 			return err
 		}
 
-		if !key.Comparable() {
+		if !decodedKey.Comparable() {
 			return d.reader.fail(ErrTypeMismatch)
 		}
 
-		if err = d.decode(element, depth+1); err != nil {
+		if err = d.decodePlanned(decodedValue, element, depth+1); err != nil {
 			return err
 		}
 
-		decoded.SetMapIndex(key, element)
+		decoded.SetMapIndex(decodedKey, decodedValue)
 	}
 	value.Set(decoded)
 	return nil
 }
 
-func (d *reflectedDecoder) decodeStruct(value reflect.Value, fields map[string]int, depth int) (err error) {
+func (d *reflectedDecoder) decodeStruct(value reflect.Value, fields []reflectionField, fieldsByName map[string]int, depth int) (err error) {
 	var count uint32
 	if count, err = d.reader.DecodeMapHeader(); err != nil {
 		return err
@@ -236,8 +240,9 @@ func (d *reflectedDecoder) decodeStruct(value reflect.Value, fields map[string]i
 			return err
 		}
 
-		if field, ok := fields[name]; ok {
-			if err = d.decode(value.Field(field), depth+1); err != nil {
+		if fieldIndex, ok := fieldsByName[name]; ok {
+			var field = fields[fieldIndex]
+			if err = d.decodePlanned(value.Field(field.index), field.plan, depth+1); err != nil {
 				return err
 			}
 

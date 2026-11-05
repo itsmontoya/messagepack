@@ -190,9 +190,14 @@ func (w *Writer) EncodeString(value string) (err error) {
 		return err
 	}
 
+	if len(value) == 0 {
+		return nil
+	}
+
+	var buffer = w.payloadBuffer(min(len(value), payloadBufferSize))
 	for len(value) > 0 {
-		n := copy(w.payloadBuffer(), value)
-		if _, err = w.write("encode string", w.state.buffer[:n]); err != nil {
+		n := copy(buffer, value)
+		if _, err = w.write("encode string", buffer[:n]); err != nil {
 			return err
 		}
 
@@ -316,7 +321,7 @@ func (w *Writer) copyPayloadFrom(operation string, remaining uint64, src io.Read
 	)
 
 	for remaining > 0 {
-		chunk = w.payloadBuffer()
+		chunk = w.payloadBuffer(payloadBufferSize)
 		if remaining < uint64(len(chunk)) {
 			chunk = chunk[:int(remaining)]
 		}
@@ -355,12 +360,12 @@ func (w *Writer) copyPayloadFrom(operation string, remaining uint64, src io.Read
 	return n, nil
 }
 
-func (w *Writer) payloadBuffer() (buffer []byte) {
-	if w.state.buffer == nil {
-		w.state.buffer = make([]byte, payloadBufferSize)
+func (w *Writer) payloadBuffer(size int) (buffer []byte) {
+	if len(w.state.buffer) < size {
+		w.state.buffer = make([]byte, size)
 	}
 
-	return w.state.buffer
+	return w.state.buffer[:size]
 }
 
 func (w *Writer) sourceError(operation string, err error) (out error) {

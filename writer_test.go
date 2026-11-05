@@ -608,6 +608,37 @@ func TestWriterZeroAllocations(t *testing.T) {
 	}
 }
 
+func TestWriterStringScratchGrowth(t *testing.T) {
+	var (
+		output        bytes.Buffer
+		w             = NewWriter(&output)
+		maximumLength int
+		err           error
+	)
+
+	for _, length := range []int{0, 9, 10, 1024, payloadBufferSize - 1, payloadBufferSize, payloadBufferSize + 1, 65536, 10} {
+		var (
+			value = strings.Repeat("\xff", length)
+			alias = *w
+			owned string
+		)
+
+		output.Reset()
+		if err = alias.EncodeString(value); err != nil {
+			t.Fatal(err)
+		}
+
+		maximumLength = max(maximumLength, min(length, payloadBufferSize))
+		if cap(w.state.buffer) > maximumLength {
+			t.Fatalf("string length %d retained %d bytes of scratch, budget %d", length, cap(w.state.buffer), maximumLength)
+		}
+
+		if owned, err = NewReader(&output).DecodeString(); err != nil || owned != value || output.Len() != 0 {
+			t.Fatalf("string length %d round trip = %v, remaining %d", length, err, output.Len())
+		}
+	}
+}
+
 func TestWriterShortStringAllocations(t *testing.T) {
 	for _, value := range []string{"", "x", "12345678", "123456789"} {
 		t.Run(fmt.Sprintf("length_%d", len(value)), func(t *testing.T) {

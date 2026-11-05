@@ -1,0 +1,1007 @@
+Benchmark samples and exact commands
+Date: 2026-11-05 America/Los_Angeles
+go version go1.27.2 darwin/arm64
+Source commit: 4dcd24df47df3a282b75bdd0fd7ba2b2a92d1180
+CPU: recorded by the Go benchmark header below
+GOMAXPROCS: default; platform: macOS-26.5.2-arm64-arm-64bit-Mach-O
+tinylib/msgp v1.6.5; five unprofiled 300 ms samples; before/after groups rotate and reverse each round
+
+Version before Round 1 Command: ./before.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Ours$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 5112658	        71.08 ns/op	 492.43 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	 1000000	       344.0 ns/op	 101.75 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargettrue-8          	 1000000	       309.9 ns/op	 112.95 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8                            	 2780848	       128.6 ns/op	 466.60 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  640554	       563.1 ns/op	 106.55 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargettrue-8            	  651062	       568.4 ns/op	 105.56 MB/s	      54 B/op	       3 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Encode-8                       	 2779539	       129.5 ns/op	8362.89 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargetfalse-8      	  619279	       567.1 ns/op	1909.69 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargettrue-8       	  573255	       623.5 ns/op	1736.86 MB/s	    1075 B/op	       3 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8                      	 2721024	       132.5 ns/op	494926.60 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  288567	      1253 ns/op	52336.88 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargettrue-8      	   89464	      4187 ns/op	15666.08 MB/s	   65587 B/op	       3 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8                       	 2508848	       142.8 ns/op	7584.88 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  485030	       689.7 ns/op	1570.19 MB/s	    2096 B/op	       3 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargettrue-8       	  511218	       699.8 ns/op	1547.68 MB/s	    2098 B/op	       4 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8                           	 5440237	        66.26 ns/op	 392.40 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	 1000000	       318.9 ns/op	  81.53 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargettrue-8           	 1000000	       316.7 ns/op	  82.08 MB/s	      48 B/op	       1 allocs/op
+BenchmarkFresh/Mixed/Ours/Encode-8                                 	 2492965	       145.1 ns/op	 413.45 MB/s	      96 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Ours/Decode-8                                 	  617376	       591.2 ns/op	 101.48 MB/s	     150 B/op	       4 allocs/op
+BenchmarkFresh/String1KiB/Ours/Encode-8                            	  217060	      1634 ns/op	 662.95 MB/s	   32864 B/op	       3 allocs/op
+BenchmarkFresh/String1KiB/Ours/Decode-8                            	  472963	       720.8 ns/op	1502.41 MB/s	    2194 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Ours-8                                   	 2165833	       166.4 ns/op	 360.67 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8                             	  369675	       981.6 ns/op	66826.09 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version before Round 1 Command: ./before.test -test.run ^$ -test.bench ^BenchmarkBufferedOurs$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 3941277	        90.83 ns/op	 385.33 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	 1000000	       341.6 ns/op	 102.47 MB/s	      48 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 2123419	       168.9 ns/op	 355.21 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  614784	       582.1 ns/op	 103.07 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Encode-8         	 2080848	       172.5 ns/op	6279.96 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Decode-8         	  594454	       598.7 ns/op	1808.81 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8        	 1637630	       222.1 ns/op	295396.89 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8        	  238099	      1387 ns/op	47297.71 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8         	 1902129	       188.1 ns/op	5757.13 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8         	  478550	       717.8 ns/op	1508.77 MB/s	    2096 B/op	       3 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8             	 4379889	        82.81 ns/op	 313.97 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8             	 1000000	       332.8 ns/op	  78.13 MB/s	      48 B/op	       1 allocs/op
+PASS
+
+Version before Round 1 Command: ./before.test -test.run ^$ -test.bench ^Benchmark(Fresh|EncodeCopy)$/.*$/^OursBuffered$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkFresh/Mixed/OursBuffered/Encode-8  	  874518	       416.3 ns/op	 144.14 MB/s	    4256 B/op	       4 allocs/op
+BenchmarkFresh/Mixed/OursBuffered/Decode-8  	  431751	       819.9 ns/op	  73.18 MB/s	    4342 B/op	       6 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Encode-8         	  194817	      1863 ns/op	 581.31 MB/s	   37024 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Decode-8         	  348190	       992.1 ns/op	1091.67 MB/s	    6386 B/op	       7 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8                	 2097404	       171.1 ns/op	 350.77 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8          	  382750	      1040 ns/op	63101.03 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version tinylib Round 1 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Tinylib$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Tinylib/Encode-8         	17698280	        20.14 ns/op	1737.52 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargetfalse-8         	 6682087	        53.44 ns/op	 654.88 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargettrue-8          	 6652288	        54.09 ns/op	 647.12 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Encode-8                            	 8561541	        42.13 ns/op	1424.21 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8           	 3672444	        99.04 ns/op	 605.82 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargettrue-8            	 3407086	       105.2 ns/op	 570.09 MB/s	       6 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Encode-8                       	 6509994	        54.96 ns/op	19703.97 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Decode/ClearTargetfalse-8      	 3125690	       115.5 ns/op	9376.94 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Decode/ClearTargettrue-8       	 1966338	       182.9 ns/op	5921.53 MB/s	    1027 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Encode-8                      	 8579803	        41.58 ns/op	1577753.90 MB/s	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargetfalse-8     	  388308	       967.6 ns/op	67795.51 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargettrue-8      	  101389	      3633 ns/op	18057.05 MB/s	   65539 B/op	       2 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Encode-8                       	 6709777	        53.75 ns/op	20148.74 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargetfalse-8      	 2059815	       175.0 ns/op	6189.14 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargettrue-8       	 1980132	       181.9 ns/op	5955.07 MB/s	    1026 B/op	       2 allocs/op
+BenchmarkComparison/Nested/Tinylib/Encode-8                           	20944996	        16.97 ns/op	1532.44 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargetfalse-8          	 6916852	        52.55 ns/op	 494.80 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargettrue-8           	 6833869	        52.42 ns/op	 495.98 MB/s	       0 B/op	       0 allocs/op
+BenchmarkFresh/Mixed/Tinylib/Encode-8                                 	  993651	       324.8 ns/op	 184.71 MB/s	    4144 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Tinylib/Decode-8                                 	  943200	       372.1 ns/op	 161.24 MB/s	    4262 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/Tinylib/Encode-8                            	 1000000	       330.4 ns/op	3277.40 MB/s	    4144 B/op	       2 allocs/op
+BenchmarkFresh/String1KiB/Tinylib/Decode-8                            	  744544	       476.8 ns/op	2271.34 MB/s	    5282 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Tinylib-8                                   	 8130118	        44.03 ns/op	1362.63 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Tinylib-8                             	  551209	       819.0 ns/op	80096.76 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 1 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Ours$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 4901994	        72.58 ns/op	 482.25 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	 1440550	       249.2 ns/op	 140.43 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargettrue-8          	 1450173	       250.7 ns/op	 139.62 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8                            	 2725737	       131.4 ns/op	 456.71 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  811671	       439.6 ns/op	 136.49 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargettrue-8            	  808647	       445.7 ns/op	 134.63 MB/s	       6 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Encode-8                       	 2703757	       131.7 ns/op	8225.61 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargetfalse-8      	  802839	       448.1 ns/op	2416.94 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargettrue-8       	  680212	       506.0 ns/op	2140.26 MB/s	    1027 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8                      	 2650363	       135.1 ns/op	485709.53 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  307276	      1264 ns/op	51904.13 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargettrue-8      	   90816	      4615 ns/op	14212.87 MB/s	   65539 B/op	       2 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8                       	 2530332	       141.7 ns/op	7642.31 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  681732	       540.7 ns/op	2002.81 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargettrue-8       	  681619	       521.3 ns/op	2077.57 MB/s	    1026 B/op	       2 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8                           	 5232456	        68.32 ns/op	 380.57 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	 1472379	       241.2 ns/op	 107.82 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargettrue-8           	 1475401	       240.4 ns/op	 108.16 MB/s	       0 B/op	       0 allocs/op
+BenchmarkFresh/Mixed/Ours/Encode-8                                 	 2419810	       148.5 ns/op	 403.91 MB/s	      96 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Ours/Decode-8                                 	  766888	       476.6 ns/op	 125.90 MB/s	     150 B/op	       4 allocs/op
+BenchmarkFresh/String1KiB/Ours/Encode-8                            	 1576094	       226.5 ns/op	4781.93 MB/s	    1120 B/op	       3 allocs/op
+BenchmarkFresh/String1KiB/Ours/Decode-8                            	  568005	       609.3 ns/op	1777.52 MB/s	    2194 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Ours-8                                   	 2139502	       167.3 ns/op	 358.68 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8                             	  348630	       912.7 ns/op	71874.11 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 1 Command: ./after.test -test.run ^$ -test.bench ^BenchmarkBufferedOurs$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 3907947	        92.47 ns/op	 378.50 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	 1348431	       267.8 ns/op	 130.71 MB/s	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 2117859	       170.9 ns/op	 351.18 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  763034	       468.2 ns/op	 128.14 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Encode-8         	 2043870	       185.7 ns/op	5833.19 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Decode-8         	  738960	       510.4 ns/op	2121.93 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8        	 1631661	       224.8 ns/op	291835.60 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8        	  249882	      1301 ns/op	50403.31 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8         	 1915146	       186.7 ns/op	5802.27 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8         	  624249	       543.7 ns/op	1991.74 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8             	 4336690	        82.78 ns/op	 314.08 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8             	 1339862	       265.1 ns/op	  98.07 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 1 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Fresh|EncodeCopy)$/.*$/^OursBuffered$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkFresh/Mixed/OursBuffered/Encode-8  	  857347	       418.1 ns/op	 143.51 MB/s	    4256 B/op	       4 allocs/op
+BenchmarkFresh/Mixed/OursBuffered/Decode-8  	  479828	       726.7 ns/op	  82.56 MB/s	    4342 B/op	       6 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Encode-8         	  702930	       512.6 ns/op	2112.87 MB/s	    5280 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Decode-8         	  398644	       891.5 ns/op	1214.84 MB/s	    6386 B/op	       7 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8                	 2081877	       171.6 ns/op	 349.56 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8          	  368293	      1047 ns/op	62668.92 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version before Round 2 Command: ./before.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Ours$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 5015041	        71.97 ns/op	 486.29 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	 1000000	       318.7 ns/op	 109.84 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargettrue-8          	 1000000	       321.3 ns/op	 108.92 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8                            	 2765440	       129.4 ns/op	 463.64 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  640735	       557.3 ns/op	 107.66 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargettrue-8            	  641948	       564.4 ns/op	 106.30 MB/s	      54 B/op	       3 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Encode-8                       	 2749729	       130.1 ns/op	8327.18 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargetfalse-8      	  637878	       568.4 ns/op	1905.22 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargettrue-8       	  582528	       628.6 ns/op	1722.87 MB/s	    1075 B/op	       3 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8                      	 2681192	       133.4 ns/op	491758.06 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  240513	      1264 ns/op	51900.43 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargettrue-8      	   88732	      4105 ns/op	15980.22 MB/s	   65587 B/op	       3 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8                       	 2515548	       144.1 ns/op	7513.52 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  502690	       695.2 ns/op	1557.84 MB/s	    2096 B/op	       3 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargettrue-8       	  516354	       696.7 ns/op	1554.42 MB/s	    2098 B/op	       4 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8                           	 5442985	        66.03 ns/op	 393.79 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	 1000000	       319.1 ns/op	  81.47 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargettrue-8           	 1000000	       315.5 ns/op	  82.40 MB/s	      48 B/op	       1 allocs/op
+BenchmarkFresh/Mixed/Ours/Encode-8                                 	 2449401	       148.2 ns/op	 404.91 MB/s	      96 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Ours/Decode-8                                 	  596074	       639.7 ns/op	  93.80 MB/s	     150 B/op	       4 allocs/op
+BenchmarkFresh/String1KiB/Ours/Encode-8                            	  216363	      1667 ns/op	 649.58 MB/s	   32864 B/op	       3 allocs/op
+BenchmarkFresh/String1KiB/Ours/Decode-8                            	  482347	       723.6 ns/op	1496.68 MB/s	    2194 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Ours-8                                   	 2187458	       164.4 ns/op	 365.03 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8                             	  392784	       975.2 ns/op	67268.18 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 2 Command: ./after.test -test.run ^$ -test.bench ^BenchmarkBufferedOurs$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 3900210	        91.35 ns/op	 383.14 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	 1322858	       269.4 ns/op	 129.94 MB/s	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 2111624	       169.9 ns/op	 353.13 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  753715	       473.1 ns/op	 126.83 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Encode-8         	 1999965	       179.5 ns/op	6032.64 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Decode-8         	  734224	       490.4 ns/op	2208.20 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8        	 1609122	       224.0 ns/op	292885.08 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8        	  284342	      2492 ns/op	26319.33 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8         	 1000000	       353.2 ns/op	3065.92 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8         	  600150	       651.8 ns/op	1661.54 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8             	 4309168	        82.72 ns/op	 314.31 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8             	 1348480	       265.7 ns/op	  97.85 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 2 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Fresh|EncodeCopy)$/.*$/^OursBuffered$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkFresh/Mixed/OursBuffered/Encode-8  	  727603	       427.4 ns/op	 140.38 MB/s	    4256 B/op	       4 allocs/op
+BenchmarkFresh/Mixed/OursBuffered/Decode-8  	  478476	       726.6 ns/op	  82.57 MB/s	    4342 B/op	       6 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Encode-8         	  702187	       516.8 ns/op	2095.71 MB/s	    5280 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Decode-8         	  383792	       895.9 ns/op	1208.85 MB/s	    6386 B/op	       7 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8                	 2099336	       172.5 ns/op	 347.86 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8          	  394575	      1037 ns/op	63232.38 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 2 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Ours$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 4992291	        71.86 ns/op	 487.08 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	 1441011	       247.3 ns/op	 141.55 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargettrue-8          	 1447383	       248.5 ns/op	 140.87 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8                            	 2683946	       133.5 ns/op	 449.45 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  798298	       441.7 ns/op	 135.85 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargettrue-8            	  811953	       445.0 ns/op	 134.83 MB/s	       6 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Encode-8                       	 2697777	       133.5 ns/op	8112.85 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargetfalse-8      	  802675	       445.5 ns/op	2430.96 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargettrue-8       	  692889	       510.5 ns/op	2121.40 MB/s	    1027 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8                      	 2629893	       136.6 ns/op	480351.93 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  255463	      1208 ns/op	54293.63 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargettrue-8      	   90235	      4065 ns/op	16136.58 MB/s	   65539 B/op	       2 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8                       	 2505213	       143.7 ns/op	7537.96 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  682286	       504.2 ns/op	2147.99 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargettrue-8       	  669648	       516.7 ns/op	2095.98 MB/s	    1026 B/op	       2 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8                           	 5271384	        67.90 ns/op	 382.92 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	 1463593	       243.8 ns/op	 106.66 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargettrue-8           	 1466811	       243.0 ns/op	 107.02 MB/s	       0 B/op	       0 allocs/op
+BenchmarkFresh/Mixed/Ours/Encode-8                                 	 2398886	       148.3 ns/op	 404.58 MB/s	      96 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Ours/Decode-8                                 	  765889	       476.5 ns/op	 125.91 MB/s	     150 B/op	       4 allocs/op
+BenchmarkFresh/String1KiB/Ours/Encode-8                            	 1582683	       229.4 ns/op	4720.92 MB/s	    1120 B/op	       3 allocs/op
+BenchmarkFresh/String1KiB/Ours/Decode-8                            	  569818	       612.5 ns/op	1768.18 MB/s	    2194 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Ours-8                                   	 2138634	       167.6 ns/op	 358.06 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8                             	  414084	       951.1 ns/op	68970.54 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version tinylib Round 2 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Tinylib$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Tinylib/Encode-8         	17724130	        20.16 ns/op	1736.14 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargetfalse-8         	 6687943	        54.14 ns/op	 646.51 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargettrue-8          	 6673138	        53.86 ns/op	 649.84 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Encode-8                            	 8553456	        42.00 ns/op	1428.42 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8           	 3648549	        97.98 ns/op	 612.35 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargettrue-8            	 3421188	       105.7 ns/op	 567.87 MB/s	       6 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Encode-8                       	 6551985	        54.89 ns/op	19731.28 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Decode/ClearTargetfalse-8      	 3109309	       114.4 ns/op	9466.83 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Decode/ClearTargettrue-8       	 2000935	       182.8 ns/op	5923.53 MB/s	    1027 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Encode-8                      	 8722506	        41.56 ns/op	1578482.27 MB/s	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargetfalse-8     	  340308	       959.8 ns/op	68342.63 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargettrue-8      	   88294	      3541 ns/op	18525.47 MB/s	   65539 B/op	       2 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Encode-8                       	 6689454	        53.72 ns/op	20161.00 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargetfalse-8      	 2059521	       176.1 ns/op	6150.90 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargettrue-8       	 1962958	       183.7 ns/op	5896.45 MB/s	    1026 B/op	       2 allocs/op
+BenchmarkComparison/Nested/Tinylib/Encode-8                           	20977186	        16.89 ns/op	1539.59 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargetfalse-8          	 6862676	        52.41 ns/op	 496.13 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargettrue-8           	 6904796	        52.41 ns/op	 496.10 MB/s	       0 B/op	       0 allocs/op
+BenchmarkFresh/Mixed/Tinylib/Encode-8                                 	  992054	       323.5 ns/op	 185.45 MB/s	    4144 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Tinylib/Decode-8                                 	  960351	       377.2 ns/op	 159.07 MB/s	    4262 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/Tinylib/Encode-8                            	 1000000	       326.9 ns/op	3313.18 MB/s	    4144 B/op	       2 allocs/op
+BenchmarkFresh/String1KiB/Tinylib/Decode-8                            	  746661	       497.3 ns/op	2177.93 MB/s	    5282 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Tinylib-8                                   	 8175585	        46.17 ns/op	1299.57 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Tinylib-8                             	  477648	       898.1 ns/op	73037.00 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version before Round 2 Command: ./before.test -test.run ^$ -test.bench ^BenchmarkBufferedOurs$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 3885010	        92.45 ns/op	 378.59 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	 1000000	       330.7 ns/op	 105.83 MB/s	      48 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 2131148	       167.1 ns/op	 359.11 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  620395	       577.8 ns/op	 103.84 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Encode-8         	 2063876	       175.9 ns/op	6155.20 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Decode-8         	  606523	       593.0 ns/op	1826.43 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8        	 1631785	       218.7 ns/op	299996.08 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8        	  235194	      1353 ns/op	48478.57 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8         	 1946719	       184.4 ns/op	5871.98 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8         	  474057	       723.8 ns/op	1496.33 MB/s	    2096 B/op	       3 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8             	 4327770	        82.95 ns/op	 313.46 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8             	 1000000	       327.4 ns/op	  79.41 MB/s	      48 B/op	       1 allocs/op
+PASS
+
+Version before Round 2 Command: ./before.test -test.run ^$ -test.bench ^Benchmark(Fresh|EncodeCopy)$/.*$/^OursBuffered$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkFresh/Mixed/OursBuffered/Encode-8  	  751140	       422.0 ns/op	 142.19 MB/s	    4256 B/op	       4 allocs/op
+BenchmarkFresh/Mixed/OursBuffered/Decode-8  	  429771	       822.9 ns/op	  72.91 MB/s	    4342 B/op	       6 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Encode-8         	  192624	      1872 ns/op	 578.64 MB/s	   37024 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Decode-8         	  347181	       999.1 ns/op	1083.97 MB/s	    6386 B/op	       7 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8                	 2104686	       170.4 ns/op	 352.03 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8          	  380446	       982.8 ns/op	66744.20 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version tinylib Round 3 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Tinylib$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Tinylib/Encode-8         	17741710	        20.19 ns/op	1733.35 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargetfalse-8         	 6644017	        53.40 ns/op	 655.39 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargettrue-8          	 6658738	        54.10 ns/op	 646.94 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Encode-8                            	 8555877	        42.04 ns/op	1427.20 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8           	 3637028	        98.52 ns/op	 609.00 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargettrue-8            	 3400294	       105.4 ns/op	 569.03 MB/s	       6 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Encode-8                       	 6546818	        54.82 ns/op	19755.78 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Decode/ClearTargetfalse-8      	 3094120	       115.7 ns/op	9359.19 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Decode/ClearTargettrue-8       	 1945448	       183.5 ns/op	5903.06 MB/s	    1027 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Encode-8                      	 8537245	        41.44 ns/op	1582992.39 MB/s	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargetfalse-8     	  395130	       949.2 ns/op	69110.72 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargettrue-8      	   95821	      3499 ns/op	18746.93 MB/s	   65539 B/op	       2 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Encode-8                       	 6645110	        53.64 ns/op	20189.06 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargetfalse-8      	 2028750	       176.8 ns/op	6126.67 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargettrue-8       	 1940072	       185.5 ns/op	5838.33 MB/s	    1026 B/op	       2 allocs/op
+BenchmarkComparison/Nested/Tinylib/Encode-8                           	20614276	        17.08 ns/op	1522.21 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargetfalse-8          	 6782763	        52.91 ns/op	 491.39 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargettrue-8           	 6770268	        52.87 ns/op	 491.80 MB/s	       0 B/op	       0 allocs/op
+BenchmarkFresh/Mixed/Tinylib/Encode-8                                 	  995437	       325.4 ns/op	 184.38 MB/s	    4144 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Tinylib/Decode-8                                 	  919382	       423.8 ns/op	 141.57 MB/s	    4262 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/Tinylib/Encode-8                            	 1000000	       326.1 ns/op	3320.64 MB/s	    4144 B/op	       2 allocs/op
+BenchmarkFresh/String1KiB/Tinylib/Decode-8                            	  731043	       475.9 ns/op	2275.73 MB/s	    5282 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Tinylib-8                                   	 8136526	        43.97 ns/op	1364.49 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Tinylib-8                             	  475537	       837.0 ns/op	78373.57 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 3 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Ours$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 5035956	        71.96 ns/op	 486.38 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	 1439406	       248.7 ns/op	 140.74 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargettrue-8          	 1461105	       247.7 ns/op	 141.29 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8                            	 2736237	       130.6 ns/op	 459.42 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  815178	       439.7 ns/op	 136.45 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargettrue-8            	  822183	       449.3 ns/op	 133.54 MB/s	       6 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Encode-8                       	 2726253	       131.2 ns/op	8255.83 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargetfalse-8      	  808988	       448.5 ns/op	2414.77 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargettrue-8       	  675596	       511.9 ns/op	2115.75 MB/s	    1027 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8                      	 2673499	       134.2 ns/op	488961.83 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  282018	      1207 ns/op	54339.99 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargettrue-8      	   84343	      4075 ns/op	16096.33 MB/s	   65539 B/op	       2 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8                       	 2494870	       143.3 ns/op	7559.40 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  665767	       519.8 ns/op	2083.37 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargettrue-8       	  677072	       553.9 ns/op	1955.23 MB/s	    1026 B/op	       2 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8                           	 5204451	        68.65 ns/op	 378.72 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	 1464930	       243.5 ns/op	 106.78 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargettrue-8           	 1479537	       243.0 ns/op	 106.98 MB/s	       0 B/op	       0 allocs/op
+BenchmarkFresh/Mixed/Ours/Encode-8                                 	 2429854	       146.9 ns/op	 408.41 MB/s	      96 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Ours/Decode-8                                 	  763952	       476.6 ns/op	 125.90 MB/s	     150 B/op	       4 allocs/op
+BenchmarkFresh/String1KiB/Ours/Encode-8                            	 1574011	       229.7 ns/op	4715.64 MB/s	    1120 B/op	       3 allocs/op
+BenchmarkFresh/String1KiB/Ours/Decode-8                            	  575010	       625.8 ns/op	1730.46 MB/s	    2194 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Ours-8                                   	 2162114	       166.2 ns/op	 361.10 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8                             	  395665	       957.9 ns/op	68482.89 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 3 Command: ./after.test -test.run ^$ -test.bench ^BenchmarkBufferedOurs$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 3719228	        91.69 ns/op	 381.74 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	 1347561	       267.8 ns/op	 130.69 MB/s	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 2129728	       168.1 ns/op	 356.99 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  759961	       467.7 ns/op	 128.27 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Encode-8         	 2075713	       174.4 ns/op	6209.36 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Decode-8         	  736082	       487.0 ns/op	2223.80 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8        	 1652985	       221.1 ns/op	296683.87 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8        	  279157	      1392 ns/op	47135.77 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8         	 1914958	       194.9 ns/op	5556.80 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8         	  623812	       546.8 ns/op	1980.75 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8             	 4340833	        82.51 ns/op	 315.12 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8             	 1349217	       265.5 ns/op	  97.94 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 3 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Fresh|EncodeCopy)$/.*$/^OursBuffered$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkFresh/Mixed/OursBuffered/Encode-8  	  733315	       425.2 ns/op	 141.12 MB/s	    4256 B/op	       4 allocs/op
+BenchmarkFresh/Mixed/OursBuffered/Decode-8  	  483172	       724.0 ns/op	  82.87 MB/s	    4342 B/op	       6 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Encode-8         	  725130	       513.7 ns/op	2108.31 MB/s	    5280 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Decode-8         	  395012	       907.1 ns/op	1193.97 MB/s	    6386 B/op	       7 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8                	 2081306	       170.8 ns/op	 351.35 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8          	  414348	      1127 ns/op	58210.47 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version before Round 3 Command: ./before.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Ours$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 5054064	        71.03 ns/op	 492.78 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	 1000000	       316.0 ns/op	 110.76 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargettrue-8          	 1000000	       314.9 ns/op	 111.13 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8                            	 2771066	       129.7 ns/op	 462.65 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  638056	       560.1 ns/op	 107.12 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargettrue-8            	  638203	       566.9 ns/op	 105.84 MB/s	      54 B/op	       3 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Encode-8                       	 2765868	       129.3 ns/op	8377.10 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargetfalse-8      	  634752	       568.1 ns/op	1906.39 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargettrue-8       	  561180	       635.5 ns/op	1704.12 MB/s	    1075 B/op	       3 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8                      	 2709465	       133.0 ns/op	493197.54 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  284582	      1264 ns/op	51886.80 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargettrue-8      	   92156	      3947 ns/op	16620.10 MB/s	   65587 B/op	       3 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8                       	 2539438	       142.2 ns/op	7615.66 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  483954	       695.6 ns/op	1556.98 MB/s	    2096 B/op	       3 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargettrue-8       	  503152	       699.7 ns/op	1547.77 MB/s	    2098 B/op	       4 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8                           	 5312110	        67.41 ns/op	 385.70 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	 1000000	       319.9 ns/op	  81.27 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargettrue-8           	 1000000	       317.4 ns/op	  81.91 MB/s	      48 B/op	       1 allocs/op
+BenchmarkFresh/Mixed/Ours/Encode-8                                 	 2464383	       146.3 ns/op	 410.06 MB/s	      96 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Ours/Decode-8                                 	  611247	       586.0 ns/op	 102.40 MB/s	     150 B/op	       4 allocs/op
+BenchmarkFresh/String1KiB/Ours/Encode-8                            	  218877	      1620 ns/op	 668.65 MB/s	   32864 B/op	       3 allocs/op
+BenchmarkFresh/String1KiB/Ours/Decode-8                            	  475818	       720.7 ns/op	1502.80 MB/s	    2194 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Ours-8                                   	 2178650	       164.6 ns/op	 364.60 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8                             	  427624	       936.2 ns/op	70066.83 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version before Round 3 Command: ./before.test -test.run ^$ -test.bench ^BenchmarkBufferedOurs$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 3973761	        90.41 ns/op	 387.13 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	 1000000	       336.3 ns/op	 104.08 MB/s	      48 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 2102722	       168.7 ns/op	 355.74 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  606541	       586.8 ns/op	 102.24 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Encode-8         	 2054160	       175.7 ns/op	6163.16 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Decode-8         	  595906	       603.9 ns/op	1793.49 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8        	 1636088	       217.4 ns/op	301682.35 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8        	  256134	      1362 ns/op	48172.46 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8         	 1910877	       186.9 ns/op	5794.80 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8         	  479762	       732.6 ns/op	1478.24 MB/s	    2096 B/op	       3 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8             	 4364088	        82.41 ns/op	 315.51 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8             	 1000000	       338.9 ns/op	  76.71 MB/s	      48 B/op	       1 allocs/op
+PASS
+
+Version before Round 3 Command: ./before.test -test.run ^$ -test.bench ^Benchmark(Fresh|EncodeCopy)$/.*$/^OursBuffered$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkFresh/Mixed/OursBuffered/Encode-8  	  732780	       431.3 ns/op	 139.11 MB/s	    4256 B/op	       4 allocs/op
+BenchmarkFresh/Mixed/OursBuffered/Decode-8  	  416971	       842.9 ns/op	  71.18 MB/s	    4342 B/op	       6 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Encode-8         	  183492	      1970 ns/op	 549.66 MB/s	   37024 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Decode-8         	  346074	       998.7 ns/op	1084.46 MB/s	    6386 B/op	       7 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8                	 2120304	       169.1 ns/op	 354.85 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8          	  403911	      1003 ns/op	65389.62 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version tinylib Round 4 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Tinylib$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Tinylib/Encode-8         	17737303	        20.27 ns/op	1726.66 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargetfalse-8         	 6494745	        53.96 ns/op	 648.64 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargettrue-8          	 6664089	        53.84 ns/op	 650.06 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Encode-8                            	 8572371	        42.12 ns/op	1424.51 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8           	 3673825	        97.74 ns/op	 613.87 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargettrue-8            	 3414963	       103.8 ns/op	 577.95 MB/s	       6 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Encode-8                       	 6529851	        55.09 ns/op	19657.86 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Decode/ClearTargetfalse-8      	 3162366	       115.3 ns/op	9393.07 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Decode/ClearTargettrue-8       	 1969585	       183.5 ns/op	5901.43 MB/s	    1027 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Encode-8                      	 8687852	        41.48 ns/op	1581445.90 MB/s	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargetfalse-8     	  420948	       902.8 ns/op	72662.45 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargettrue-8      	  104734	      3567 ns/op	18388.38 MB/s	   65539 B/op	       2 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Encode-8                       	 6700027	        53.75 ns/op	20149.90 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargetfalse-8      	 2022608	       178.5 ns/op	6067.10 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargettrue-8       	 1940718	       186.6 ns/op	5802.90 MB/s	    1026 B/op	       2 allocs/op
+BenchmarkComparison/Nested/Tinylib/Encode-8                           	21294424	        17.00 ns/op	1529.77 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargetfalse-8          	 6798748	        52.26 ns/op	 497.55 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargettrue-8           	 6802764	        52.55 ns/op	 494.75 MB/s	       0 B/op	       0 allocs/op
+BenchmarkFresh/Mixed/Tinylib/Encode-8                                 	 1000000	       325.6 ns/op	 184.28 MB/s	    4144 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Tinylib/Decode-8                                 	  923174	       375.2 ns/op	 159.90 MB/s	    4262 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/Tinylib/Encode-8                            	 1000000	       327.0 ns/op	3311.46 MB/s	    4144 B/op	       2 allocs/op
+BenchmarkFresh/String1KiB/Tinylib/Decode-8                            	  684692	       478.1 ns/op	2265.45 MB/s	    5282 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Tinylib-8                                   	 8179756	        43.96 ns/op	1364.82 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Tinylib-8                             	  467764	       870.9 ns/op	75319.62 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version before Round 4 Command: ./before.test -test.run ^$ -test.bench ^BenchmarkBufferedOurs$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 3932012	        91.14 ns/op	 384.01 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	 1000000	       335.2 ns/op	 104.41 MB/s	      48 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 2167046	       168.3 ns/op	 356.55 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  596770	       589.4 ns/op	 101.79 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Encode-8         	 2038023	       174.7 ns/op	6199.87 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Decode-8         	  593316	       604.1 ns/op	1792.87 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8        	 1647388	       217.5 ns/op	301617.51 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8        	  220761	      1391 ns/op	47147.43 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8         	 1916560	       206.3 ns/op	5248.91 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8         	  477331	       736.2 ns/op	1471.15 MB/s	    2096 B/op	       3 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8             	 4262205	        84.77 ns/op	 306.73 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8             	 1000000	       317.6 ns/op	  81.87 MB/s	      48 B/op	       1 allocs/op
+PASS
+
+Version before Round 4 Command: ./before.test -test.run ^$ -test.bench ^Benchmark(Fresh|EncodeCopy)$/.*$/^OursBuffered$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkFresh/Mixed/OursBuffered/Encode-8  	  741700	       431.5 ns/op	 139.06 MB/s	    4256 B/op	       4 allocs/op
+BenchmarkFresh/Mixed/OursBuffered/Decode-8  	  407535	       842.0 ns/op	  71.26 MB/s	    4342 B/op	       6 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Encode-8         	  186994	      1954 ns/op	 554.16 MB/s	   37024 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Decode-8         	  354496	      1012 ns/op	1070.18 MB/s	    6386 B/op	       7 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8                	 2101249	       169.9 ns/op	 353.09 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8          	  406264	       979.9 ns/op	66945.36 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version before Round 4 Command: ./before.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Ours$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 5009276	        71.50 ns/op	 489.54 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	 1000000	       313.3 ns/op	 111.71 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargettrue-8          	 1000000	       312.1 ns/op	 112.14 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8                            	 2791645	       129.4 ns/op	 463.75 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  643191	       557.0 ns/op	 107.72 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargettrue-8            	  646754	       568.1 ns/op	 105.61 MB/s	      54 B/op	       3 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Encode-8                       	 2762246	       129.3 ns/op	8375.49 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargetfalse-8      	  635386	       565.5 ns/op	1915.05 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargettrue-8       	  562866	       628.9 ns/op	1721.94 MB/s	    1075 B/op	       3 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8                      	 2715597	       132.2 ns/op	496267.28 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  242750	      1276 ns/op	51412.45 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargettrue-8      	   91629	      4061 ns/op	16154.32 MB/s	   65587 B/op	       3 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8                       	 2558635	       141.5 ns/op	7654.35 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  491782	       692.5 ns/op	1563.92 MB/s	    2096 B/op	       3 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargettrue-8       	  520231	       702.7 ns/op	1541.15 MB/s	    2098 B/op	       4 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8                           	 5412885	        66.28 ns/op	 392.30 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	 1000000	       317.8 ns/op	  81.81 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargettrue-8           	 1000000	       317.5 ns/op	  81.90 MB/s	      48 B/op	       1 allocs/op
+BenchmarkFresh/Mixed/Ours/Encode-8                                 	 2468270	       145.2 ns/op	 413.19 MB/s	      96 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Ours/Decode-8                                 	  615055	       584.9 ns/op	 102.58 MB/s	     150 B/op	       4 allocs/op
+BenchmarkFresh/String1KiB/Ours/Encode-8                            	  227293	      1562 ns/op	 693.39 MB/s	   32864 B/op	       3 allocs/op
+BenchmarkFresh/String1KiB/Ours/Decode-8                            	  479732	       725.1 ns/op	1493.63 MB/s	    2194 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Ours-8                                   	 2163115	       164.8 ns/op	 364.03 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8                             	  427299	       947.8 ns/op	69207.20 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 4 Command: ./after.test -test.run ^$ -test.bench ^BenchmarkBufferedOurs$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 3914673	        90.99 ns/op	 384.64 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	 1337959	       268.9 ns/op	 130.17 MB/s	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 2130852	       168.4 ns/op	 356.34 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  744910	       474.7 ns/op	 126.39 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Encode-8         	 2050202	       175.0 ns/op	6188.08 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Decode-8         	  733116	       486.7 ns/op	2225.05 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8        	 1640683	       226.5 ns/op	289575.82 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8        	  268939	      1335 ns/op	49131.38 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8         	 1921737	       187.3 ns/op	5782.96 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8         	  601461	       551.7 ns/op	1962.92 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8             	 4441060	        81.17 ns/op	 320.30 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8             	 1338962	       265.2 ns/op	  98.03 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 4 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Fresh|EncodeCopy)$/.*$/^OursBuffered$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkFresh/Mixed/OursBuffered/Encode-8  	  741967	       425.4 ns/op	 141.04 MB/s	    4256 B/op	       4 allocs/op
+BenchmarkFresh/Mixed/OursBuffered/Decode-8  	  484287	       727.6 ns/op	  82.46 MB/s	    4342 B/op	       6 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Encode-8         	  680667	       520.0 ns/op	2082.57 MB/s	    5280 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Decode-8         	  322350	      1033 ns/op	1047.94 MB/s	    6386 B/op	       7 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8                	 2077971	       184.7 ns/op	 324.81 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8          	  338386	      1020 ns/op	64341.41 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 4 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Ours$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 4948954	        71.88 ns/op	 486.91 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	 1451199	       247.4 ns/op	 141.49 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargettrue-8          	 1462141	       248.1 ns/op	 141.06 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8                            	 2686107	       133.0 ns/op	 451.09 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  808299	       442.9 ns/op	 135.48 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargettrue-8            	  793599	       448.1 ns/op	 133.90 MB/s	       6 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Encode-8                       	 2666684	       134.3 ns/op	8062.78 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargetfalse-8      	  797356	       448.1 ns/op	2416.69 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargettrue-8       	  679950	       511.4 ns/op	2117.59 MB/s	    1027 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8                      	 2624373	       137.2 ns/op	478200.70 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  298090	      1225 ns/op	53539.24 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargettrue-8      	   87991	      4083 ns/op	16067.81 MB/s	   65539 B/op	       2 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8                       	 2508402	       143.4 ns/op	7550.67 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  664701	       509.7 ns/op	2124.69 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargettrue-8       	  692058	       515.4 ns/op	2101.34 MB/s	    1026 B/op	       2 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8                           	 5372144	        66.40 ns/op	 391.55 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	 1499086	       239.7 ns/op	 108.45 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargettrue-8           	 1484305	       240.2 ns/op	 108.24 MB/s	       0 B/op	       0 allocs/op
+BenchmarkFresh/Mixed/Ours/Encode-8                                 	 2401227	       148.8 ns/op	 403.18 MB/s	      96 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Ours/Decode-8                                 	  745572	       478.4 ns/op	 125.43 MB/s	     150 B/op	       4 allocs/op
+BenchmarkFresh/String1KiB/Ours/Encode-8                            	 1563016	       227.1 ns/op	4768.82 MB/s	    1120 B/op	       3 allocs/op
+BenchmarkFresh/String1KiB/Ours/Decode-8                            	  568099	       613.5 ns/op	1765.21 MB/s	    2194 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Ours-8                                   	 2144222	       166.7 ns/op	 360.03 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8                             	  461816	       906.0 ns/op	72402.45 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 5 Command: ./after.test -test.run ^$ -test.bench ^BenchmarkBufferedOurs$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 3890000	        92.35 ns/op	 378.98 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	 1346767	       273.0 ns/op	 128.19 MB/s	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 2111433	       168.7 ns/op	 355.66 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  736855	       478.5 ns/op	 125.38 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Encode-8         	 2047591	       175.3 ns/op	6179.16 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Decode-8         	  728707	       490.4 ns/op	2208.54 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8        	 1608332	       220.1 ns/op	298033.69 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8        	  245853	      1294 ns/op	50709.76 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8         	 1904899	       187.5 ns/op	5775.12 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8         	  616767	       548.0 ns/op	1976.33 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8             	 4346860	        82.81 ns/op	 313.96 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8             	 1338814	       266.4 ns/op	  97.59 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 5 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Fresh|EncodeCopy)$/.*$/^OursBuffered$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkFresh/Mixed/OursBuffered/Encode-8  	  762166	       430.2 ns/op	 139.46 MB/s	    4256 B/op	       4 allocs/op
+BenchmarkFresh/Mixed/OursBuffered/Decode-8  	  472864	       731.4 ns/op	  82.04 MB/s	    4342 B/op	       6 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Encode-8         	  688154	       523.1 ns/op	2070.41 MB/s	    5280 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Decode-8         	  404251	       903.5 ns/op	1198.63 MB/s	    6386 B/op	       7 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8                	 2074932	       171.8 ns/op	 349.20 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8          	  400638	      1011 ns/op	64872.00 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version before Round 5 Command: ./before.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Ours$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 5069487	        71.05 ns/op	 492.61 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	 1000000	       311.4 ns/op	 112.41 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargettrue-8          	 1000000	       314.0 ns/op	 111.45 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8                            	 2743128	       130.3 ns/op	 460.45 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  651700	       563.7 ns/op	 106.44 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargettrue-8            	  635251	       569.0 ns/op	 105.45 MB/s	      54 B/op	       3 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Encode-8                       	 2737466	       130.2 ns/op	8318.01 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargetfalse-8      	  628098	       571.7 ns/op	1894.28 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargettrue-8       	  562792	       640.4 ns/op	1691.16 MB/s	    1075 B/op	       3 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8                      	 2665110	       133.7 ns/op	490700.11 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  250288	      1261 ns/op	52036.92 MB/s	      51 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargettrue-8      	   82512	      4175 ns/op	15710.35 MB/s	   65587 B/op	       3 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8                       	 2525737	       142.0 ns/op	7628.18 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  504831	       701.6 ns/op	1543.69 MB/s	    2096 B/op	       3 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargettrue-8       	  508192	       706.2 ns/op	1533.60 MB/s	    2098 B/op	       4 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8                           	 5293987	        67.47 ns/op	 385.34 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	 1000000	       324.0 ns/op	  80.26 MB/s	      48 B/op	       1 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargettrue-8           	 1000000	       320.9 ns/op	  81.02 MB/s	      48 B/op	       1 allocs/op
+BenchmarkFresh/Mixed/Ours/Encode-8                                 	 2453443	       146.6 ns/op	 409.15 MB/s	      96 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Ours/Decode-8                                 	  586088	       594.8 ns/op	 100.87 MB/s	     150 B/op	       4 allocs/op
+BenchmarkFresh/String1KiB/Ours/Encode-8                            	  209598	      1686 ns/op	 642.25 MB/s	   32864 B/op	       3 allocs/op
+BenchmarkFresh/String1KiB/Ours/Decode-8                            	  480159	       728.6 ns/op	1486.42 MB/s	    2194 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Ours-8                                   	 2148003	       166.1 ns/op	 361.16 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8                             	  414698	      1030 ns/op	63682.13 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version before Round 5 Command: ./before.test -test.run ^$ -test.bench ^BenchmarkBufferedOurs$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 3965397	        90.57 ns/op	 386.46 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	 1000000	       336.8 ns/op	 103.93 MB/s	      48 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 2153016	       166.0 ns/op	 361.34 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  606217	       595.4 ns/op	 100.77 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Encode-8         	 2045539	       175.1 ns/op	6186.45 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary1KiB/Decode-8         	  597175	       606.5 ns/op	1785.74 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8        	 1632882	       219.0 ns/op	299576.03 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8        	  263252	      1398 ns/op	46927.75 MB/s	      51 B/op	       2 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8         	 1934578	       186.9 ns/op	5793.23 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8         	  486625	       731.5 ns/op	1480.50 MB/s	    2096 B/op	       3 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8             	 4470734	        80.58 ns/op	 322.64 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8             	 1000000	       319.7 ns/op	  81.33 MB/s	      48 B/op	       1 allocs/op
+PASS
+
+Version before Round 5 Command: ./before.test -test.run ^$ -test.bench ^Benchmark(Fresh|EncodeCopy)$/.*$/^OursBuffered$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkFresh/Mixed/OursBuffered/Encode-8  	  743116	       428.0 ns/op	 140.19 MB/s	    4256 B/op	       4 allocs/op
+BenchmarkFresh/Mixed/OursBuffered/Decode-8  	  429952	       833.4 ns/op	  72.00 MB/s	    4342 B/op	       6 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Encode-8         	  189697	      1901 ns/op	 569.66 MB/s	   37024 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/OursBuffered/Decode-8         	  348453	       991.9 ns/op	1091.83 MB/s	    6386 B/op	       7 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8                	 2103848	       170.4 ns/op	 352.03 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8          	  367696	      1012 ns/op	64839.44 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version tinylib Round 5 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Tinylib$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Tinylib/Encode-8         	17765275	        20.18 ns/op	1734.12 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargetfalse-8         	 6668132	        53.88 ns/op	 649.58 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargettrue-8          	 6566012	        53.85 ns/op	 649.90 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Encode-8                            	 8583843	        42.11 ns/op	1424.79 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8           	 3701610	        98.12 ns/op	 611.52 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargettrue-8            	 3428445	       104.7 ns/op	 572.97 MB/s	       6 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Encode-8                       	 6570636	        54.71 ns/op	19794.39 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Decode/ClearTargetfalse-8      	 3141340	       115.2 ns/op	9402.50 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary1KiB/Tinylib/Decode/ClearTargettrue-8       	 1961704	       183.7 ns/op	5896.19 MB/s	    1027 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Encode-8                      	 8608329	        41.50 ns/op	1580764.48 MB/s	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargetfalse-8     	  429597	       999.1 ns/op	65654.20 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargettrue-8      	   98779	      3628 ns/op	18079.00 MB/s	   65539 B/op	       2 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Encode-8                       	 6725356	        53.72 ns/op	20161.07 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargetfalse-8      	 2005436	       182.3 ns/op	5940.64 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargettrue-8       	 1929931	       186.6 ns/op	5804.23 MB/s	    1026 B/op	       2 allocs/op
+BenchmarkComparison/Nested/Tinylib/Encode-8                           	20761694	        16.95 ns/op	1534.23 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargetfalse-8          	 6823657	        52.49 ns/op	 495.36 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargettrue-8           	 6834258	        52.86 ns/op	 491.90 MB/s	       0 B/op	       0 allocs/op
+BenchmarkFresh/Mixed/Tinylib/Encode-8                                 	 1000000	       323.5 ns/op	 185.48 MB/s	    4144 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Tinylib/Decode-8                                 	  965546	       414.4 ns/op	 144.79 MB/s	    4262 B/op	       5 allocs/op
+BenchmarkFresh/String1KiB/Tinylib/Encode-8                            	 1000000	       334.0 ns/op	3242.87 MB/s	    4144 B/op	       2 allocs/op
+BenchmarkFresh/String1KiB/Tinylib/Decode-8                            	  743480	       519.3 ns/op	2085.46 MB/s	    5282 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Tinylib-8                                   	 8031493	        44.31 ns/op	1354.02 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Tinylib-8                             	  462536	       837.2 ns/op	78357.01 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+Version after Round 5 Command: ./after.test -test.run ^$ -test.bench ^Benchmark(Comparison|Fresh|EncodeCopy)$/.*$/^Ours$ -test.benchmem -test.benchtime=300ms -test.count=1
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 4999501	        72.79 ns/op	 480.84 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	 1450491	       249.1 ns/op	 140.48 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargettrue-8          	 1446792	       249.1 ns/op	 140.51 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8                            	 2752286	       130.3 ns/op	 460.41 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  803481	       440.6 ns/op	 136.18 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargettrue-8            	  802332	       449.2 ns/op	 133.58 MB/s	       6 B/op	       2 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Encode-8                       	 2727271	       131.1 ns/op	8260.97 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargetfalse-8      	  812319	       448.0 ns/op	2417.51 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargettrue-8       	  676346	       516.6 ns/op	2096.59 MB/s	    1027 B/op	       2 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8                      	 2574333	       135.3 ns/op	484979.95 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  278232	      1241 ns/op	52844.04 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargettrue-8      	   91716	      4388 ns/op	14947.94 MB/s	   65539 B/op	       2 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8                       	 2541451	       142.1 ns/op	7622.73 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  679015	       513.5 ns/op	2109.14 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargettrue-8       	  695988	       514.0 ns/op	2107.05 MB/s	    1026 B/op	       2 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8                           	 5314675	        67.71 ns/op	 383.97 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	 1455459	       245.8 ns/op	 105.77 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargettrue-8           	 1467060	       242.2 ns/op	 107.33 MB/s	       0 B/op	       0 allocs/op
+BenchmarkFresh/Mixed/Ours/Encode-8                                 	 2432026	       146.8 ns/op	 408.71 MB/s	      96 B/op	       2 allocs/op
+BenchmarkFresh/Mixed/Ours/Decode-8                                 	  753242	       479.6 ns/op	 125.11 MB/s	     150 B/op	       4 allocs/op
+BenchmarkFresh/String1KiB/Ours/Encode-8                            	 1551163	       227.7 ns/op	4756.45 MB/s	    1120 B/op	       3 allocs/op
+BenchmarkFresh/String1KiB/Ours/Decode-8                            	  575431	       612.1 ns/op	1769.28 MB/s	    2194 B/op	       5 allocs/op
+BenchmarkEncodeCopy/Mixed/Ours-8                                   	 2128980	       167.3 ns/op	 358.70 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8                             	  373854	       924.1 ns/op	70980.90 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+
+Medians and ranges
+version,benchmark,samples,ns/op,min ns/op,max ns/op,B/op,allocs/op,writecalls/op
+after,BenchmarkBufferedOurs/Binary1KiB/Decode-8,5,490.4,486.7,510.4,3.0,1.0,
+after,BenchmarkBufferedOurs/Binary1KiB/Encode-8,5,175.3,174.4,185.7,0.0,0.0,1.0
+after,BenchmarkBufferedOurs/Binary64KiB/Decode-8,5,1335.0,1294.0,2492.0,3.0,1.0,
+after,BenchmarkBufferedOurs/Binary64KiB/Encode-8,5,224.0,220.1,226.5,0.0,0.0,4.0
+after,BenchmarkBufferedOurs/Mixed/Decode-8,5,473.1,467.7,478.5,3.0,1.0,
+after,BenchmarkBufferedOurs/Mixed/Encode-8,5,168.7,168.1,170.9,0.0,0.0,1.0
+after,BenchmarkBufferedOurs/Nested/Decode-8,5,265.5,265.1,266.4,0.0,0.0,
+after,BenchmarkBufferedOurs/Nested/Encode-8,5,82.72,81.17,82.81,0.0,0.0,1.0
+after,BenchmarkBufferedOurs/Scalars/Decode-8,5,268.9,267.8,273.0,0.0,0.0,
+after,BenchmarkBufferedOurs/Scalars/Encode-8,5,91.69,90.99,92.47,0.0,0.0,1.0
+after,BenchmarkBufferedOurs/String1KiB/Decode-8,5,548.0,543.7,651.8,1024.0,1.0,
+after,BenchmarkBufferedOurs/String1KiB/Encode-8,5,187.5,186.7,353.2,0.0,0.0,1.0
+after,BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargetfalse-8,5,448.1,445.5,448.5,3.0,1.0,
+after,BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargettrue-8,5,511.4,506.0,516.6,1027.0,2.0,
+after,BenchmarkComparison/Binary1KiB/Ours/Encode-8,5,131.7,131.1,134.3,0.0,0.0,16.0
+after,BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8,5,1225.0,1207.0,1264.0,3.0,1.0,
+after,BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargettrue-8,5,4083.0,4065.0,4615.0,65539.0,2.0,
+after,BenchmarkComparison/Binary64KiB/Ours/Encode-8,5,135.3,134.2,137.2,0.0,0.0,17.0
+after,BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8,5,440.6,439.6,442.9,3.0,1.0,
+after,BenchmarkComparison/Mixed/Ours/Decode/ClearTargettrue-8,5,448.1,445.0,449.3,6.0,2.0,
+after,BenchmarkComparison/Mixed/Ours/Encode-8,5,131.4,130.3,133.5,0.0,0.0,16.0
+after,BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8,5,243.5,239.7,245.8,0.0,0.0,
+after,BenchmarkComparison/Nested/Ours/Decode/ClearTargettrue-8,5,242.2,240.2,243.0,0.0,0.0,
+after,BenchmarkComparison/Nested/Ours/Encode-8,5,67.9,66.4,68.65,0.0,0.0,6.0
+after,BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8,5,248.7,247.3,249.2,0.0,0.0,
+after,BenchmarkComparison/Scalars/Ours/Decode/ClearTargettrue-8,5,248.5,247.7,250.7,0.0,0.0,
+after,BenchmarkComparison/Scalars/Ours/Encode-8,5,71.96,71.86,72.79,0.0,0.0,8.0
+after,BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8,5,513.5,504.2,540.7,1024.0,1.0,
+after,BenchmarkComparison/String1KiB/Ours/Decode/ClearTargettrue-8,5,516.7,514.0,553.9,1026.0,2.0,
+after,BenchmarkComparison/String1KiB/Ours/Encode-8,5,143.3,141.7,143.7,0.0,0.0,16.0
+after,BenchmarkEncodeCopy/Binary64KiB/Ours-8,5,924.1,906.0,957.9,0.0,0.0,
+after,BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8,5,1037.0,1011.0,1127.0,0.0,0.0,
+after,BenchmarkEncodeCopy/Mixed/Ours-8,5,167.3,166.2,167.6,0.0,0.0,
+after,BenchmarkEncodeCopy/Mixed/OursBuffered-8,5,171.8,170.8,184.7,0.0,0.0,
+after,BenchmarkFresh/Mixed/Ours/Decode-8,5,476.6,476.5,479.6,150.0,4.0,
+after,BenchmarkFresh/Mixed/Ours/Encode-8,5,148.3,146.8,148.8,96.0,2.0,
+after,BenchmarkFresh/Mixed/OursBuffered/Decode-8,5,726.7,724.0,731.4,4342.0,6.0,
+after,BenchmarkFresh/Mixed/OursBuffered/Encode-8,5,425.4,418.1,430.2,4256.0,4.0,
+after,BenchmarkFresh/String1KiB/Ours/Decode-8,5,612.5,609.3,625.8,2194.0,5.0,
+after,BenchmarkFresh/String1KiB/Ours/Encode-8,5,227.7,226.5,229.7,1120.0,3.0,
+after,BenchmarkFresh/String1KiB/OursBuffered/Decode-8,5,903.5,891.5,1033.0,6386.0,7.0,
+after,BenchmarkFresh/String1KiB/OursBuffered/Encode-8,5,516.8,512.6,523.1,5280.0,5.0,
+before,BenchmarkBufferedOurs/Binary1KiB/Decode-8,5,603.9,593.0,606.5,51.0,2.0,
+before,BenchmarkBufferedOurs/Binary1KiB/Encode-8,5,175.1,172.5,175.9,0.0,0.0,1.0
+before,BenchmarkBufferedOurs/Binary64KiB/Decode-8,5,1387.0,1353.0,1398.0,51.0,2.0,
+before,BenchmarkBufferedOurs/Binary64KiB/Encode-8,5,218.7,217.4,222.1,0.0,0.0,4.0
+before,BenchmarkBufferedOurs/Mixed/Decode-8,5,586.8,577.8,595.4,51.0,2.0,
+before,BenchmarkBufferedOurs/Mixed/Encode-8,5,168.3,166.0,168.9,0.0,0.0,1.0
+before,BenchmarkBufferedOurs/Nested/Decode-8,5,327.4,317.6,338.9,48.0,1.0,
+before,BenchmarkBufferedOurs/Nested/Encode-8,5,82.81,80.58,84.77,0.0,0.0,1.0
+before,BenchmarkBufferedOurs/Scalars/Decode-8,5,336.3,330.7,341.6,48.0,1.0,
+before,BenchmarkBufferedOurs/Scalars/Encode-8,5,90.83,90.41,92.45,0.0,0.0,1.0
+before,BenchmarkBufferedOurs/String1KiB/Decode-8,5,731.5,717.8,736.2,2096.0,3.0,
+before,BenchmarkBufferedOurs/String1KiB/Encode-8,5,186.9,184.4,206.3,0.0,0.0,1.0
+before,BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargetfalse-8,5,568.1,565.5,571.7,51.0,2.0,
+before,BenchmarkComparison/Binary1KiB/Ours/Decode/ClearTargettrue-8,5,628.9,623.5,640.4,1075.0,3.0,
+before,BenchmarkComparison/Binary1KiB/Ours/Encode-8,5,129.5,129.3,130.2,0.0,0.0,16.0
+before,BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8,5,1264.0,1253.0,1276.0,51.0,2.0,
+before,BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargettrue-8,5,4105.0,3947.0,4187.0,65587.0,3.0,
+before,BenchmarkComparison/Binary64KiB/Ours/Encode-8,5,133.0,132.2,133.7,0.0,0.0,17.0
+before,BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8,5,560.1,557.0,563.7,51.0,2.0,
+before,BenchmarkComparison/Mixed/Ours/Decode/ClearTargettrue-8,5,568.1,564.4,569.0,54.0,3.0,
+before,BenchmarkComparison/Mixed/Ours/Encode-8,5,129.4,128.6,130.3,0.0,0.0,16.0
+before,BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8,5,319.1,317.8,324.0,48.0,1.0,
+before,BenchmarkComparison/Nested/Ours/Decode/ClearTargettrue-8,5,317.4,315.5,320.9,48.0,1.0,
+before,BenchmarkComparison/Nested/Ours/Encode-8,5,66.28,66.03,67.47,0.0,0.0,6.0
+before,BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8,5,316.0,311.4,344.0,48.0,1.0,
+before,BenchmarkComparison/Scalars/Ours/Decode/ClearTargettrue-8,5,314.0,309.9,321.3,48.0,1.0,
+before,BenchmarkComparison/Scalars/Ours/Encode-8,5,71.08,71.03,71.97,0.0,0.0,8.0
+before,BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8,5,695.2,689.7,701.6,2096.0,3.0,
+before,BenchmarkComparison/String1KiB/Ours/Decode/ClearTargettrue-8,5,699.8,696.7,706.2,2098.0,4.0,
+before,BenchmarkComparison/String1KiB/Ours/Encode-8,5,142.2,141.5,144.1,0.0,0.0,16.0
+before,BenchmarkEncodeCopy/Binary64KiB/Ours-8,5,975.2,936.2,1030.0,0.0,0.0,
+before,BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8,5,1003.0,979.9,1040.0,0.0,0.0,
+before,BenchmarkEncodeCopy/Mixed/Ours-8,5,164.8,164.4,166.4,0.0,0.0,
+before,BenchmarkEncodeCopy/Mixed/OursBuffered-8,5,170.4,169.1,171.1,0.0,0.0,
+before,BenchmarkFresh/Mixed/Ours/Decode-8,5,591.2,584.9,639.7,150.0,4.0,
+before,BenchmarkFresh/Mixed/Ours/Encode-8,5,146.3,145.1,148.2,96.0,2.0,
+before,BenchmarkFresh/Mixed/OursBuffered/Decode-8,5,833.4,819.9,842.9,4342.0,6.0,
+before,BenchmarkFresh/Mixed/OursBuffered/Encode-8,5,428.0,416.3,431.5,4256.0,4.0,
+before,BenchmarkFresh/String1KiB/Ours/Decode-8,5,723.6,720.7,728.6,2194.0,5.0,
+before,BenchmarkFresh/String1KiB/Ours/Encode-8,5,1634.0,1562.0,1686.0,32864.0,3.0,
+before,BenchmarkFresh/String1KiB/OursBuffered/Decode-8,5,998.7,991.9,1012.0,6386.0,7.0,
+before,BenchmarkFresh/String1KiB/OursBuffered/Encode-8,5,1901.0,1863.0,1970.0,37024.0,5.0,
+tinylib,BenchmarkComparison/Binary1KiB/Tinylib/Decode/ClearTargetfalse-8,5,115.3,114.4,115.7,3.0,1.0,
+tinylib,BenchmarkComparison/Binary1KiB/Tinylib/Decode/ClearTargettrue-8,5,183.5,182.8,183.7,1027.0,2.0,
+tinylib,BenchmarkComparison/Binary1KiB/Tinylib/Encode-8,5,54.89,54.71,55.09,0.0,0.0,1.0
+tinylib,BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargetfalse-8,5,959.8,902.8,999.1,3.0,1.0,
+tinylib,BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargettrue-8,5,3567.0,3499.0,3633.0,65539.0,2.0,
+tinylib,BenchmarkComparison/Binary64KiB/Tinylib/Encode-8,5,41.5,41.44,41.58,0.0,0.0,3.0
+tinylib,BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8,5,98.12,97.74,99.04,3.0,1.0,
+tinylib,BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargettrue-8,5,105.2,103.8,105.7,6.0,2.0,
+tinylib,BenchmarkComparison/Mixed/Tinylib/Encode-8,5,42.11,42.0,42.13,0.0,0.0,1.0
+tinylib,BenchmarkComparison/Nested/Tinylib/Decode/ClearTargetfalse-8,5,52.49,52.26,52.91,0.0,0.0,
+tinylib,BenchmarkComparison/Nested/Tinylib/Decode/ClearTargettrue-8,5,52.55,52.41,52.87,0.0,0.0,
+tinylib,BenchmarkComparison/Nested/Tinylib/Encode-8,5,16.97,16.89,17.08,0.0,0.0,1.0
+tinylib,BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargetfalse-8,5,53.88,53.4,54.14,0.0,0.0,
+tinylib,BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargettrue-8,5,53.86,53.84,54.1,0.0,0.0,
+tinylib,BenchmarkComparison/Scalars/Tinylib/Encode-8,5,20.18,20.14,20.27,0.0,0.0,1.0
+tinylib,BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargetfalse-8,5,176.8,175.0,182.3,1024.0,1.0,
+tinylib,BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargettrue-8,5,185.5,181.9,186.6,1026.0,2.0,
+tinylib,BenchmarkComparison/String1KiB/Tinylib/Encode-8,5,53.72,53.64,53.75,0.0,0.0,1.0
+tinylib,BenchmarkEncodeCopy/Binary64KiB/Tinylib-8,5,837.2,819.0,898.1,0.0,0.0,
+tinylib,BenchmarkEncodeCopy/Mixed/Tinylib-8,5,44.03,43.96,46.17,0.0,0.0,
+tinylib,BenchmarkFresh/Mixed/Tinylib/Decode-8,5,377.2,372.1,423.8,4262.0,5.0,
+tinylib,BenchmarkFresh/Mixed/Tinylib/Encode-8,5,324.8,323.5,325.6,4144.0,2.0,
+tinylib,BenchmarkFresh/String1KiB/Tinylib/Decode-8,5,478.1,475.9,519.3,5282.0,5.0,
+tinylib,BenchmarkFresh/String1KiB/Tinylib/Encode-8,5,327.0,326.1,334.0,4144.0,2.0,
+
+
+Source and binary SHA-256 hashes
+5051bf2ad92bf0acf8ebc28463c1ec3211e80587d6e6e548206bd25e6d3cb3bf  decoder.go
+23f779b140b734711bfa11c73a3285ea8996181d58d64817a28722cdd2297c6b  reflected_decoder.go
+e550cc11e10c1e83963313c19f65cbe79c38f0af4fe10d76f6624e90e9f1871c  reflection_plan.go
+40ccdf793def459d5b37f1b102fd0c26dbac5ffa2a78cc3f81d5f4e922f73e5b  reader.go
+55fffda2c3bca2b7f784d4ba722fcf5321234a587c016dea8c57bc138078aec0  writer.go
+c10fab96cc73eb509ee1c9e735abca8225ff2a4d728dbd86daf768839c22fa71  before.test
+b12714b1b090aa9595819f3bb1bd2354c135c26af2657cb721065131bb95d85d  after.test
+
+
+Validation
+Full repository validation after implementation:
+GOCACHE=/private/tmp/messagepack-go-build go test ./...
+ok github.com/itsmontoya/messagepack 1.240s
+GOCACHE=/private/tmp/messagepack-go-build go test -race ./...
+ok github.com/itsmontoya/messagepack 14.055s
+GOCACHE=/private/tmp/messagepack-go-build go vet ./...
+exit 0
+The test and race suites used authorized localhost-listener access for HTTP integration tests.
+Focused fuzzing: see fuzz-results.txt.
+
+
+Focused fuzzing
+Command: go test -run ^$ -fuzz ^FuzzDecoderReflection$ -fuzztime=15s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/60 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 60/60 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 93521 (31174/sec), new interesting: 77 (total: 137)
+fuzz: elapsed: 6s, execs: 181623 (29366/sec), new interesting: 93 (total: 153)
+fuzz: elapsed: 9s, execs: 245749 (21369/sec), new interesting: 109 (total: 169)
+fuzz: elapsed: 12s, execs: 336699 (30321/sec), new interesting: 116 (total: 176)
+fuzz: elapsed: 15s, execs: 427313 (30205/sec), new interesting: 122 (total: 182)
+fuzz: elapsed: 16s, execs: 427313 (0/sec), new interesting: 122 (total: 182)
+PASS
+ok  	github.com/itsmontoya/messagepack	15.967s
+Command: go test -run ^$ -fuzz ^FuzzEncoderReflection$ -fuzztime=15s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/2 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 2/2 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 79429 (26467/sec), new interesting: 13 (total: 15)
+fuzz: elapsed: 6s, execs: 234159 (51581/sec), new interesting: 16 (total: 18)
+fuzz: elapsed: 9s, execs: 281164 (15667/sec), new interesting: 18 (total: 20)
+fuzz: elapsed: 12s, execs: 385397 (34744/sec), new interesting: 19 (total: 21)
+fuzz: elapsed: 15s, execs: 385397 (0/sec), new interesting: 19 (total: 21)
+fuzz: elapsed: 16s, execs: 385397 (0/sec), new interesting: 19 (total: 21)
+PASS
+ok  	github.com/itsmontoya/messagepack	16.280s
+Command: go test -run ^$ -fuzz ^FuzzStreamPayloadTransfer$ -fuzztime=15s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/7764 completed
+fuzz: elapsed: 3s, gathering baseline coverage: 7764/7764 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 17821 (5938/sec), new interesting: 34 (total: 7798)
+fuzz: elapsed: 6s, execs: 24162 (2114/sec), new interesting: 36 (total: 7800)
+fuzz: elapsed: 9s, execs: 24162 (0/sec), new interesting: 36 (total: 7800)
+fuzz: elapsed: 12s, execs: 145196 (40345/sec), new interesting: 39 (total: 7803)
+fuzz: elapsed: 15s, execs: 362829 (72559/sec), new interesting: 41 (total: 7805)
+fuzz: elapsed: 16s, execs: 362829 (0/sec), new interesting: 41 (total: 7805)
+PASS
+ok  	github.com/itsmontoya/messagepack	16.313s
+
+
+Post-measurement updated CPU profile run
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8         	 7834098	       432.0 ns/op	 138.89 MB/s	       3 B/op	       1 allocs/op
+PASS
+
+
+Post-measurement CPU profile summary
+File: after.test
+Type: cpu
+Time: 2026-11-05 11:30:02 PST
+Duration: 3.97s, Total samples = 3.35s (84.46%)
+Showing nodes accounting for 2.96s, 88.36% of 3.35s total
+Dropped 18 nodes (cum <= 0.02s)
+Showing top 25 nodes out of 74
+      flat  flat%   sum%        cum   cum%
+     0.63s 18.81% 18.81%      0.63s 18.81%  runtime.madvise
+     0.58s 17.31% 36.12%      1.07s 31.94%  github.com/itsmontoya/messagepack.(*Reader).readFull
+     0.21s  6.27% 42.39%      0.30s  8.96%  bytes.(*Reader).Read
+     0.21s  6.27% 48.66%      0.21s  6.27%  errors.Is
+     0.13s  3.88% 52.54%      2.42s 72.24%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodePlanned
+     0.13s  3.88% 56.42%      0.13s  3.88%  runtime.memmove
+     0.10s  2.99% 59.40%      0.86s 25.67%  github.com/itsmontoya/messagepack.(*Reader).readPayload
+     0.08s  2.39% 61.79%      0.36s 10.75%  github.com/itsmontoya/messagepack.(*Reader).readPayloadHeader
+     0.08s  2.39% 64.18%      2.35s 70.15%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeStruct
+     0.08s  2.39% 66.57%      0.13s  3.88%  internal/runtime/maps.(*Map).getWithoutKeySmallFastStr
+     0.07s  2.09% 68.66%      0.64s 19.10%  github.com/itsmontoya/messagepack.(*Reader).readTag
+     0.07s  2.09% 70.75%      0.07s  2.09%  github.com/itsmontoya/messagepack.(*reflectedDecoder).visit (inline)
+     0.07s  2.09% 72.84%      0.10s  2.99%  reflect.Value.Field
+     0.07s  2.09% 74.93%      0.20s  5.97%  runtime.mapaccess2_faststr
+     0.07s  2.09% 77.01%      0.07s  2.09%  runtime.pthread_cond_signal
+     0.07s  2.09% 79.10%      0.14s  4.18%  runtime.slicebytetostring
+     0.06s  1.79% 80.90%      0.06s  1.79%  github.com/itsmontoya/messagepack.(*Reader).ready (inline)
+     0.05s  1.49% 82.39%      2.61s 77.91%  github.com/itsmontoya/messagepack.(*Decoder).Decode
+     0.04s  1.19% 83.58%      0.35s 10.45%  github.com/itsmontoya/messagepack.(*Reader).peekTag
+     0.04s  1.19% 84.78%      0.04s  1.19%  internal/runtime/maps.memHashAES
+     0.03s   0.9% 85.67%      2.65s 79.10%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.2
+     0.03s   0.9% 86.57%      0.04s  1.19%  runtime.nilinterhash
+     0.02s   0.6% 87.16%      0.02s   0.6%  github.com/itsmontoya/messagepack.(*Reader).decodeInt64
+     0.02s   0.6% 87.76%      0.05s  1.49%  github.com/itsmontoya/messagepack.(*Reader).readContainerHeader
+     0.02s   0.6% 88.36%      0.19s  5.67%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeBytes

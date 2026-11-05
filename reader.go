@@ -436,7 +436,7 @@ func (r *Reader) skipPayload(state *skipState, length uint64) (err error) {
 	}
 
 	for length > 0 {
-		var chunk = r.payloadBuffer()
+		var chunk = r.payloadBuffer(payloadBufferSize)
 		if length < uint64(len(chunk)) {
 			chunk = chunk[:int(length)]
 		}
@@ -519,6 +519,8 @@ func (r *Reader) readPayload(operation string, isString bool, dst []byte) (value
 	if isString && length <= uint64(len(r.scratch)) {
 		// DecodeString copies these bytes before scratch can be reused.
 		value = r.scratch[:int(length)]
+	} else if isString && length <= payloadBufferSize {
+		value = r.payloadBuffer(int(length))
 	} else if dst != nil && length <= uint64(cap(dst)) {
 		value = dst[:int(length)]
 	} else {
@@ -566,7 +568,7 @@ func (r *Reader) copyPayloadTo(operation string, dst io.Writer, remaining uint64
 	)
 
 	for remaining > 0 {
-		chunk = r.payloadBuffer()
+		chunk = r.payloadBuffer(payloadBufferSize)
 		if remaining < uint64(len(chunk)) {
 			chunk = chunk[:int(remaining)]
 		}
@@ -593,12 +595,12 @@ func (r *Reader) copyPayloadTo(operation string, dst io.Writer, remaining uint64
 	return n, nil
 }
 
-func (r *Reader) payloadBuffer() (buffer []byte) {
-	if r.state.buffer == nil {
-		r.state.buffer = make([]byte, payloadBufferSize)
+func (r *Reader) payloadBuffer(size int) (buffer []byte) {
+	if len(r.state.buffer) < size {
+		r.state.buffer = make([]byte, size)
 	}
 
-	return r.state.buffer
+	return r.state.buffer[:size]
 }
 
 func (r *Reader) ready() (err error) {

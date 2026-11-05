@@ -43,7 +43,7 @@ func FuzzDecoderReflection(f *testing.F) {
 			backing = &payload[0]
 			target = &payload
 		}
-		if err = d.reader.SetLimits(ReaderLimits{MaxPayloadBytes: 4096}); err != nil {
+		if err = d.reflected.reader.SetLimits(ReaderLimits{MaxPayloadBytes: 4096}); err != nil {
 			t.Fatal(err)
 		}
 

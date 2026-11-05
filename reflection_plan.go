@@ -82,7 +82,9 @@ func (p *reflectionPlan) initializePointer() {
 	p.encode = func(e *reflectedEncoder, value reflect.Value, depth int) (err error) {
 		return e.encodePointer(value, p.element, depth)
 	}
-	p.decode = (*reflectedDecoder).decodePointer
+	p.decode = func(d *reflectedDecoder, value reflect.Value, _ byte, depth int) (err error) {
+		return d.decodePointer(value, p.element, depth)
+	}
 }
 
 func (p *reflectionPlan) initializeArray() {
@@ -96,7 +98,9 @@ func (p *reflectionPlan) initializeArray() {
 	p.encode = func(e *reflectedEncoder, value reflect.Value, depth int) (err error) {
 		return e.encodeArray(value, p.element, depth)
 	}
-	p.decode = (*reflectedDecoder).decodeArray
+	p.decode = func(d *reflectedDecoder, value reflect.Value, _ byte, depth int) (err error) {
+		return d.decodeArray(value, p.element, depth)
+	}
 }
 
 func (p *reflectionPlan) initializeMap() {
@@ -105,7 +109,9 @@ func (p *reflectionPlan) initializeMap() {
 	p.encode = func(e *reflectedEncoder, value reflect.Value, depth int) (err error) {
 		return e.encodeMap(value, p.key, p.element, depth)
 	}
-	p.decode = (*reflectedDecoder).decodeMap
+	p.decode = func(d *reflectedDecoder, value reflect.Value, _ byte, depth int) (err error) {
+		return d.decodeMap(value, p.key, p.element, depth)
+	}
 }
 
 func (p *reflectionPlan) initializeStruct() {
@@ -117,7 +123,7 @@ func (p *reflectionPlan) initializeStruct() {
 		}
 
 		p.fields = append(p.fields, reflectionField{index: index, plan: lookupReflectionPlan(field.Type)})
-		p.fieldsByName[field.Name] = index
+		p.fieldsByName[field.Name] = len(p.fields) - 1
 	}
 	// Resolve child plans during traversal so recursive types cannot deadlock initialization.
 	p.encode = func(e *reflectedEncoder, value reflect.Value, depth int) (err error) {
@@ -128,7 +134,7 @@ func (p *reflectionPlan) initializeStruct() {
 		return e.encodeStruct(value, p.fields, p.prefix, depth)
 	}
 	p.decode = func(d *reflectedDecoder, value reflect.Value, _ byte, depth int) (err error) {
-		return d.decodeStruct(value, p.fieldsByName, depth)
+		return d.decodeStruct(value, p.fields, p.fieldsByName, depth)
 	}
 	p.initializePrefixes()
 }
