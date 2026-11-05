@@ -7,6 +7,7 @@ import (
 	"io"
 	"math"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -284,7 +285,7 @@ func TestDecoderReflectionBytesReuseFailures(t *testing.T) {
 				err     error
 			)
 
-			if err = d.reader.SetLimits(ReaderLimits{MaxPayloadBytes: tt.limit}); err != nil {
+			if err = d.reflected.reader.SetLimits(ReaderLimits{MaxPayloadBytes: tt.limit}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -336,8 +337,8 @@ func TestDecoderReflectionBytesReuseAllocations(t *testing.T) {
 				input.Reset(output.Bytes())
 				err = d.Decode(&value)
 			})
-			if err != nil || allocs > 1 {
-				t.Fatalf("reused bytes Decode = %v, %.0f allocations, want at most one", err, allocs)
+			if err != nil || allocs != 0 {
+				t.Fatalf("reused bytes Decode = %v, %.0f allocations, want zero", err, allocs)
 			}
 
 			if len(value.Payload) != size || value.Payload[0] != 7 || value.Payload[size-1] != 7 || input.Len() != 0 {
@@ -399,8 +400,8 @@ func TestDecoderReflectionPointers(t *testing.T) {
 func TestDecoderReflectionStructFields(t *testing.T) {
 	var (
 		value = struct {
-			ID     int
 			hidden int
+			ID     int
 		}{ID: 1, hidden: 9}
 		wire = []byte{0x84, 0xa2, 'I', 'D', 2, 0xa1, 'x', 0x91, 0x81, 0xa1, 'y', 0xc3,
 			0xa6, 'h', 'i', 'd', 'd', 'e', 'n', 0, 0xa2, 'I', 'D', 42, 0xc3}
@@ -480,12 +481,70 @@ func TestDecoderReflectionWarmedAllocations(t *testing.T) {
 		input.Reset(output.Bytes())
 		err = d.Decode(&value)
 	})
-	if err != nil || allocs > 1 {
-		t.Fatalf("warmed struct Decode = %v, %.0f allocations, want at most one", err, allocs)
+	if err != nil || allocs != 0 {
+		t.Fatalf("warmed struct Decode = %v, %.0f allocations, want zero", err, allocs)
 	}
 
 	if value.ID != 42 || value.Count != -3 || !value.Active || value.Ratio != 1.5 || input.Len() != 0 {
 		t.Fatalf("warmed struct Decode = %+v, remaining %d", value, input.Len())
+	}
+}
+
+func TestDecoderReflectionWarmedStringAllocations(t *testing.T) {
+	for _, length := range []int{3, 10, 1024, payloadBufferSize} {
+		t.Run(fmt.Sprintf("Bytes%d", length), func(t *testing.T) {
+			var (
+				want   = strings.Repeat("x", length)
+				value  = struct{ Name string }{Name: want}
+				output bytes.Buffer
+				err    error
+			)
+
+			if err = NewEncoder(&output).Encode(&value); err != nil {
+				t.Fatal(err)
+			}
+
+			var (
+				input  = bytes.NewReader(output.Bytes())
+				d      = NewDecoder(input)
+				allocs = testing.AllocsPerRun(100, func() {
+					input.Reset(output.Bytes())
+					err = d.Decode(&value)
+				})
+			)
+
+			if err != nil || allocs > 1 || value.Name != want || input.Len() != 0 {
+				t.Fatalf("warmed string Decode = %v, %g allocations, remaining %d", err, allocs, input.Len())
+			}
+		})
+	}
+}
+
+func TestDecoderReflectionVisitBudgetPerRoot(t *testing.T) {
+	var (
+		value  [maximumReflectionVisits - 1]bool
+		output bytes.Buffer
+		writer = NewWriter(&output)
+		err    error
+	)
+
+	if err = writer.EncodeArrayHeader(uint32(len(value))); err != nil {
+		t.Fatal(err)
+	}
+
+	var (
+		wire  = append(output.Bytes(), bytes.Repeat([]byte{0xc3}, len(value))...)
+		input = bytes.NewReader(bytes.Repeat(wire, 2))
+		d     = NewDecoder(input)
+	)
+
+	for index := 0; index < 2; index++ {
+		if err = d.Decode(&value); err != nil || !value[0] || !value[len(value)-1] {
+			t.Fatalf("Decode root %d = %v", index, err)
+		}
+	}
+	if err = d.Decode(&value); !errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+		t.Fatalf("Decode after complete roots = %v, want clean EOF", err)
 	}
 }
 

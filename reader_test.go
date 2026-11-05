@@ -2240,6 +2240,93 @@ func TestReaderShortStringAllocations(t *testing.T) {
 	}
 }
 
+func TestReaderStringScratchAllocations(t *testing.T) {
+	for _, length := range []int{10, 31, 32, 1024, payloadBufferSize} {
+		t.Run(fmt.Sprintf("Bytes%d", length), func(t *testing.T) {
+			var (
+				want   = strings.Repeat("\xff", length)
+				output bytes.Buffer
+				err    error
+			)
+
+			if err = NewWriter(&output).EncodeString(want); err != nil {
+				t.Fatal(err)
+			}
+
+			var (
+				input  = bytes.NewReader(output.Bytes())
+				r      = NewReader(input)
+				allocs = testing.AllocsPerRun(100, func() {
+					input.Reset(output.Bytes())
+					r.Reset(input)
+					benchmarkStringSink, err = r.DecodeString()
+				})
+			)
+
+			if err != nil || benchmarkStringSink != want || allocs > 1 || input.Len() != 0 {
+				t.Fatalf("DecodeString = %v, %g allocations, remaining %d", err, allocs, input.Len())
+			}
+
+			if cap(r.state.buffer) > length {
+				t.Fatalf("retained scratch %d exceeds %d-byte payload", cap(r.state.buffer), length)
+			}
+		})
+	}
+}
+
+func TestReaderStringScratchOwnership(t *testing.T) {
+	for _, length := range []int{10, 1024, payloadBufferSize, payloadBufferSize + 1, 65536} {
+		t.Run(fmt.Sprintf("Bytes%d", length), func(t *testing.T) {
+			var (
+				want   = strings.Repeat("\xff", length)
+				other  = strings.Repeat("x", length)
+				output bytes.Buffer
+				writer = NewWriter(&output)
+				err    error
+			)
+
+			if err = writer.EncodeString(want); err != nil {
+				t.Fatal(err)
+			}
+
+			if err = writer.EncodeString(other); err != nil {
+				t.Fatal(err)
+			}
+
+			if err = writer.EncodeBool(true); err != nil {
+				t.Fatal(err)
+			}
+
+			var (
+				input  = decoderTestReader{data: output.Bytes(), maxRead: 3}
+				r      = NewReader(&input)
+				first  string
+				second string
+				tail   bool
+			)
+
+			if first, err = r.DecodeString(); err != nil || first != want {
+				t.Fatalf("first string = %v", err)
+			}
+
+			var alias = *r
+			if second, err = alias.DecodeString(); err != nil || second != other {
+				t.Fatalf("second string = %v", err)
+			}
+
+			if tail, err = r.DecodeBool(); err != nil || !tail || input.position != len(input.data) {
+				t.Fatalf("following value = (%v, %v), position %d", tail, err, input.position)
+			}
+
+			clear(input.data)
+			clear(r.state.buffer)
+			if first != want || second != other || cap(r.state.buffer) > payloadBufferSize {
+				t.Fatal("owned strings changed or retained scratch exceeded its bound")
+			}
+		})
+	}
+}
+
 func TestReaderPayloadClassification(t *testing.T) {
 	methods := []struct {
 		name  string

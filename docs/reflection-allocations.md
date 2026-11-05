@@ -1,5 +1,9 @@
 # Cached reflection allocations
 
+The [decoder and string follow-up](decoder-string-optimizations.md) records the
+subsequent decoder-context reuse, cached child dispatch, and string staging changes.
+The measurements below preserve the earlier implementation stages.
+
 Measured on 2026-11-04 with Go 1.27.2, darwin/arm64, and an Apple M3. This initial
 comparison measures the uncached fallback and cached reflection plans before
 the byte-slice reuse follow-up below. Both versions use the same

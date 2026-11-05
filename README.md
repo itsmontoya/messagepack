@@ -100,15 +100,16 @@ reject overflow into smaller Go integers.
 
 Reflection plans are cached by `reflect.Type` across Encoder and Decoder
 instances. Field metadata, codec functions, and hook eligibility are initialized
-once per type and reused. Encoding plans link directly to child handlers and
-cache wire bytes for struct headers and keys, combining adjacent prefixes.
-The Encoder owns reusable scratch and traversal state. Field values still use
-reflection; there is no generator or additional build step. The synchronized
+once per type and reused. Plans link directly to child handlers. Encoding also
+caches wire bytes for struct headers and keys, combining adjacent prefixes.
+The Encoder and Decoder own reusable scratch and traversal state. Field values
+still use reflection; there is no generator or additional build step. The synchronized
 cache retains type metadata for the process lifetime and never stores application
 values or stream state.
 The [allocation measurements](docs/reflection-allocations.md) cover warmed
 scalar, mixed, and nested structs, including zero-allocation encoding for the
-measured pointer inputs and remaining decoding allocations.
+measured pointer inputs. The [decoder and string follow-up](docs/decoder-string-optimizations.md)
+covers zero-allocation warmed scalar decoding and remaining owned-result allocations.
 
 ```go
 var (
@@ -356,6 +357,9 @@ buffering, and retained application data have their own memory costs.
 
 `DecodeString` and `DecodeBytes` return owned results stable after subsequent
 calls or `Reset`. They intentionally allocate in proportion to accepted payloads.
+String reads up to 32 KiB reuse bounded staging storage after warm-up; the returned
+string still owns its bytes. Larger strings use temporary payload-sized staging.
+In-memory string writes grow reusable scratch to the required size, up to 32 KiB.
 `Reader.SetLimits` configures their cap and independent per-call Skip budgets:
 
 | `ReaderLimits` field | Default | Meaning |
