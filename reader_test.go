@@ -1841,6 +1841,9 @@ func TestReaderPayloadWire(t *testing.T) {
 	}{
 		{name: "empty", stringHeader: []byte{0xa0}, binaryHeader: []byte{0xc4, 0}},
 		{name: "one", length: 1, stringHeader: []byte{0xa1}, binaryHeader: []byte{0xc4, 1}},
+		{name: "8", length: 8, stringHeader: []byte{0xa8}, binaryHeader: []byte{0xc4, 8}},
+		{name: "9", length: 9, stringHeader: []byte{0xa9}, binaryHeader: []byte{0xc4, 9}},
+		{name: "10", length: 10, stringHeader: []byte{0xaa}, binaryHeader: []byte{0xc4, 10}},
 		{name: "31", length: 31, stringHeader: []byte{0xbf}, binaryHeader: []byte{0xc4, 31}},
 		{name: "32", length: 32, stringHeader: []byte{0xd9, 32}, binaryHeader: []byte{0xc4, 32}},
 		{name: "255", length: 255, stringHeader: []byte{0xd9, 0xff}, binaryHeader: []byte{0xc4, 0xff}},
@@ -1974,6 +1977,8 @@ func TestReaderPayloadTruncation(t *testing.T) {
 		isString bool
 	}{
 		{wire: []byte{0xa2, 1, 2}, header: 1, isString: true},
+		{wire: []byte{0xa9, 1, 2, 3, 4, 5, 6, 7, 8, 9}, header: 1, isString: true},
+		{wire: []byte{0xaa, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}, header: 1, isString: true},
 		{wire: []byte{0xd9, 2, 1, 2}, header: 2, isString: true},
 		{wire: []byte{0xda, 0, 2, 1, 2}, header: 3, isString: true},
 		{wire: []byte{0xdb, 0, 0, 0, 2, 1, 2}, header: 5, isString: true},
@@ -2177,6 +2182,61 @@ func TestReaderPayloadOwnership(t *testing.T) {
 
 	if text != "abc" || !bytes.Equal(value, []byte{1, 2, 3}) {
 		t.Fatalf("owned values changed after source/result/scratch/reset reuse: %q, %x", text, value)
+	}
+}
+
+func TestReaderShortStringOwnership(t *testing.T) {
+	for _, length := range []int{1, 8, 9, 10} {
+		t.Run(fmt.Sprintf("length_%d", length), func(t *testing.T) {
+			var (
+				want  = strings.Repeat("\xff", length)
+				wire  = append([]byte{0xa0 | byte(length)}, []byte(want)...)
+				input bytes.Reader
+				r     = NewReader(&input)
+				value string
+				err   error
+			)
+
+			input.Reset(wire)
+			if value, err = r.DecodeString(); err != nil || value != want {
+				t.Fatalf("DecodeString = (%q, %v), want %q", value, err, want)
+			}
+
+			wire[1] = 0
+			input.Reset([]byte{0xa9, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+			r.Reset(&input)
+			if _, err = r.DecodeString(); err != nil {
+				t.Fatal(err)
+			}
+
+			if value != want {
+				t.Fatalf("owned string changed after source mutation and scratch reuse: %q", value)
+			}
+		})
+	}
+}
+
+func TestReaderShortStringAllocations(t *testing.T) {
+	for _, length := range []int{0, 1, 2, 8, 9} {
+		t.Run(fmt.Sprintf("length_%d", length), func(t *testing.T) {
+			var (
+				wire  = append([]byte{0xa0 | byte(length)}, bytes.Repeat([]byte{0xff}, length)...)
+				input bytes.Reader
+				r     = NewReader(&input)
+			)
+
+			allocations := testing.AllocsPerRun(1000, func() {
+				input.Reset(wire)
+				r.Reset(&input)
+				var err error
+				if benchmarkStringSink, err = r.DecodeString(); err != nil {
+					t.Fatal(err)
+				}
+			})
+			if allocations > 1 {
+				t.Fatalf("short string decoding allocated %g times, want at most one owned string allocation", allocations)
+			}
+		})
 	}
 }
 
@@ -2657,6 +2717,8 @@ func TestSkipSupportedValues(t *testing.T) {
 		{name: "float64 NaN bits", wire: []byte{0xcb, 0x7f, 0xf0, 0, 0, 0, 0, 0, 1}},
 		{name: "empty fixstr", wire: []byte{0xa0}},
 		{name: "raw fixstr", wire: []byte{0xa2, 0xff, 0}},
+		{name: "nine byte string", wire: []byte{0xa9, 0xff, 0, 1, 2, 3, 4, 5, 6, 7}},
+		{name: "ten byte string", wire: []byte{0xaa, 0xff, 0, 1, 2, 3, 4, 5, 6, 7, 8}},
 		{name: "str8", wire: []byte{0xd9, 2, 0xff, 0}},
 		{name: "str16", wire: []byte{0xda, 0, 2, 0xff, 0}},
 		{name: "str32", wire: []byte{0xdb, 0, 0, 0, 2, 0xff, 0}},
@@ -2664,6 +2726,8 @@ func TestSkipSupportedValues(t *testing.T) {
 		{name: "empty str16", wire: []byte{0xda, 0, 0}},
 		{name: "empty str32", wire: []byte{0xdb, 0, 0, 0, 0}},
 		{name: "bin8", wire: []byte{0xc4, 2, 0xff, 0}},
+		{name: "nine byte binary", wire: []byte{0xc4, 9, 0xff, 0, 1, 2, 3, 4, 5, 6, 7}},
+		{name: "ten byte binary", wire: []byte{0xc4, 10, 0xff, 0, 1, 2, 3, 4, 5, 6, 7, 8}},
 		{name: "bin16", wire: []byte{0xc5, 0, 2, 0xff, 0}},
 		{name: "bin32", wire: []byte{0xc6, 0, 0, 0, 2, 0xff, 0}},
 		{name: "empty bin8", wire: []byte{0xc4, 0}},
@@ -2708,6 +2772,31 @@ func TestSkipSupportedValues(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestSkipShortPayloadAllocations(t *testing.T) {
+	for _, wire := range [][]byte{
+		{0xa0},
+		{0xa1, 'x'},
+		{0xa9, '1', '2', '3', '4', '5', '6', '7', '8', '9'},
+		{0xc4, 0},
+		{0xc4, 1, 'x'},
+		{0xc4, 9, '1', '2', '3', '4', '5', '6', '7', '8', '9'},
+	} {
+		t.Run(fmt.Sprintf("%x", wire), func(t *testing.T) {
+			var input bytes.Reader
+			allocations := testing.AllocsPerRun(1000, func() {
+				input.Reset(wire)
+				var r = NewReader(&input)
+				if err := r.Skip(); err != nil {
+					t.Fatal(err)
+				}
+			})
+			if allocations > 2 {
+				t.Fatalf("fresh short payload Skip allocated %g times, want at most two codec allocations", allocations)
+			}
+		})
 	}
 }
 
@@ -2807,7 +2896,9 @@ func TestSkipTruncation(t *testing.T) {
 		{0xd3, 0x80, 0, 0, 0, 0, 0, 0, 0},
 		{0xca, 0x3f, 0xc0, 0, 0}, {0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0},
 		{0xa2, 0xff, 0}, {0xd9, 2, 0xff, 0}, {0xda, 0, 2, 0xff, 0}, {0xdb, 0, 0, 0, 2, 0xff, 0},
+		{0xa9, 0xff, 0, 1, 2, 3, 4, 5, 6, 7}, {0xaa, 0xff, 0, 1, 2, 3, 4, 5, 6, 7, 8},
 		{0xc4, 2, 0xff, 0}, {0xc5, 0, 2, 0xff, 0}, {0xc6, 0, 0, 0, 2, 0xff, 0},
+		{0xc4, 9, 0xff, 0, 1, 2, 3, 4, 5, 6, 7}, {0xc4, 10, 0xff, 0, 1, 2, 3, 4, 5, 6, 7, 8},
 		{0x91, 0xc0}, {0xdc, 0, 1, 0xc0}, {0xdd, 0, 0, 0, 1, 0xc0},
 		{0x81, 0xc0, 0xc3}, {0xde, 0, 1, 0xc0, 0xc3}, {0xdf, 0, 0, 0, 1, 0xc0, 0xc3},
 		{0x92, 0x81, 0xc0, 0x91, 0xc3, 0x90},

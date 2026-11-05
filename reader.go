@@ -256,7 +256,7 @@ func (r *Reader) readContainerHeader(operation string, isMap bool) (count uint32
 // Failures return an empty string and may consume input; no UTF-8 validation occurs.
 func (r *Reader) DecodeString() (value string, err error) {
 	var payload []byte
-	if payload, err = r.readOwnedPayload("decode string", true); err != nil {
+	if payload, err = r.readPayload("decode string", true); err != nil {
 		return "", err
 	}
 
@@ -266,7 +266,7 @@ func (r *Reader) DecodeString() (value string, err error) {
 // DecodeBytes returns owned binary contents within MaxPayloadBytes.
 // Empty binary succeeds with a non-nil slice; failures return nil.
 func (r *Reader) DecodeBytes() (value []byte, err error) {
-	return r.readOwnedPayload("decode bytes", false)
+	return r.readPayload("decode bytes", false)
 }
 
 // DecodeStringTo copies a string's original bytes to dst using bounded memory.
@@ -430,6 +430,10 @@ func (r *Reader) skipPayload(state *skipState, length uint64) (err error) {
 		return ErrLimitExceeded
 	}
 
+	if length <= uint64(len(r.scratch)) {
+		return r.readSkip(state, r.scratch[:int(length)])
+	}
+
 	for length > 0 {
 		var chunk = r.payloadBuffer()
 		if length < uint64(len(chunk)) {
@@ -496,7 +500,7 @@ func (r *Reader) readPayloadHeader(operation string, isString bool) (length uint
 	}
 }
 
-func (r *Reader) readOwnedPayload(operation string, isString bool) (value []byte, err error) {
+func (r *Reader) readPayload(operation string, isString bool) (value []byte, err error) {
 	var length uint64
 	if length, err = r.readPayloadHeader(operation, isString); err != nil {
 		return nil, err
@@ -510,7 +514,13 @@ func (r *Reader) readOwnedPayload(operation string, isString bool) (value []byte
 		return nil, r.fail(ErrOverflow)
 	}
 
-	value = make([]byte, int(length))
+	if isString && length <= uint64(len(r.scratch)) {
+		// DecodeString copies these bytes before scratch can be reused.
+		value = r.scratch[:int(length)]
+	} else {
+		value = make([]byte, int(length))
+	}
+
 	for offset := 0; offset < len(value); {
 		var size = len(value) - offset
 		if size > payloadBufferSize {

@@ -1,0 +1,15 @@
+--- a/writer.go
++++ b/writer.go
+@@ -184,6 +184,12 @@
+ 		return err
+ 	}
+ 
++	if len(value) > 0 && len(value) <= len(w.scratch) {
++		copy(w.scratch[:], value)
++		_, err = w.write("encode string", w.scratch[:len(value)])
++		return err
++	}
++
+ 	for len(value) > 0 {
+ 		n := copy(w.payloadBuffer(), value)
+ 		if _, err = w.write("encode string", w.state.buffer[:n]); err != nil {
