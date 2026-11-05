@@ -2,8 +2,8 @@
 
 A small, typed MessagePack codec for Go 1.27.2 or later, using only the standard
 library. `Writer` writes typed values to an `io.Writer`; `Reader` reads typed values
-from an `io.Reader`. `Encoder` and `Decoder` handle custom values implementing
-`Encodee` and `Decodee`.
+from an `io.Reader`. `Encoder` and `Decoder` prefer custom `Encodee` and `Decodee`
+hooks and use reflection for ordinary Go values.
 Process HTTP response bodies, file datasets, and consecutive messages without
 holding an entire encoded object in memory. Known-length payload transfers use
 bounded codec memory; convenient owned payload reads have finite size limits.
@@ -16,9 +16,8 @@ and behavior. [In-memory workflows](#encode-and-decode-in-memory) use the same t
 
 ## Encode custom values
 
-`Encoder` exposes `Encode(value any)` and `Close()`. For now, `Encode` accepts only
-values implementing this interface; all other values return `ErrUnsupportedType`.
-Reflection is deferred.
+`Encoder` exposes `Encode(value any)` and `Close()`. Values implementing this
+interface control their schema; other supported values use reflection:
 
 ```go
 // Encodee defines the encoding hook accepted by Encoder.
@@ -58,15 +57,16 @@ construct a new Encoder to attach an output.
 
 The by-value `Writer` passed to `EncodeMessagePack` shares its output, payload
 buffer, and failure state with the Encoder. Hook failures are terminal, including
-errors returned after partial output. Unsupported values perform no I/O and leave
-a healthy Encoder usable. Typed nil pointers implementing `Encodee` receive the
-normal Go method call.
+errors returned after partial output. Unsupported root kinds perform no I/O and
+leave a healthy Encoder usable. Typed nil pointers implementing `Encodee` receive
+the normal Go method call.
 
 ## Decode custom values
 
-`Decoder` exposes `Decode(value any)` and `Close()`. Decode accepts only values
-implementing this interface; other targets return `ErrUnsupportedType` without
-reading input or making the Decoder terminal. Reflection is deferred.
+`Decoder` exposes `Decode(value any)` and `Close()`. Values implementing this
+interface control their schema; other targets must be non-nil pointers to
+supported Go values. Invalid targets and unsupported root kinds return
+`ErrUnsupportedType` without reading input or making the Decoder terminal.
 
 ```go
 // Decodee defines the decoding hook accepted by Decoder.
@@ -89,6 +89,75 @@ terminal. If a hook ignores a Reader failure, Decode still returns that failure.
 stored failure. It neither drains nor closes the supplied reader. A zero-value
 Decoder or `NewDecoder(nil)` is unattached; construct a new Decoder to attach input.
 Typed nil pointers implementing Decodee receive the normal Go method call.
+
+## Reflect ordinary Go values
+
+Hooks take priority at the root and in nested values. Without a hook, reflection
+supports booleans, all signed and unsigned integer kinds, float32/float64, strings,
+pointers, interfaces, arrays, slices, maps, and structs. Named types use their
+underlying kind. Numeric reads retain the typed Reader's conversion rules and
+reject overflow into smaller Go integers.
+
+Reflection plans are cached by `reflect.Type` across Encoder and Decoder
+instances. Field metadata, codec functions, and hook eligibility are initialized
+once per type and reused. Encoding plans link directly to child handlers and
+cache wire bytes for struct headers and keys, combining adjacent prefixes.
+The Encoder owns reusable scratch and traversal state. Field values still use
+reflection; there is no generator or additional build step. The synchronized
+cache retains type metadata for the process lifetime and never stores application
+values or stream state.
+The [allocation measurements](docs/reflection-allocations.md) cover warmed
+scalar, mixed, and nested structs, including zero-allocation encoding for the
+measured pointer inputs and remaining decoding allocations.
+
+```go
+var (
+    output  bytes.Buffer
+    value   = struct{ ID int }{ID: 42}
+    decoded struct{ ID int }
+    err     error
+)
+
+if err = messagepack.NewEncoder(&output).Encode(value); err != nil {
+    panic(err)
+}
+
+if err = messagepack.NewDecoder(&output).Decode(&decoded); err != nil {
+    panic(err)
+}
+```
+
+Structs use maps with exact exported Go field names, in declaration order.
+Unexported fields are ignored; embedded fields keep their own names. Struct tags
+are not interpreted. Decoding skips unknown fields with `Reader.Skip`, leaves
+missing fields unchanged, and lets the last duplicate field win. Ordinary map
+iteration order is unspecified; fixed arrays require an exact element count.
+
+Byte slices use binary, including empty binary for a nil byte slice, matching
+`Writer.EncodeBytes`. Other nil slices, nil maps, nil pointers, and nil interfaces
+encode nil; non-nil slices and arrays use arrays. Wire nil clears pointer, slice,
+map, and interface targets. Decode allocates missing nested pointers as needed.
+
+Reflected byte-slice fields and targets reuse their backing arrays when capacity
+is sufficient, and allocate larger storage otherwise. Empty binary retains
+capacity; wire nil clears the slice. Decoding into the same target can overwrite
+earlier slice aliases, including a partial prefix on failure. Copy bytes to retain
+an earlier value, and keep input storage separate from destination buffers.
+The typed `Reader.DecodeBytes` method always returns fresh owned storage.
+
+An empty interface receives bool, uint64 for unsigned wire integers (including
+positive fixints), int64 for signed wire integers, float32/float64, string, []byte,
+[]any, map[any]any, or nil. An interface already holding a non-nil pointer decodes
+into that pointer. Map keys must be comparable Go values.
+
+Reflection has a fixed recursion limit of 256 calls and a per-decode budget of
+1048576 visits, including pointer/interface traversal. String and binary results
+use the Reader's payload cap. Container storage grows as children arrive, rather
+than allocating from an advertised count alone. Limit failures return
+`ErrLimitExceeded`; cyclic inputs eventually reach the recursion limit.
+Failures encountered during traversal are terminal and may leave partial output
+or target updates. Missing required children report `io.ErrUnexpectedEOF`;
+EOF before a new root remains `io.EOF`.
 
 ## Decode an HTTP response body
 
@@ -320,10 +389,10 @@ are returned directly.
 | `io.EOF` | No byte of the next requested value was available. |
 | `io.ErrUnexpectedEOF` | The current header, scalar, payload, or skipped value was incomplete. |
 | `ErrInvalidFormat` | Reserved tag `0xc1`. |
-| `ErrUnsupportedType` | Extension tag, including timestamps, or a value lacking the required Encodee/Decodee hook. |
-| `ErrTypeMismatch` | A supported wire family rejected by the requested typed decoder. |
+| `ErrUnsupportedType` | Extension tag, including timestamps, unsupported Go kind, or invalid decode target. |
+| `ErrTypeMismatch` | A supported wire value incompatible with the requested decoder or Go target. |
 | `ErrOverflow` | Numeric conversion overflow, encode length above uint32, or owned length above platform `int`. |
-| `ErrLimitExceeded` | A consumed header/value exceeds an owned-result or Skip limit. |
+| `ErrLimitExceeded` | An owned-result, Skip, or reflection traversal limit was exceeded. |
 | `ErrUninitialized` | No attached reader/writer. |
 | `ErrClosed` | Encode or Decode called after its codec was closed. |
 | `ErrInvalidArgument` | Invalid limits or a required nil transfer interface. |
@@ -433,10 +502,10 @@ led to the applied short-string and Skip optimizations, recorded with
 A [follow-up profiling pass](docs/allocation-followup.md) also removes temporary
 payload allocations when decoding strings of at most nine bytes.
 
-Generic marshal/unmarshal, reflection, automatic
-struct mapping, struct tags, extensions/timestamps, code generation, map sorting,
-pooling, concurrency machinery, unsafe conversions, assembly, and speculative
-fast paths remain deferred. Application schemas use explicit typed calls.
+Package-level marshal/unmarshal functions, struct tags, extensions/timestamps,
+code generation, map sorting, pooling, concurrency machinery, unsafe conversions,
+assembly, and speculative fast paths remain deferred. Custom application schemas
+use explicit typed calls.
 Streaming transfers and bounded Skip are implemented.
 
 ## Contributions

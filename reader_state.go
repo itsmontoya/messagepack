@@ -13,6 +13,8 @@ type readerState struct {
 	reader io.Reader
 	err    error
 	eof    bool
+	tag    byte
+	hasTag bool
 	limits ReaderLimits
 	buffer []byte
 }

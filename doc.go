@@ -3,10 +3,23 @@
 // binary, container headers, and bounded skipping. Extensions and timestamps are
 // unsupported.
 //
-// Encoder.Encode accepts values implementing Encodee; Decoder.Decode accepts
-// targets implementing Decodee. Their EncodeMessagePack and DecodeMessagePack
-// methods receive concrete Writer and Reader values. Other values return
-// ErrUnsupportedType. Reflection and automatic object mapping are deferred.
+// Encoder.Encode and Decoder.Decode prefer Encodee and Decodee hooks, whose
+// methods receive concrete Writer and Reader values. Otherwise they reflect Go
+// scalars, pointers, interfaces, arrays, slices, maps, and exported struct fields.
+// Decode requires a non-nil pointer when no hook matches. Structs use maps with
+// exact exported field names; tags are ignored and unknown fields are skipped.
+// Codec plans, field metadata, and hook eligibility are cached by reflect.Type
+// across instances, with synchronized initialization and no application values.
+// Encoding links cached child handlers and pre-encodes struct headers and keys;
+// Encoder owns reusable scratch. Field access remains reflective.
+// Byte slices use binary; other slices and arrays use arrays. Nil byte slices
+// encode empty binary, while other nil slices, maps, and pointers encode nil.
+// Reflected byte-slice targets reuse sufficient capacity, so decoding can overwrite
+// retained aliases even on failure. Typed Reader.DecodeBytes results stay independent.
+// Empty interfaces decode into scalar types, []any, or map[any]any. Reflection is
+// capped at 256 recursive calls and 1048576 visits per decode, with payload limits
+// inherited from Reader. Invalid targets and unsupported root kinds return
+// ErrUnsupportedType before I/O; failures during traversal are terminal.
 // Encoder and Decoder expose only their value operation and Close. Close releases
 // the codec without flushing, draining, or closing the supplied stream, returns
 // any stored failure, and makes later value operations return ErrClosed.
@@ -52,7 +65,8 @@
 // EOF before any byte of a requested value matches io.EOF; an incomplete operation
 // matches io.ErrUnexpectedEOF. EOF before a required child call still appears as
 // io.EOF to a typed Reader; the application schema must report an incomplete
-// message. Sequences end on EOF before the next root. Exactly-one-message checks
+// message. Reflected containers report missing children as io.ErrUnexpectedEOF.
+// Sequences end on EOF before the next root. Exactly-one-message checks
 // require a finite body or external frame and the same caller buffering; do not
 // wait for connection EOF after each message on a persistent stream.
 //

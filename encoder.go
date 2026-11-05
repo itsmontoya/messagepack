@@ -3,33 +3,35 @@ package messagepack
 import (
 	"fmt"
 	"io"
+	"reflect"
 )
 
 // NewEncoder attaches an Encoder to w without taking ownership or buffering output.
 // A nil interface leaves the Encoder unattached.
 func NewEncoder(w io.Writer) (out *Encoder) {
 	var e Encoder
-	e.writer.Reset(w)
+	e.reflected.writer.Reset(w)
 	return &e
 }
 
-// Encoder writes values implementing Encodee to a caller-owned writer.
+// Encoder writes Go values to a caller-owned writer, preferring Encodee hooks.
+// Reflection encoding reuses instance-owned scratch and cached per-type handlers.
 // Its zero value is unattached. Encoding failures are terminal;
 // instances must not be copied after first use or used concurrently.
 type Encoder struct {
-	writer Writer
-	closed bool
+	reflected reflectedEncoder
+	closed    bool
 }
 
-// Encode delegates to value's EncodeMessagePack method, sharing output and failures.
-// Other values return ErrUnsupportedType without output or a terminal failure.
-// An Encodee failure may leave partial output and prevents further encoding.
+// Encode uses Encodee when available and otherwise reflects supported Go values.
+// Unsupported root kinds return ErrUnsupportedType without output or a terminal failure.
+// Failures during encoding may leave partial output and prevent further encoding.
 func (e *Encoder) Encode(value any) (err error) {
 	if e.closed {
 		return ErrClosed
 	}
 
-	if err = e.writer.ready(); err != nil {
+	if err = e.reflected.writer.ready(); err != nil {
 		return err
 	}
 
@@ -38,18 +40,25 @@ func (e *Encoder) Encode(value any) (err error) {
 		ok      bool
 	)
 
-	if encodee, ok = value.(Encodee); !ok {
-		return ErrUnsupportedType
+	if encodee, ok = value.(Encodee); ok {
+		err = encodee.EncodeMessagePack(e.reflected.writer)
+	} else {
+		var reflected = reflect.ValueOf(value)
+
+		if reflected.IsValid() && !supportsReflection(reflected.Kind()) {
+			return ErrUnsupportedType
+		}
+
+		err = e.reflected.encode(reflected, 0)
 	}
 
-	err = encodee.EncodeMessagePack(e.writer)
-	if e.writer.state.err != nil {
-		return e.writer.state.err
+	if e.reflected.writer.state.err != nil {
+		return e.reflected.writer.state.err
 	}
 
 	if err != nil {
-		e.writer.state.err = fmt.Errorf("messagepack: encode value: %w", err)
-		return e.writer.state.err
+		e.reflected.writer.state.err = fmt.Errorf("messagepack: encode value: %w", err)
+		return e.reflected.writer.state.err
 	}
 
 	return nil
@@ -59,10 +68,10 @@ func (e *Encoder) Encode(value any) (err error) {
 // Repeated calls return the stored encoding failure, if any.
 func (e *Encoder) Close() (err error) {
 	e.closed = true
-	if e.writer.state == nil {
+	if e.reflected.writer.state == nil {
 		return nil
 	}
 
-	e.writer.state.writer = nil
-	return e.writer.state.err
+	e.reflected.writer.state.writer = nil
+	return e.reflected.writer.state.err
 }

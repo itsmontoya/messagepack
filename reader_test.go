@@ -3374,6 +3374,59 @@ func TestStreamContainerTruncationAndClassification(t *testing.T) {
 	}
 }
 
+func TestReaderPeekTagSharesPendingEOF(t *testing.T) {
+	var (
+		input = &decoderTestReader{data: []byte{0xc3}, endErr: io.EOF}
+		r     = NewReader(input)
+		tag   byte
+		err   error
+		value bool
+	)
+
+	if tag, err = r.peekTag(); err != nil || tag != 0xc3 || input.reads != 1 {
+		t.Fatalf("peekTag = (%x, %v), reads %d", tag, err, input.reads)
+	}
+
+	var shared = *r
+	if tag, err = shared.peekTag(); err != nil || tag != 0xc3 || input.reads != 1 {
+		t.Fatalf("shared peekTag = (%x, %v), reads %d", tag, err, input.reads)
+	}
+
+	if value, err = shared.DecodeBool(); err != nil || !value || input.reads != 1 {
+		t.Fatalf("shared DecodeBool = (%v, %v), reads %d", value, err, input.reads)
+	}
+
+	if _, err = r.DecodeBool(); !errors.Is(err, io.EOF) || input.reads != 1 {
+		t.Fatalf("DecodeBool after cached EOF = %v, reads %d", err, input.reads)
+	}
+}
+
+func TestReaderPeekTagSkipAndReset(t *testing.T) {
+	var (
+		input = &decoderTestReader{data: []byte{0x91, 42, 0xc2}}
+		r     = NewReader(input)
+		value bool
+		err   error
+	)
+
+	if _, err = r.peekTag(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = r.Skip(); err != nil || input.position != 2 {
+		t.Fatalf("Skip after peek = %v, position %d", err, input.position)
+	}
+
+	if _, err = r.peekTag(); err != nil {
+		t.Fatal(err)
+	}
+
+	r.Reset(bytes.NewReader([]byte{0xc3}))
+	if value, err = r.DecodeBool(); err != nil || !value {
+		t.Fatalf("DecodeBool after Reset = (%v, %v)", value, err)
+	}
+}
+
 func requireStreamHeaderFailure(t *testing.T, d *Reader, want error) {
 	t.Helper()
 	array, arrayErr := d.DecodeArrayHeader()

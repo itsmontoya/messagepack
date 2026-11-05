@@ -24,6 +24,7 @@ func makeReaderLimitsWithDefault() (limits ReaderLimits) {
 // A zero field selects its finite default; no field can disable its limit.
 type ReaderLimits struct {
 	// MaxPayloadBytes caps each owned string/binary result; the default is 16 MiB.
+	// Reflected binary payloads remain capped when they reuse destination storage.
 	MaxPayloadBytes uint64
 	// MaxSkipDepth caps nested container levels; the default is 64, maximum 256.
 	MaxSkipDepth uint32
