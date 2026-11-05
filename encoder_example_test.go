@@ -25,3 +25,23 @@ func ExampleEncoder() {
 	fmt.Printf("%x\n", output.Bytes())
 	// Output: 81a269642a
 }
+
+func ExampleEncoder_reflection() {
+	var (
+		output  bytes.Buffer
+		value   = struct{ ID int }{ID: 42}
+		decoded struct{ ID int }
+		err     error
+	)
+
+	if err = messagepack.NewEncoder(&output).Encode(value); err != nil {
+		panic(err)
+	}
+
+	if err = messagepack.NewDecoder(&output).Decode(&decoded); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(decoded.ID)
+	// Output: 42
+}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -63,15 +64,10 @@ func TestEncoderUnsupportedValues(t *testing.T) {
 		name  string
 		value any
 	}{
-		{name: "nil"},
-		{name: "bool", value: true},
-		{name: "integer", value: int64(42)},
-		{name: "string", value: "id"},
-		{name: "bytes", value: []byte{1, 2}},
-		{name: "array", value: [1]int{42}},
-		{name: "slice", value: []int{42}},
-		{name: "map", value: map[string]int{"id": 42}},
-		{name: "struct", value: struct{ ID int }{ID: 42}},
+		{name: "channel", value: make(chan int)},
+		{name: "function", value: func() {}},
+		{name: "complex64", value: complex64(1)},
+		{name: "complex128", value: complex128(1)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -90,6 +86,165 @@ func TestEncoderUnsupportedValues(t *testing.T) {
 				t.Fatalf("Encode after unsupported value = (%x, %v), dispatches %d", output.data, err, value.calls)
 			}
 		})
+	}
+}
+
+func TestEncoderReflection(t *testing.T) {
+	type identifier uint16
+	type octet byte
+	type score float32
+	var (
+		integer = 42
+		tests   = []struct {
+			name  string
+			value any
+			wire  []byte
+		}{
+			{name: "nil", wire: []byte{0xc0}},
+			{name: "bool", value: true, wire: []byte{0xc3}},
+			{name: "int", value: -1, wire: []byte{0xff}},
+			{name: "int8", value: int8(-1), wire: []byte{0xff}},
+			{name: "int16", value: int16(-1), wire: []byte{0xff}},
+			{name: "int32", value: int32(-1), wire: []byte{0xff}},
+			{name: "int64", value: int64(-1), wire: []byte{0xff}},
+			{name: "uint", value: uint(42), wire: []byte{42}},
+			{name: "uint8", value: uint8(42), wire: []byte{42}},
+			{name: "uint16", value: uint16(42), wire: []byte{42}},
+			{name: "uint32", value: uint32(42), wire: []byte{42}},
+			{name: "uint64", value: uint64(42), wire: []byte{42}},
+			{name: "uintptr", value: uintptr(42), wire: []byte{42}},
+			{name: "named integer", value: identifier(42), wire: []byte{42}},
+			{name: "float32", value: float32(1.5), wire: []byte{0xca, 0x3f, 0xc0, 0, 0}},
+			{name: "float32 signaling NaN", value: math.Float32frombits(0x7f800001), wire: []byte{0xca, 0x7f, 0x80, 0, 1}},
+			{name: "addressable float32 signaling NaN", value: &struct{ F float32 }{F: math.Float32frombits(0x7f800001)}, wire: []byte{0x81, 0xa1, 'F', 0xca, 0x7f, 0x80, 0, 1}},
+			{name: "addressable named float32 signaling NaN", value: &struct{ F score }{F: score(math.Float32frombits(0x7f800001))}, wire: []byte{0x81, 0xa1, 'F', 0xca, 0x7f, 0x80, 0, 1}},
+			{name: "float64", value: 1.5, wire: []byte{0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}},
+			{name: "string", value: "id", wire: []byte{0xa2, 'i', 'd'}},
+			{name: "bytes", value: []byte{1, 2}, wire: []byte{0xc4, 2, 1, 2}},
+			{name: "named bytes", value: []octet{1, 2}, wire: []byte{0xc4, 2, 1, 2}},
+			{name: "nil bytes", value: []byte(nil), wire: []byte{0xc4, 0}},
+			{name: "array", value: [2]int{1, -1}, wire: []byte{0x92, 1, 0xff}},
+			{name: "slice", value: []int{1, -1}, wire: []byte{0x92, 1, 0xff}},
+			{name: "nil slice", value: []int(nil), wire: []byte{0xc0}},
+			{name: "empty slice", value: []int{}, wire: []byte{0x90}},
+			{name: "map", value: map[string]int{"id": 42}, wire: []byte{0x81, 0xa2, 'i', 'd', 42}},
+			{name: "nil map", value: map[string]int(nil), wire: []byte{0xc0}},
+			{name: "empty map", value: map[string]int{}, wire: []byte{0x80}},
+			{name: "pointer", value: &integer, wire: []byte{42}},
+			{name: "nil pointer", value: (*int)(nil), wire: []byte{0xc0}},
+			{name: "struct", value: struct {
+				ID     int
+				hidden chan int
+			}{ID: 42}, wire: []byte{0x81, 0xa2, 'I', 'D', 42}},
+			{name: "nested", value: []any{map[string][]bool{"ok": {true}}}, wire: []byte{0x91, 0x81, 0xa2, 'o', 'k', 0x91, 0xc3}},
+		}
+	)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				output bytes.Buffer
+				err    = NewEncoder(&output).Encode(tt.value)
+			)
+
+			if err != nil || !bytes.Equal(output.Bytes(), tt.wire) {
+				t.Fatalf("Encode(%T) = (%x, %v), want %x", tt.value, output.Bytes(), err, tt.wire)
+			}
+		})
+	}
+}
+
+func TestEncoderReflectionNestedHook(t *testing.T) {
+	var (
+		output bytes.Buffer
+		value  = &struct{ Value encoderTestEncodee }{
+			Value: encoderTestEncodee{encode: func(w Writer) (err error) { return w.EncodeBool(true) }},
+		}
+		want = []byte{0x81, 0xa5, 'V', 'a', 'l', 'u', 'e', 0xc3}
+		err  = NewEncoder(&output).Encode(value)
+	)
+
+	if err != nil || value.Value.calls != 1 || !bytes.Equal(output.Bytes(), want) {
+		t.Fatalf("Encode nested hook = (%x, %v), calls %d", output.Bytes(), err, value.Value.calls)
+	}
+}
+
+func TestEncoderReflectionCachedHookAddressability(t *testing.T) {
+	var (
+		value = struct{ Value encoderTestEncodee }{
+			Value: encoderTestEncodee{encode: func(w Writer) (err error) { return w.EncodeBool(true) }},
+		}
+		output bytes.Buffer
+		e      = NewEncoder(&output)
+		prefix = []byte{0x81, 0xa5, 'V', 'a', 'l', 'u', 'e'}
+		err    error
+	)
+
+	if err = e.Encode(value); err != nil || value.Value.calls != 0 || !bytes.Equal(output.Bytes(), append(prefix, 0x80)) {
+		t.Fatalf("unaddressable hook field = (%x, %v), calls %d", output.Bytes(), err, value.Value.calls)
+	}
+
+	output.Reset()
+	if err = e.Encode(&value); err != nil || value.Value.calls != 1 || !bytes.Equal(output.Bytes(), append(prefix, 0xc3)) {
+		t.Fatalf("addressable cached hook field = (%x, %v), calls %d", output.Bytes(), err, value.Value.calls)
+	}
+}
+
+func TestEncoderReflectionFailuresAreTerminal(t *testing.T) {
+	var (
+		cycle = make([]any, 1)
+		tests = []struct {
+			name    string
+			value   any
+			wantErr error
+		}{
+			{name: "unsupported child", value: []any{42, make(chan int)}, wantErr: ErrUnsupportedType},
+			{name: "cycle", value: cycle, wantErr: ErrLimitExceeded},
+		}
+	)
+
+	cycle[0] = cycle
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				output = &encoderTestWriter{}
+				e      = NewEncoder(output)
+				first  = e.Encode(tt.value)
+				writes = output.writes
+				err    error
+			)
+
+			if first != tt.wantErr || writes == 0 {
+				t.Fatalf("Encode = %v, writes %d, want %v after output", first, writes, tt.wantErr)
+			}
+
+			if err = e.Encode(true); err != first || output.writes != writes {
+				t.Fatalf("terminal Encode = %v, writes %d", err, output.writes)
+			}
+
+			if err = e.Close(); err != first {
+				t.Fatalf("Close = %v, want %v", err, first)
+			}
+		})
+	}
+}
+
+func TestEncoderReflectionDestinationFailure(t *testing.T) {
+	var (
+		destinationFailure = errors.New("test: reflection destination failure")
+		output             = &encoderTestWriter{err: destinationFailure}
+		e                  = NewEncoder(output)
+		first              = e.Encode(true)
+		writes             = output.writes
+		err                error
+	)
+
+	if !errors.Is(first, destinationFailure) || first == destinationFailure {
+		t.Fatalf("Encode = %v, want wrapped destination failure", first)
+	}
+
+	if err = e.Encode(true); err != first || output.writes != writes {
+		t.Fatalf("terminal Encode = %v, writes %d", err, output.writes)
 	}
 }
 

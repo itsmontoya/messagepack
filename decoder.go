@@ -1,8 +1,10 @@
 package messagepack
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"reflect"
 )
 
 // NewDecoder attaches a Decoder to r without read-ahead or taking ownership.
@@ -13,7 +15,7 @@ func NewDecoder(r io.Reader) (out *Decoder) {
 	return &d
 }
 
-// Decoder reads values implementing Decodee from a caller-owned reader.
+// Decoder reads Go values from a caller-owned reader, preferring Decodee hooks.
 // Its zero value is unattached. Decoding failures are terminal;
 // instances must not be copied after first use or used concurrently.
 type Decoder struct {
@@ -21,9 +23,9 @@ type Decoder struct {
 	closed bool
 }
 
-// Decode delegates to value's DecodeMessagePack method, sharing input and failures.
-// Other values return ErrUnsupportedType without input or a terminal failure.
-// A Decodee failure may consume partial input and prevents further decoding.
+// Decode uses Decodee when available and otherwise reflects a non-nil pointer target.
+// Invalid targets and unsupported root kinds return ErrUnsupportedType before input.
+// Failures during decoding may consume partial input and prevent further decoding.
 // Returned hook errors preserve schema context; ignored Reader failures still surface.
 func (d *Decoder) Decode(value any) (err error) {
 	if d.closed {
@@ -39,11 +41,32 @@ func (d *Decoder) Decode(value any) (err error) {
 		ok      bool
 	)
 
-	if decodee, ok = value.(Decodee); !ok {
-		return ErrUnsupportedType
+	if decodee, ok = value.(Decodee); ok {
+		err = decodee.DecodeMessagePack(d.reader)
+	} else {
+		var (
+			reflected = reflect.ValueOf(value)
+			codec     = reflectedDecoder{reader: d.reader, remainingVisits: maximumReflectionVisits}
+		)
+
+		if !reflected.IsValid() || reflected.Kind() != reflect.Pointer || reflected.IsNil() {
+			return ErrUnsupportedType
+		}
+
+		if !supportsReflection(reflected.Elem().Kind()) {
+			return ErrUnsupportedType
+		}
+
+		err = codec.decode(reflected.Elem(), 0)
+		if err == nil {
+			err = d.reader.state.err
+		}
+
+		if codec.started && err == d.reader.state.err && errors.Is(err, io.EOF) {
+			err = d.reader.fail(fmt.Errorf("messagepack: decode reflected value: %w", io.ErrUnexpectedEOF))
+		}
 	}
 
-	err = decodee.DecodeMessagePack(d.reader)
 	if err == nil {
 		return d.reader.state.err
 	}

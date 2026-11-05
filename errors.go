@@ -7,9 +7,9 @@ const maximumConsecutiveEmptyReads = 100
 var (
 	// ErrInvalidFormat indicates the reserved MessagePack tag 0xc1.
 	ErrInvalidFormat = errors.New("messagepack: invalid format")
-	// ErrUnsupportedType indicates an extension tag or a value lacking the required codec hook.
+	// ErrUnsupportedType indicates an extension tag, unsupported Go kind, or invalid decode target.
 	ErrUnsupportedType = errors.New("messagepack: unsupported type")
-	// ErrTypeMismatch indicates a supported wire family rejected by the requested reader.
+	// ErrTypeMismatch indicates a supported wire value incompatible with the decode target.
 	ErrTypeMismatch = errors.New("messagepack: type mismatch")
 	// ErrOverflow indicates an unrepresentable numeric value or an oversized payload.
 	ErrOverflow = errors.New("messagepack: overflow")
@@ -19,7 +19,7 @@ var (
 	ErrClosed = errors.New("messagepack: closed codec")
 	// ErrInvalidArgument indicates invalid limits or a required nil transfer interface.
 	ErrInvalidArgument = errors.New("messagepack: invalid argument")
-	// ErrLimitExceeded indicates a consumed value exceeds a configured decoder limit.
+	// ErrLimitExceeded indicates a reader limit or reflection traversal limit was exceeded.
 	ErrLimitExceeded = errors.New("messagepack: limit exceeded")
 )
 
