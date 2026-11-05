@@ -1,0 +1,1810 @@
+CPU profiling audit, 2026-11-05
+Production files unchanged. All timing samples retained.
+
+===== metadata.json =====
+{
+  "date": "2026-11-05 America/Los_Angeles",
+  "production_commit": "4432a357d5c0bd0adb4cdb749554b4723fd98ee6",
+  "go": "go version go1.27.2 darwin/arm64",
+  "kernel": "Darwin Joshs-MacBook-Air.local 25.5.0 Darwin Kernel Version 25.5.0: Tue Jun  9 22:19:21 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T8122 arm64",
+  "profile_directory": "/private/tmp/messagepack-cpu-20261105.ezkm_8cr",
+  "timing_target": "200ms, 5 samples per case, sequential groups; rotation/reversal in runners",
+  "profile_target": "8s per case, separate from timing comparisons",
+  "production_changes": false
+}
+
+===== sha256.txt =====
+d588db041fe248654a55b1ca1475b952fd43f29f746a6b9b17ad5970ea8c3809  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/allocation_benchmark_noop_test.go
+cd82cea91a631e90f8374a03639e48984548e56786386132e5fe15de0aa50f59  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/allocation_benchmark_test.go
+7a8b1444f85b2ee04325cf13a09eb908f9abfeec8ce6a8db5998878304de7115  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/allocation_benchmark_value_test.go
+54d9db034345aa5e5e6a57b70ce1d5fb891ca8f647d7a3c19388c0d2c7d48f4a  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/application_message_test.go
+83969241516009f7f3bff51a3dc6acb8df8f6d65b664030245348bf25404befc  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/benchmark_test.go
+8483bba329bc34eb1bab51caadc35e0a35c0f3328f94f41adb480268c54ab974  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/cpu_benchmark_message_test.go
+38f82762e55b716db575b107b5fb0a72284cca8afb712c5be1ea3b9ef3095f57  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/cpu_benchmark_test.go
+59115bf5d41f01dbefbf31e834edbc50fbea5f1610d3b301f36f374cfd5bdc90  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decodee.go
+5051bf2ad92bf0acf8ebc28463c1ec3211e80587d6e6e548206bd25e6d3cb3bf  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decoder.go
+ea4f64e368f7686bb869663c65415d51c998ce2af58453fd1fafbf9cc797319b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decoder_counting_writer_test.go
+e018211d45fd1475a7b9b86483fb9d94ff7d0480dcd3cdb7a08934b34703474c  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decoder_example_test.go
+0b8f0e03dcfbff18d732dfc1d098307e60e6dd51038f58499275f6eb501a348f  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decoder_test.go
+f1934b36cff0060f0e2b76e696e317951ff03f44cbc9a5c1f09a5aa35a1cedfc  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decoder_test_decodee_test.go
+f34f24daa914b5bce67ecbbe0074204a15beeaed345f8bece4193917a8a3ff37  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decoder_test_reader_test.go
+7ddd9fdc1f9cfcfb7a07481fbe2e36e069ee82f007d04f7771d5caf7d859edf2  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/doc.go
+8200fadf9d90c965f2d6a9dc60ab8169422b31f0d9cd7f58a6d9f90b10e4a6e4  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encodee.go
+5db8a315f21feed4599626337e0accdaeb1cae223b2d48a339988ec0f9a66714  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder.go
+b73f7436e5ab063b0ac6ee37438ce32c1584af71b1d4d005a672acf1555cced1  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_counting_writer_test.go
+1bef6c8285aca6be215e2c271de56ddedacba72d585db3f8716ee8d60f593766  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_example_test.go
+85604ec106a51757da8d24fc42f11cf79c59fe650acbca3e793c95e199ec59fb  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_generated_reader_test.go
+a39b7727d53162bd9637fdfe9bd61e8f9b45d01d3f10d36ee50c62c7aae165b1  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_payload_writer_test.go
+ab41898a1a232192528f21f64401eb794d9c301813f728a766ad1e3dc66b540f  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_test.go
+ec9a0174945eb1e6d5557a5dcc7a0edec982c5811cf6f7512517e42474da6f98  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_test_encodee_test.go
+b773c7ea700515c273d197169f2e419bd43a202a8885e102919f6da510867c28  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_test_writer_test.go
+c8ace15e440ad95f1f613e09d7e706d90eb4b82947762490d9527dd94a71e893  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/errors.go
+6b345591c8a1db25de9ed6b0c598145131e7bcf1cfc18dc3d324c196e631db54  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/example_message_test.go
+b2506fcff70606194a3a1ec26767d198727111982d680c629d9e2849c0fdb05b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/example_test.go
+43f10b24448fbc6f860bd6cf610d671f6b3281b0659e650b84eac5b68550ad10  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/integration_test.go
+40ccdf793def459d5b37f1b102fd0c26dbac5ffa2a78cc3f81d5f4e922f73e5b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader.go
+fa580b9281390cd709249447775f3353caf226e8c9d58bbc3427731ff0049b0d  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader_limits.go
+3fa5a7f0d9f67b79f98eb224c98ed1a529bbfa51c8d1d21fa3355fdd4df22b51  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader_state.go
+6b80e204d79c25ce2265a71ecd50de98078269b3ce8ca40b032865346c612eec  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader_test.go
+b75321a6644a2be118b3090dfaab51e85f796718baa000b3a2b8bdeae49ea460  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader_writer_test.go
+23f779b140b734711bfa11c73a3285ea8996181d58d64817a28722cdd2297c6b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflected_decoder.go
+27b9b03a95c8a804822a73e4f45a4c41ca878bbe7e60f9e6925ef14401b5819a  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflected_encoder.go
+2f1bc29505c7bb3bac2f4f444350582cb337e34080e6aaea73b30f7075f5e42b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection.go
+35923fc0bfd82ebb41ce976ccd55c32076505e7b0748f2e3c2377ef45b82c102  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection_benchmark_test.go
+d62ff9c04e8bd2b6083df19e8efc07c00bc1fbbdfa5dc994e88f785e7c31da06  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection_encode_fuzz_test.go
+bcdc4243cac5748b002784e7e9472b2d195956ec7029a51f2237cfeb719f6425  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection_field.go
+2ce773c2bb508cbae47d4ca8b00ec7685f8fe5391ed56de3a82f7190d892b4e8  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection_fuzz_test.go
+e550cc11e10c1e83963313c19f65cbe79c38f0af4fe10d76f6624e90e9f1871c  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection_plan.go
+fcf5ea2cdda48e339f8928445916b09a9d8d16c2b3d04f9c57a11dbe76fc9e99  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection_plan_test.go
+609f056a9923b38eabdb4ce7f4eece1e4ae171ba8e907f1380fb93df8755a118  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/roundtrip_fuzz_test.go
+9b9c7109a619bd4c951999e93ddc0920b7bde6e46526cd6d8f7c745c07a37428  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/skip_repeating_reader_test.go
+1e4fcdfb418fe0e90b671694e44fcd762723b578b83e66605a01e56016e87f89  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/skip_state.go
+4dbeb9fb0e99610b5ef24bb740ce3d9cee48d983bfa8cb2a526afa8c7115634c  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_application_message_test.go
+886219ed763a321cdbdb6e7d733561d86b8764ce58549e32d130e278492d1812  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_array_reader_test.go
+a6c4a4feb302309ad4a2a574a44b760e24f511113b716db92cd456ce13479d5c  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_array_writer_test.go
+bbd36162a349adff557d58d1c6dfe4cfc685bfc0b3fa9d9d7f9976fd53165a0d  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_benchmark_array_reader_test.go
+5f769f9df34ce60176e5aa5b55acb9b0135ee1df606038aeae306f327f322612  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_benchmark_fixture_reader_test.go
+5684fde1a1f0f9e94578ede211e85a6fa7ba0e83d61d676ce2e93004693ae60b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_benchmark_payload_reader_test.go
+b4ae69ea12e0661d2b50203731722aeef83492a9b4ee0171b47fb7e0b09d1e41  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_benchmark_test.go
+90c3f52e71a526addfe7e0bca490de60b79271159d1f1e745536c802684249b8  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_benchmark_writer_test.go
+fe90d102889ecc75a5243f13199ea2c31e263fcf4d5449ce6192adfe36b761dc  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_boundary_workflow_test.go
+ea3836b38b7993414436b499226b403783553fbbbc0baddc138b450075aaa084  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_checking_writer_test.go
+09cbb798edd2883cd1cb3e1d97bb9889a65a68eba2c5d6de9dc9c53c45d25ccd  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_decode_fuzz_test.go
+3993e46a3b3b16e7a05ec6afa12b924abcf0c71f41b314518cdb05830caf4b18  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_example_test.go
+3fb28fe493734f76601b09a24a49971bc9508bc28906933c342f4331a87cd201  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_file_workflow_test.go
+a2adcef173a42ccc260645f6c568cc47e0344e3b224fcb1af22ff4d017708c65  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_file_writer_test.go
+05ecdcb8c5d89e7d9596324593df1bbcc5cdf034ba61b47b40dbc2eb7424cddb  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_flexible_integration_test.go
+981f38c18788a0a243df261d4ce6c7f30f62c5ecac05e88fb2b463259edb0e0b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_flexible_schema_test.go
+d18bd3dc2b2fca5b60c6d55302cf8e1354fe445d7dfba7df505b8a14229b5e56  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_fuzz_reader_test.go
+de27669b60de3708724df3a36211859d0261d8cb21636dab6c88c46e1eca7f5d  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_fuzz_test.go
+3ba7e6b4e9d8e46b58ced401ef695f85a459bd08ed3076f50456f782dce2f8ad  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_fuzz_writer_test.go
+bbff4f73a2fd0ccf4f26df2010c24ed8e5018f4c4f2d39a937f8c58a30b9aa9e  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_gated_reader_test.go
+6ffc23d3957905f5a8ecc27e4dcce437612c2972545f046040acd589d6b356d9  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_http_integration_test.go
+809defb7309cdaf9bd084af35f614420f5d0740e08f12bc8701ff3b746658738  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_http_writer_test.go
+a6ef61001bd29ee44e20c543297196b662df20801e5f8f8b14ed653e1ac2fea7  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_integration_test.go
+6bcdf036139eaddafe5be91472c85be0386e437849f3982273a507d5c1419ec4  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_owned_body_test.go
+7df61d753cb26cd6d004c5a2918c9063327d8322ef1a94f77ad6d3c69469dbdb  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_payload_benchmark_test.go
+4d7da79f85977053a6a426ce179a2cde118dbac3c9288a06ee5cd3fffa888b76  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_payload_schema_test.go
+bb4a8cabbb657105e8edd697a3b7ee701ba0269bcfcb16914a0f723524e182d2  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_roundtrip_fuzz_test.go
+b946231fa3529491706cf138221fa0fcc153a98e57382350fcfa8f3e3cbb0488  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_skip_fuzz_test.go
+373a73de4d79ac9d26f1dd4b929fbdef3aaceaa512489da38d022ab737976afc  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_transfer_fuzz_test.go
+55fffda2c3bca2b7f784d4ba722fcf5321234a587c016dea8c57bc138078aec0  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/writer.go
+e0db96dbae7469328144e12ec067085ec46e550fd7164d51d020bb0e20e5a1d5  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/writer_state.go
+4f6e56814000fab5cea54b5f875892d382e9d15d07d5bbb284270ef7469a9850  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/writer_test.go
+4db261abd65d2ead37f93785237e7662d4a05baea70aab623c6acf613b74fc07  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/buffered_ours_test.go
+745b5eb125c760dcb153852ecc0bdb350293b0240576f65e07ec33c8beb5da15  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/comparison_test.go
+24376950a633ce63dd83d441ea67d47e3610d0bca19bc04ca6b58801f97c5552  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/controls_benchmark_test.go
+3a16405e247481b181bcc6de70bfc1aa5855902bf3d3ec676f8ddb9a0666ee8d  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/counting_reader_test.go
+d7e8dc0d9f7aed404236b526c7a9e9ae022396febf4753ff8e63b8eac57adaba  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/counting_writer_test.go
+5d6d1e7e5420fcf48cd4ca87cf93a7c3294c19e61d6234c6531a0ca1abac3f68  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/io_test.go
+91bb4f2ffe106094e883390c37a15069e166f10608826c7b71e6b68a684c14ff  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/mixed.go
+b9f08a484104e5ffb47cb4193e53821b0559ff5a4fad6442f0066d8418253b63  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/mixed_gen.go
+6aaa0cbacd1a7a63b36eae132f3c2a47a9821a5eeb2fc80d4ef90eb9ba2b635c  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/nested.go
+b8cbe1c0886701a85b61afd216d0d2796db56fc70a1c1703b846dd9179415716  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/nested_gen.go
+3391af0022abfb6049806f5e0c3a6d09ced55a995fa0cf45317272613e28ca78  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/scalars.go
+7b37fba877aeccdc733df821445e1f3a371ab1bfd1d128f8ca1bac2bd3f5dfea  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/scalars_gen.go
+ec3420ed07f6a2b960deeb27fe086ad83357fa77118d62e3c97ec4b8aaf15794  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/go.mod
+1243b123ab9f87fc9c544dfbc25a4bf9f7fe372b008253a605a9b606b9e4b0c8  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/go.mod
+1d9b037b528d8bce66d3b2e86fe5f73c8521f0ffd2a2ed92a9b0af8539fb985d  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison/go.sum
+e3b23edebfb2336ec16c0abf1e4fece1d4e26f8d3787698f6c12800c4168e078  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/combined.test
+0c92421b3e4629269e87ffd7b64a7846d3ea49364e069d5d9840d013d12a0020  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test
+fc87fdd5abaddd08e59a998f19f9bc4a414e583fe0fd0dc1e59ce61f17a2f79b  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/empty-body.test
+f62d427a091fafb0f1e4320f4c1cc1f80481b7789a9c09cebc453d39b53f47e7  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test
+a0578217e077827aae3c95a57e53053455c6bbf37ecf6709f509092f7817bb4f  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/nil-error.test
+f324bf7e8bbc126074be5194a0ed3858ffa62056e45d5bf3b84b5dac869e095b  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/pprof
+ea11352fc17af06a3dec600774c9203537ad1e73dc7c1b32def423e17300b9d7  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/combined-reader.go
+ccec742c00f9c33a6869e17c90a848a1a045f468d02505c96b7702cdc4324ad4  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/empty-body-reader.go
+4304f842deb085c7da7d1c6298c72d19eef15bd4351bc25ae0f0449d9ac5cbe4  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/nil-error-reader.go
+0f6ef75a0c181a3464e9651d2538e60a7fdb5cdaf0636de1cb699639e01c3aa7  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/combined-overlay.json
+954c4cd0f7302a440f202f90f16e384edb7f429bea9272b1bab76d3a1231d5a3  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/empty-body-overlay.json
+561fb035c184e6af96bf4923055c0dd3d0d0c1db6d0d563c0c43411350c085a0  /private/tmp/messagepack-cpu-20261105.ezkm_8cr/nil-error-overlay.json
+
+===== validation.txt =====
+GOCACHE=/private/tmp/messagepack-go-build go test ./...
+Initial sandbox run: localhost listener blocked in existing HTTP integration suite.
+Rerun with authorized localhost listener access: exit 0
+ok  github.com/itsmontoya/messagepack  1.237s
+
+GOCACHE=/private/tmp/messagepack-go-build go vet ./...
+exit 0, no diagnostics
+
+Native benchmark smoke: exit 0; see native-smoke.txt.
+Comparison tests: exit 0; see comparison-validation.txt.
+Prototype Reader and Decoder tests: exit 0 for all three builds; see experiment-validation.txt.
+
+===== native-smoke.txt =====
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	       1	       500.0 ns/op	 120.00 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	       1	      1500 ns/op	  40.00 MB/s	      16 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Mixed/Typed/Encode-8       	       1	       541.0 ns/op	 110.91 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Typed/Decode-8       	       1	       917.0 ns/op	  65.43 MB/s	      16 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	       1	       542.0 ns/op	121027.68 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	       1	      2583 ns/op	25395.66 MB/s	      16 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Typed/Encode-8              	       1	       208.0 ns/op	315370.19 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Typed/Decode-8              	       1	      2792 ns/op	23494.63 MB/s	      16 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	       1	       500.0 ns/op	2166.00 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	       1	      2875 ns/op	 376.70 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Typed/Encode-8               	       1	       250.0 ns/op	4332.00 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Typed/Decode-8               	       1	      1291 ns/op	 838.88 MB/s	    1024 B/op	       1 allocs/op
+PASS
+
+===== comparison-validation.txt =====
+=== RUN   TestComparison
+=== RUN   TestComparison/Scalars
+=== RUN   TestComparison/Mixed
+=== RUN   TestComparison/Binary1KiB
+=== RUN   TestComparison/Binary64KiB
+=== RUN   TestComparison/String1KiB
+=== RUN   TestComparison/Nested
+--- PASS: TestComparison (0.00s)
+    --- PASS: TestComparison/Scalars (0.00s)
+    --- PASS: TestComparison/Mixed (0.00s)
+    --- PASS: TestComparison/Binary1KiB (0.00s)
+    --- PASS: TestComparison/Binary64KiB (0.00s)
+    --- PASS: TestComparison/String1KiB (0.00s)
+    --- PASS: TestComparison/Nested (0.00s)
+=== RUN   TestIOCalls
+    io_test.go:43: Scalars Ours: 35 wire bytes, 14 underlying reads
+    io_test.go:43: Scalars OursBuffered: 35 wire bytes, 1 underlying reads
+    io_test.go:43: Scalars Tinylib: 35 wire bytes, 1 underlying reads
+    io_test.go:43: Mixed Ours: 60 wire bytes, 25 underlying reads
+    io_test.go:43: Mixed OursBuffered: 60 wire bytes, 1 underlying reads
+    io_test.go:43: Mixed Tinylib: 60 wire bytes, 1 underlying reads
+    io_test.go:43: Binary1KiB Ours: 1083 wire bytes, 25 underlying reads
+    io_test.go:43: Binary1KiB OursBuffered: 1083 wire bytes, 1 underlying reads
+    io_test.go:43: Binary1KiB Tinylib: 1083 wire bytes, 1 underlying reads
+    io_test.go:43: Binary64KiB Ours: 65597 wire bytes, 26 underlying reads
+    io_test.go:43: Binary64KiB OursBuffered: 65597 wire bytes, 4 underlying reads
+    io_test.go:43: Binary64KiB Tinylib: 65597 wire bytes, 3 underlying reads
+    io_test.go:43: String1KiB Ours: 1083 wire bytes, 26 underlying reads
+    io_test.go:43: String1KiB OursBuffered: 1083 wire bytes, 1 underlying reads
+    io_test.go:43: String1KiB Tinylib: 1083 wire bytes, 1 underlying reads
+    io_test.go:43: Nested Ours: 26 wire bytes, 13 underlying reads
+    io_test.go:43: Nested OursBuffered: 26 wire bytes, 1 underlying reads
+    io_test.go:43: Nested Tinylib: 26 wire bytes, 1 underlying reads
+--- PASS: TestIOCalls (0.00s)
+PASS
+
+===== summary.csv =====
+case,samples,median_ns,min_ns,max_ns,bytes,allocs
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8,5,128.0,127.4,131.5,0,0
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8,5,438.0,408.7,440.3,3,1
+BenchmarkCPUTraversal/Mixed/Typed/Encode-8,5,58.21,57.76,59.08,0,0
+BenchmarkCPUTraversal/Mixed/Typed/Decode-8,5,310.9,297.0,313.6,3,1
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8,5,131.2,129.9,132.5,0,0
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8,5,1211.0,1162.0,1255.0,3,1
+BenchmarkCPUTraversal/Binary64KiB/Typed/Encode-8,5,61.44,60.31,61.71,0,0
+BenchmarkCPUTraversal/Binary64KiB/Typed/Decode-8,5,1080.0,1030.0,1148.0,3,1
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8,5,138.8,135.4,139.3,0,0
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8,5,495.2,486.5,500.3,1024,1
+BenchmarkCPUTraversal/String1KiB/Typed/Encode-8,5,67.75,67.21,68.11,0,0
+BenchmarkCPUTraversal/String1KiB/Typed/Decode-8,5,372.1,363.7,373.2,1024,1
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8,5,246.9,234.9,247.5,0,0
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargetfalse-8,5,53.21,51.92,53.35,0,0
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8,5,437.3,425.9,444.6,3,1
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8,5,97.09,94.84,104.7,3,1
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8,5,1217.0,1183.0,1297.0,3,1
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargetfalse-8,5,903.7,896.0,966.9,3,1
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8,5,488.6,488.3,492.7,1024,1
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargetfalse-8,5,171.3,169.9,175.0,1024,1
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8,5,241.2,236.8,243.0,0,0
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargetfalse-8,5,52.27,50.77,52.75,0,0
+BenchmarkBufferedOurs/Scalars/Encode-8,5,90.53,89.83,91.37,0,0
+BenchmarkBufferedOurs/Scalars/Decode-8,5,268.4,263.2,269.5,0,0
+BenchmarkBufferedOurs/Mixed/Encode-8,5,167.1,165.4,168.3,0,0
+BenchmarkBufferedOurs/Mixed/Decode-8,5,467.8,464.6,473.3,3,1
+BenchmarkBufferedOurs/Binary64KiB/Encode-8,5,219.6,217.7,221.0,0,0
+BenchmarkBufferedOurs/Binary64KiB/Decode-8,5,1308.0,1253.0,1342.0,3,1
+BenchmarkBufferedOurs/String1KiB/Encode-8,5,184.4,184.1,184.5,0,0
+BenchmarkBufferedOurs/String1KiB/Decode-8,5,530.6,527.0,549.2,1024,1
+BenchmarkBufferedOurs/Nested/Encode-8,5,81.4,79.91,81.79,0,0
+BenchmarkBufferedOurs/Nested/Decode-8,5,265.3,264.5,266.4,0,0
+BenchmarkEncodeCopy/Mixed/Ours-8,5,165.0,164.1,166.7,0,0
+BenchmarkEncodeCopy/Mixed/OursBuffered-8,5,171.3,168.3,172.8,0,0
+BenchmarkEncodeCopy/Mixed/Tinylib-8,5,43.83,43.48,43.97,0,0
+BenchmarkEncodeCopy/Binary64KiB/Ours-8,5,979.4,937.4,1020.0,0,0
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8,5,987.6,971.0,1055.0,0,0
+BenchmarkEncodeCopy/Binary64KiB/Tinylib-8,5,821.9,783.9,861.8,0,0
+
+===== encode-summary.csv =====
+variant,case,samples,median_ns,min_ns,max_ns,bytes,allocs
+current,BenchmarkComparison/Scalars/Ours/Encode-8,5,71.42,70.43,73.84,0,0
+current,BenchmarkComparison/Mixed/Ours/Encode-8,5,130.0,129.5,131.5,0,0
+current,BenchmarkComparison/Binary64KiB/Ours/Encode-8,5,133.4,132.7,134.6,0,0
+current,BenchmarkComparison/String1KiB/Ours/Encode-8,5,140.6,139.9,141.5,0,0
+current,BenchmarkComparison/Nested/Ours/Encode-8,5,66.1,65.99,69.17,0,0
+current,BenchmarkComparison/Scalars/Tinylib/Encode-8,5,20.04,20.0,20.8,0,0
+current,BenchmarkComparison/Mixed/Tinylib/Encode-8,5,41.96,41.85,42.38,0,0
+current,BenchmarkComparison/Binary64KiB/Tinylib/Encode-8,5,41.78,41.25,45.17,0,0
+current,BenchmarkComparison/String1KiB/Tinylib/Encode-8,5,53.63,53.43,54.2,0,0
+current,BenchmarkComparison/Nested/Tinylib/Encode-8,5,17.03,16.81,17.61,0,0
+
+===== experiment-summary.csv =====
+variant,case,samples,median_ns,min_ns,max_ns,bytes,allocs
+native,BenchmarkCPUTraversal/Mixed/Reflection/Decode-8,5,446.3,438.2,448.7,3,1
+native,BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8,5,1189.0,1167.0,1212.0,3,1
+native,BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8,5,502.2,498.8,505.7,1024,1
+nil-error,BenchmarkCPUTraversal/Mixed/Reflection/Decode-8,5,413.1,410.6,415.1,3,1
+nil-error,BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8,5,1169.0,1156.0,1194.0,3,1
+nil-error,BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8,5,472.8,462.4,474.7,1024,1
+empty-body,BenchmarkCPUTraversal/Mixed/Reflection/Decode-8,5,423.5,422.1,430.7,3,1
+empty-body,BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8,5,1183.0,1158.0,1326.0,3,1
+empty-body,BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8,5,487.6,481.1,490.3,1024,1
+combined,BenchmarkCPUTraversal/Mixed/Reflection/Decode-8,5,402.3,401.3,411.9,3,1
+combined,BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8,5,1166.0,1148.0,1206.0,3,1
+combined,BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8,5,474.4,461.5,482.7,1024,1
+
+===== timings.txt =====
+
+ROUND 1 GROUP native
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1904840	       131.5 ns/op	 456.32 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  591679	       408.7 ns/op	 146.82 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Mixed/Typed/Encode-8       	 4378369	        59.08 ns/op	1015.55 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Typed/Decode-8       	  816765	       297.0 ns/op	 202.04 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1870135	       129.9 ns/op	504964.89 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  218080	      1162 ns/op	56430.15 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Typed/Encode-8              	 3946869	        60.31 ns/op	1087727.53 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Typed/Decode-8              	  253580	      1030 ns/op	63678.81 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1760205	       135.4 ns/op	7999.40 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  472479	       486.5 ns/op	2225.91 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Typed/Encode-8               	 3602426	        67.29 ns/op	16095.04 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Typed/Decode-8               	  637174	       363.7 ns/op	2977.49 MB/s	    1024 B/op	       1 allocs/op
+PASS
+
+ROUND 1 GROUP comparison
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/./^(Encode|Decode)$/^(ClearTargetfalse)?$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	 1012994	       234.9 ns/op	 148.98 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargetfalse-8      	 4591152	        51.92 ns/op	 674.11 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  586068	       425.9 ns/op	 140.87 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8        	 2518544	        94.84 ns/op	 632.63 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  208202	      1197 ns/op	54788.21 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargetfalse-8  	  328982	       903.7 ns/op	72584.09 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  469184	       488.3 ns/op	2218.02 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargetfalse-8   	 1380844	       171.3 ns/op	6321.33 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	 1000000	       236.8 ns/op	 109.78 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargetfalse-8       	 4610481	        50.77 ns/op	 512.12 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 1 GROUP buffered
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkBufferedOurs$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 2617928	        91.37 ns/op	 383.05 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	  915127	       266.2 ns/op	 131.50 MB/s	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 1457114	       165.4 ns/op	 362.68 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  544083	       464.6 ns/op	 129.15 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8         	 1000000	       220.9 ns/op	296902.35 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8         	  194712	      1275 ns/op	51432.30 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8          	 1302822	       184.4 ns/op	5874.15 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8          	  424800	       528.6 ns/op	2048.95 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8              	 2954594	        81.52 ns/op	 318.94 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8              	  956588	       265.3 ns/op	  97.98 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 1 GROUP copy
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkEncodeCopy$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkEncodeCopy/Mixed/Ours-8    	 1461968	       165.0 ns/op	 363.53 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8         	 1412408	       168.3 ns/op	 356.48 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Mixed/Tinylib-8              	 5476909	        43.87 ns/op	1367.71 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8           	  278374	      1020 ns/op	64325.19 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8   	  278577	       987.6 ns/op	66421.19 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Tinylib-8        	  383294	       791.8 ns/op	82849.25 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 2 GROUP native
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1869573	       127.4 ns/op	 470.86 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  567403	       438.0 ns/op	 136.98 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Mixed/Typed/Encode-8       	 4150208	        57.76 ns/op	1038.86 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Typed/Decode-8       	  813099	       307.9 ns/op	 194.89 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1797754	       132.4 ns/op	495623.31 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  209196	      1164 ns/op	56359.76 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Typed/Encode-8              	 3921512	        61.23 ns/op	1071345.85 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Typed/Decode-8              	  258505	      1064 ns/op	61629.10 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1730875	       137.5 ns/op	7875.19 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  465781	       495.2 ns/op	2186.98 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Typed/Encode-8               	 3563337	        67.21 ns/op	16113.38 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Typed/Decode-8               	  633488	       370.7 ns/op	2921.82 MB/s	    1024 B/op	       1 allocs/op
+PASS
+
+ROUND 2 GROUP copy
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkEncodeCopy$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkEncodeCopy/Mixed/Ours-8    	 1446982	       164.1 ns/op	 365.66 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8         	 1409527	       170.1 ns/op	 352.82 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Mixed/Tinylib-8              	 5515682	        43.48 ns/op	1379.97 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8           	  269527	       942.4 ns/op	69604.75 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8   	  252456	      1055 ns/op	62164.41 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Tinylib-8        	  256125	       821.9 ns/op	79807.48 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 2 GROUP buffered
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkBufferedOurs$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 2598522	        89.83 ns/op	 389.63 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	  907272	       263.2 ns/op	 132.96 MB/s	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 1424133	       166.2 ns/op	 360.97 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  547856	       464.6 ns/op	 129.15 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8         	 1000000	       217.8 ns/op	301195.48 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8         	  196206	      1308 ns/op	50146.51 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8          	 1293360	       184.5 ns/op	5870.38 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8          	  395085	       527.0 ns/op	2055.16 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8              	 2984498	        79.91 ns/op	 325.37 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8              	  929991	       264.5 ns/op	  98.29 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 2 GROUP comparison
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/./^(Encode|Decode)$/^(ClearTargetfalse)?$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	 1000000	       247.5 ns/op	 141.39 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargetfalse-8      	 4484793	        53.35 ns/op	 656.01 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  556752	       435.7 ns/op	 137.70 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8        	 2473942	        95.88 ns/op	 625.80 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  210195	      1217 ns/op	53906.95 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargetfalse-8  	  311026	       896.0 ns/op	73209.19 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  481404	       488.6 ns/op	2216.56 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargetfalse-8   	 1398781	       171.1 ns/op	6328.70 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	  984127	       241.2 ns/op	 107.78 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargetfalse-8       	 4659028	        52.37 ns/op	 496.43 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 3 GROUP buffered
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkBufferedOurs$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 2630671	        90.53 ns/op	 386.62 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	  891212	       268.5 ns/op	 130.34 MB/s	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 1438713	       167.1 ns/op	 359.05 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  537704	       469.9 ns/op	 127.68 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8         	 1000000	       219.6 ns/op	298655.19 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8         	  184702	      1342 ns/op	48895.75 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8          	 1282168	       184.5 ns/op	5871.42 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8          	  430222	       530.6 ns/op	2040.97 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8              	 2915316	        81.79 ns/op	 317.89 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8              	  906244	       266.4 ns/op	  97.59 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 3 GROUP copy
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkEncodeCopy$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkEncodeCopy/Mixed/Ours-8    	 1452594	       164.2 ns/op	 365.31 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8         	 1402908	       171.3 ns/op	 350.17 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Mixed/Tinylib-8              	 5481562	        43.75 ns/op	1371.36 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8           	  269365	       937.4 ns/op	69975.20 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8   	  256162	       971.0 ns/op	67553.81 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Tinylib-8        	  349707	       783.9 ns/op	83684.04 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 3 GROUP native
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1854402	       127.7 ns/op	 469.95 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  570087	       440.3 ns/op	 136.27 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Mixed/Typed/Encode-8       	 4127764	        58.27 ns/op	1029.63 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Typed/Decode-8       	  805390	       311.5 ns/op	 192.61 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1828922	       130.7 ns/op	502079.43 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  211351	      1211 ns/op	54169.54 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Typed/Encode-8              	 3908409	        61.44 ns/op	1067725.01 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Typed/Decode-8              	  224888	      1148 ns/op	57156.89 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1735106	       138.9 ns/op	7795.11 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  445126	       500.3 ns/op	2164.72 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Typed/Encode-8               	 3543993	        67.75 ns/op	15984.93 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Typed/Decode-8               	  620608	       372.1 ns/op	2910.31 MB/s	    1024 B/op	       1 allocs/op
+PASS
+
+ROUND 3 GROUP comparison
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/./^(Encode|Decode)$/^(ClearTargetfalse)?$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	  980508	       246.2 ns/op	 142.15 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargetfalse-8      	 4499710	        53.24 ns/op	 657.40 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  575550	       437.3 ns/op	 137.21 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8        	 2453230	        97.30 ns/op	 616.67 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  215229	      1297 ns/op	50584.10 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargetfalse-8  	  303810	       954.4 ns/op	68732.97 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  469345	       488.5 ns/op	2217.11 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargetfalse-8   	 1397913	       169.9 ns/op	6375.50 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	  986030	       243.0 ns/op	 107.00 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargetfalse-8       	 4653356	        51.61 ns/op	 503.80 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 4 GROUP buffered
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkBufferedOurs$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 2615398	        90.65 ns/op	 386.09 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	  924009	       268.4 ns/op	 130.42 MB/s	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 1430686	       167.2 ns/op	 358.85 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  502056	       467.8 ns/op	 128.26 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8         	 1000000	       217.7 ns/op	301303.68 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8         	  189414	      1253 ns/op	52350.14 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8          	 1302050	       184.1 ns/op	5882.88 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8          	  424856	       549.2 ns/op	1971.89 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8              	 2937865	        81.40 ns/op	 319.41 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8              	  932294	       265.5 ns/op	  97.93 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 4 GROUP comparison
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/./^(Encode|Decode)$/^(ClearTargetfalse)?$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	  982968	       246.9 ns/op	 141.74 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargetfalse-8      	 4485830	        53.10 ns/op	 659.15 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  565742	       437.8 ns/op	 137.06 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8        	 2441670	       104.7 ns/op	 573.11 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  209162	      1278 ns/op	51330.18 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargetfalse-8  	  289444	       966.9 ns/op	67844.29 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  483408	       489.0 ns/op	2214.83 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargetfalse-8   	 1393038	       172.5 ns/op	6277.62 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	 1000000	       240.8 ns/op	 107.99 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargetfalse-8       	 4540692	        52.27 ns/op	 497.42 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 4 GROUP native
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1875044	       128.0 ns/op	 468.89 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  572991	       438.9 ns/op	 136.70 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Mixed/Typed/Encode-8       	 4147599	        58.17 ns/op	1031.50 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Typed/Decode-8       	  784345	       313.6 ns/op	 191.31 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1814520	       131.2 ns/op	499869.14 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  215239	      1216 ns/op	53957.70 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Typed/Encode-8              	 3864858	        61.47 ns/op	1067108.63 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Typed/Decode-8              	  243736	      1088 ns/op	60281.77 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1718050	       139.3 ns/op	7774.79 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  457000	       495.0 ns/op	2187.70 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Typed/Encode-8               	 3523070	        68.11 ns/op	15901.88 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Typed/Decode-8               	  596995	       373.2 ns/op	2901.75 MB/s	    1024 B/op	       1 allocs/op
+PASS
+
+ROUND 4 GROUP copy
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkEncodeCopy$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkEncodeCopy/Mixed/Ours-8    	 1434135	       166.7 ns/op	 359.83 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8         	 1385913	       172.8 ns/op	 347.24 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Mixed/Tinylib-8              	 5477679	        43.83 ns/op	1368.90 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8           	  282559	       979.4 ns/op	66975.37 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8   	  273151	      1023 ns/op	64144.87 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Tinylib-8        	  279763	       861.8 ns/op	76113.53 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 5 GROUP native
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1858939	       128.3 ns/op	 467.59 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  549534	       435.8 ns/op	 137.68 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Mixed/Typed/Encode-8       	 4129377	        58.21 ns/op	1030.79 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Typed/Decode-8       	  760646	       310.9 ns/op	 192.98 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1813291	       132.5 ns/op	495253.73 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  196615	      1255 ns/op	52277.94 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Typed/Encode-8              	 3895410	        61.71 ns/op	1063027.97 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Typed/Decode-8              	  243441	      1080 ns/op	60754.56 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1707568	       138.8 ns/op	7804.24 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  455472	       498.6 ns/op	2172.29 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Typed/Encode-8               	 3526772	        67.81 ns/op	15972.22 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Typed/Decode-8               	  636639	       372.9 ns/op	2904.39 MB/s	    1024 B/op	       1 allocs/op
+PASS
+
+ROUND 5 GROUP comparison
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/./^(Encode|Decode)$/^(ClearTargetfalse)?$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Decode/ClearTargetfalse-8         	  947211	       247.1 ns/op	 141.65 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Scalars/Tinylib/Decode/ClearTargetfalse-8      	 4454449	        53.21 ns/op	 657.82 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8           	  559728	       444.6 ns/op	 134.96 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8        	 2462827	        97.09 ns/op	 618.01 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Decode/ClearTargetfalse-8     	  207799	      1183 ns/op	55470.80 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Decode/ClearTargetfalse-8  	  298632	       897.7 ns/op	73071.34 MB/s	       3 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Ours/Decode/ClearTargetfalse-8      	  484089	       492.7 ns/op	2198.13 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Decode/ClearTargetfalse-8   	 1372128	       175.0 ns/op	6190.00 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkComparison/Nested/Ours/Decode/ClearTargetfalse-8          	  997142	       242.6 ns/op	 107.17 MB/s	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Decode/ClearTargetfalse-8       	 4509998	        52.75 ns/op	 492.90 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 5 GROUP buffered
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkBufferedOurs$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkBufferedOurs/Scalars/Encode-8  	 2650776	        90.12 ns/op	 388.37 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Scalars/Decode-8  	  894451	       269.5 ns/op	 129.88 MB/s	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Encode-8    	 1422354	       168.3 ns/op	 356.56 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Mixed/Decode-8    	  527617	       473.3 ns/op	 126.78 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Encode-8         	 1000000	       221.0 ns/op	296814.92 MB/s	         4.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Binary64KiB/Decode-8         	  189589	      1310 ns/op	50067.49 MB/s	       3 B/op	       1 allocs/op
+BenchmarkBufferedOurs/String1KiB/Encode-8          	 1291939	       184.3 ns/op	5875.51 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/String1KiB/Decode-8          	  435205	       537.1 ns/op	2016.21 MB/s	    1024 B/op	       1 allocs/op
+BenchmarkBufferedOurs/Nested/Encode-8              	 2964710	        80.85 ns/op	 321.59 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkBufferedOurs/Nested/Decode-8              	  896232	       265.0 ns/op	  98.13 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+ROUND 5 GROUP copy
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkEncodeCopy$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkEncodeCopy/Mixed/Ours-8    	 1423491	       166.7 ns/op	 359.97 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Mixed/OursBuffered-8         	 1378705	       172.3 ns/op	 348.29 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Mixed/Tinylib-8              	 5467956	        43.97 ns/op	1364.60 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Ours-8           	  294124	       995.5 ns/op	65895.89 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/OursBuffered-8   	  229444	       982.4 ns/op	66773.58 MB/s	       0 B/op	       0 allocs/op
+BenchmarkEncodeCopy/Binary64KiB/Tinylib-8        	  264132	       822.8 ns/op	79726.66 MB/s	       0 B/op	       0 allocs/op
+PASS
+
+===== encode-timings.txt =====
+ROUND 1 COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/Ours/^Encode$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 3491952	        70.43 ns/op	 496.97 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8           	 1853734	       130.0 ns/op	 461.40 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8     	 1791810	       133.4 ns/op	491867.95 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8      	 1688893	       141.5 ns/op	7654.24 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8          	 3592856	        67.01 ns/op	 387.98 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 1 COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/Tinylib/^Encode$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Tinylib/Encode-8         	11996076	        20.00 ns/op	1749.70 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Encode-8           	 5767255	        42.10 ns/op	1425.12 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Encode-8     	 5755900	        41.44 ns/op	1583080.20 MB/s	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Encode-8      	 4486375	        53.43 ns/op	20268.03 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Encode-8          	14517446	        16.90 ns/op	1538.59 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 2 COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/Tinylib/^Encode$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Tinylib/Encode-8         	11980057	        20.04 ns/op	1746.31 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Encode-8           	 5744082	        41.85 ns/op	1433.64 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Encode-8     	 5832639	        41.25 ns/op	1590053.41 MB/s	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Encode-8      	 4488620	        53.63 ns/op	20192.11 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Encode-8          	13802060	        16.81 ns/op	1546.49 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 2 COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/Ours/^Encode$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 3383811	        71.16 ns/op	 491.84 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8           	 1834924	       130.0 ns/op	 461.46 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8     	 1799598	       132.7 ns/op	494357.61 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8      	 1697335	       139.9 ns/op	7740.25 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8          	 3643266	        66.00 ns/op	 393.94 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 3 COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/Ours/^Encode$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 3351036	        71.42 ns/op	 490.03 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8           	 1851181	       129.5 ns/op	 463.28 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8     	 1800796	       132.8 ns/op	494054.29 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8      	 1712054	       140.6 ns/op	7702.22 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8          	 3651110	        65.99 ns/op	 394.01 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 3 COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/Tinylib/^Encode$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Tinylib/Encode-8         	12044816	        20.01 ns/op	1748.84 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Encode-8           	 5764092	        41.96 ns/op	1429.88 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Encode-8     	 5749833	        41.87 ns/op	1566507.22 MB/s	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Encode-8      	 4441030	        53.55 ns/op	20224.55 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Encode-8          	13718989	        17.03 ns/op	1526.54 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 4 COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/Tinylib/^Encode$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Tinylib/Encode-8         	12163291	        20.80 ns/op	1682.78 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Encode-8           	 5685176	        42.38 ns/op	1415.63 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Encode-8     	 5632398	        45.17 ns/op	1452298.43 MB/s	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Encode-8      	 4446141	        54.20 ns/op	19980.18 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Encode-8          	13571238	        17.61 ns/op	1476.46 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 4 COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/Ours/^Encode$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 3331383	        71.65 ns/op	 488.45 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8           	 1782888	       131.5 ns/op	 456.32 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8     	 1772740	       134.1 ns/op	489100.11 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8      	 1702281	       140.6 ns/op	7703.76 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8          	 3652441	        66.10 ns/op	 393.33 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 5 COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/Ours/^Encode$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Ours/Encode-8         	 3269752	        73.84 ns/op	 474.03 MB/s	         8.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Ours/Encode-8           	 1816136	       131.4 ns/op	 456.78 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Ours/Encode-8     	 1790456	       134.6 ns/op	487271.46 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Ours/Encode-8      	 1693429	       140.7 ns/op	7697.81 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Ours/Encode-8          	 3459265	        69.17 ns/op	 375.90 MB/s	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 5 COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/Tinylib/^Encode$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Scalars/Tinylib/Encode-8         	12060326	        20.10 ns/op	1741.57 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Mixed/Tinylib/Encode-8           	 5695543	        41.95 ns/op	1430.30 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Binary64KiB/Tinylib/Encode-8     	 5766746	        41.78 ns/op	1569943.02 MB/s	         3.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/String1KiB/Tinylib/Encode-8      	 4452441	        53.79 ns/op	20135.27 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkComparison/Nested/Tinylib/Encode-8          	13779014	        17.29 ns/op	1504.11 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+
+===== experiment-timings.txt =====
+ROUND 1 VARIANT native COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  545082	       447.7 ns/op	 134.02 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  198938	      1167 ns/op	56204.98 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  449792	       504.2 ns/op	2148.07 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 1 VARIANT nil-error COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/nil-error.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  599331	       413.6 ns/op	 145.07 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  214759	      1194 ns/op	54961.29 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  496890	       462.4 ns/op	2342.36 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 1 VARIANT empty-body COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/empty-body.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  579400	       422.1 ns/op	 142.15 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  212984	      1189 ns/op	55176.88 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  470292	       481.1 ns/op	2251.07 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 1 VARIANT combined COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/combined.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  597807	       402.7 ns/op	 148.98 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  208310	      1186 ns/op	55299.48 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  483399	       461.5 ns/op	2346.76 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 2 VARIANT native COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  537262	       446.3 ns/op	 134.43 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  209074	      1179 ns/op	55624.94 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  461094	       502.2 ns/op	2156.31 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 2 VARIANT combined COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/combined.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  611301	       401.8 ns/op	 149.34 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  215956	      1157 ns/op	56709.61 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  506925	       463.1 ns/op	2338.46 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 2 VARIANT empty-body COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/empty-body.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  567604	       423.5 ns/op	 141.68 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  214789	      1158 ns/op	56640.11 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  494131	       483.0 ns/op	2242.33 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 2 VARIANT nil-error COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/nil-error.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  579768	       413.1 ns/op	 145.24 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  204655	      1156 ns/op	56738.30 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  498183	       466.7 ns/op	2320.47 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 3 VARIANT empty-body COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/empty-body.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  577790	       430.7 ns/op	 139.30 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  187813	      1326 ns/op	49470.19 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  480324	       490.0 ns/op	2210.29 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 3 VARIANT combined COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/combined.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  590623	       401.3 ns/op	 149.53 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  226324	      1148 ns/op	57126.67 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  492943	       474.4 ns/op	2282.77 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 3 VARIANT native COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  546364	       448.7 ns/op	 133.72 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  191424	      1212 ns/op	54109.80 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  470346	       499.8 ns/op	2166.84 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 3 VARIANT nil-error COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/nil-error.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  572359	       413.0 ns/op	 145.27 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  193432	      1185 ns/op	55376.04 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  493318	       474.7 ns/op	2281.48 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 4 VARIANT empty-body COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/empty-body.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  566120	       422.6 ns/op	 141.97 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  211200	      1174 ns/op	55870.97 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  471577	       487.6 ns/op	2221.25 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 4 VARIANT nil-error COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/nil-error.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  582648	       410.6 ns/op	 146.11 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  215540	      1169 ns/op	56102.69 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  504549	       472.8 ns/op	2290.56 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 4 VARIANT native COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  556827	       440.2 ns/op	 136.30 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  203458	      1203 ns/op	54506.82 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  446362	       498.8 ns/op	2171.20 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 4 VARIANT combined COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/combined.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  584842	       402.3 ns/op	 149.14 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  209517	      1166 ns/op	56263.99 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  426180	       476.0 ns/op	2275.30 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 5 VARIANT native COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  548492	       438.2 ns/op	 136.94 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  193370	      1189 ns/op	55149.25 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  437028	       505.7 ns/op	2141.65 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 5 VARIANT nil-error COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/nil-error.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  586216	       415.1 ns/op	 144.56 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  215661	      1169 ns/op	56134.86 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  489058	       472.8 ns/op	2290.55 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 5 VARIANT empty-body COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/empty-body.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  557787	       428.2 ns/op	 140.12 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  204109	      1183 ns/op	55430.77 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  461116	       490.3 ns/op	2208.74 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 5 VARIANT combined COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/combined.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^Decode$', '-test.benchmem', '-test.benchtime=200ms']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  590744	       411.9 ns/op	 145.68 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  202298	      1206 ns/op	54387.89 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  498990	       482.7 ns/op	2243.77 MB/s	    1024 B/op	       1 allocs/op
+PASS
+
+===== experiment-validation.txt =====
+COMMAND ['go', 'test', '-overlay', '/private/tmp/messagepack-cpu-20261105.ezkm_8cr/nil-error-overlay.json', '-c', '-o', '/private/tmp/messagepack-cpu-20261105.ezkm_8cr/nil-error.test', '.']
+PASS
+COMMAND ['go', 'test', '-overlay', '/private/tmp/messagepack-cpu-20261105.ezkm_8cr/empty-body-overlay.json', '-c', '-o', '/private/tmp/messagepack-cpu-20261105.ezkm_8cr/empty-body.test', '.']
+PASS
+COMMAND ['go', 'test', '-overlay', '/private/tmp/messagepack-cpu-20261105.ezkm_8cr/combined-overlay.json', '-c', '-o', '/private/tmp/messagepack-cpu-20261105.ezkm_8cr/combined.test', '.']
+PASS
+
+===== profile-runs.txt =====
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^Mixed$/^Ours$/^Encode$', '-test.benchtime=8s', '-test.cpuprofile', '/private/tmp/messagepack-cpu-20261105.ezkm_8cr/artifacts/ours-encode.cpu.pprof']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Mixed/Ours/Encode-8         	73527956	       132.0 ns/op	 454.69 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^Mixed$/^Ours$/^Decode$/^ClearTargetfalse$', '-test.benchtime=8s', '-test.cpuprofile', '/private/tmp/messagepack-cpu-20261105.ezkm_8cr/artifacts/ours-decode.cpu.pprof']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Mixed/Ours/Decode/ClearTargetfalse-8         	21811005	       432.3 ns/op	 138.79 MB/s	       3 B/op	       1 allocs/op
+PASS
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^Mixed$/^Tinylib$/^Encode$', '-test.benchtime=8s', '-test.cpuprofile', '/private/tmp/messagepack-cpu-20261105.ezkm_8cr/artifacts/tiny-encode.cpu.pprof']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Mixed/Tinylib/Encode-8         	229314789	        42.10 ns/op	1425.02 MB/s	         1.000 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/comparison.test', '-test.run', '^$', '-test.bench', '^BenchmarkComparison$/^Mixed$/^Tinylib$/^Decode$/^ClearTargetfalse$', '-test.benchtime=8s', '-test.cpuprofile', '/private/tmp/messagepack-cpu-20261105.ezkm_8cr/artifacts/tiny-decode.cpu.pprof']
+goos: darwin
+goarch: arm64
+pkg: example.com/messagepack-tinylib-alloc
+cpu: Apple M3
+BenchmarkComparison/Mixed/Tinylib/Decode/ClearTargetfalse-8         	94849632	        96.75 ns/op	 620.19 MB/s	       3 B/op	       1 allocs/op
+PASS
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/^Mixed$/^Typed$/^Encode$', '-test.benchtime=8s', '-test.cpuprofile', '/private/tmp/messagepack-cpu-20261105.ezkm_8cr/artifacts/typed-encode.cpu.pprof']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Typed/Encode-8         	164642560	        58.53 ns/op	1025.14 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+COMMAND ['/private/tmp/messagepack-cpu-20261105.ezkm_8cr/native.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/^Mixed$/^Typed$/^Decode$', '-test.benchtime=8s', '-test.cpuprofile', '/private/tmp/messagepack-cpu-20261105.ezkm_8cr/artifacts/typed-decode.cpu.pprof']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Typed/Decode-8         	30264104	       313.3 ns/op	 191.54 MB/s	       3 B/op	       1 allocs/op
+PASS
+
+===== ours-encode.top.txt =====
+File: comparison.test
+Type: cpu
+Time: 2026-11-05 11:55:05 PST
+Duration: 9.99s, Total samples = 8.18s (81.87%)
+Showing nodes accounting for 7.91s, 96.70% of 8.18s total
+Dropped 25 nodes (cum <= 0.04s)
+Showing top 45 nodes out of 61
+      flat  flat%   sum%        cum   cum%
+     1.22s 14.91% 14.91%      6.63s 81.05%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodePlanned
+     1.03s 12.59% 27.51%      1.68s 20.54%  github.com/itsmontoya/messagepack.(*Writer).write
+     0.57s  6.97% 34.47%      6.12s 74.82%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeStruct
+     0.49s  5.99% 40.46%      0.49s  5.99%  runtime.pthread_cond_signal
+     0.46s  5.62% 46.09%      1.07s 13.08%  github.com/itsmontoya/messagepack.(*Writer).writeEncoded
+     0.42s  5.13% 51.22%      0.42s  5.13%  github.com/itsmontoya/messagepack.(*Writer).ready (inline)
+     0.33s  4.03% 55.26%      0.70s  8.56%  internal/sync.(*HashTrieMap[go.shape.interface {},go.shape.interface {}]).Load
+     0.29s  3.55% 58.80%      0.29s  3.55%  example.com/messagepack-tinylib-alloc.(*countingWriter).Write
+     0.29s  3.55% 62.35%      0.45s  5.50%  reflect.Value.Field
+     0.24s  2.93% 65.28%      1.44s 17.60%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeArray
+     0.17s  2.08% 67.36%      0.17s  2.08%  sync/atomic.(*Bool).Load (inline)
+     0.15s  1.83% 69.19%      7.58s 92.67%  github.com/itsmontoya/messagepack.(*Encoder).Encode
+     0.14s  1.71% 70.90%      0.22s  2.69%  reflect.Value.lenNonSlice
+     0.13s  1.59% 72.49%      0.42s  5.13%  github.com/itsmontoya/messagepack.(*Writer).EncodeBytes
+     0.13s  1.59% 74.08%      0.31s  3.79%  github.com/itsmontoya/messagepack.(*Writer).encodeUint64
+     0.13s  1.59% 75.67%      0.37s  4.52%  github.com/itsmontoya/messagepack.(*Writer).writePayloadHeader
+     0.12s  1.47% 77.14%      6.24s 76.28%  github.com/itsmontoya/messagepack.(*reflectionPlan).initializeStruct.func1
+     0.11s  1.34% 78.48%      0.11s  1.34%  reflect.flag.kind (inline)
+     0.10s  1.22% 79.71%      0.50s  6.11%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeInt
+     0.09s  1.10% 80.81%      0.09s  1.10%  internal/abi.(*Type).Kind (inline)
+     0.09s  1.10% 81.91%      0.09s  1.10%  internal/abi.Name.IsExported (inline)
+     0.09s  1.10% 83.01%      0.10s  1.22%  internal/runtime/maps.MemHash64
+     0.08s  0.98% 83.99%      0.25s  3.06%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeBool
+     0.08s  0.98% 84.96%      0.55s  6.72%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeString
+     0.08s  0.98% 85.94%      0.08s  0.98%  internal/sync.(*HashTrieMap[go.shape.interface {},go.shape.interface {}]).init (inline)
+     0.07s  0.86% 86.80%      7.66s 93.64%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.1
+     0.07s  0.86% 87.65%      0.37s  4.52%  github.com/itsmontoya/messagepack.(*Writer).EncodeInt64
+     0.07s  0.86% 88.51%      0.46s  5.62%  github.com/itsmontoya/messagepack.(*Writer).EncodeString
+     0.07s  0.86% 89.36%      0.11s  1.34%  reflect.Value.Index
+     0.06s  0.73% 90.10%      6.47s 79.10%  github.com/itsmontoya/messagepack.(*reflectionPlan).initializePointer.func1
+     0.06s  0.73% 90.83%      0.22s  2.69%  runtime.nilinterhash
+     0.06s  0.73% 91.56%      0.16s  1.96%  runtime.typehash
+     0.05s  0.61% 92.18%      1.49s 18.22%  github.com/itsmontoya/messagepack.(*reflectionPlan).initializeArray.func1
+     0.05s  0.61% 92.79%      0.05s  0.61%  runtime.memmove
+     0.04s  0.49% 93.28%      0.13s  1.59%  github.com/itsmontoya/messagepack.(*Writer).EncodeArrayHeader
+     0.04s  0.49% 93.77%      0.14s  1.71%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeFloat64
+     0.03s  0.37% 94.13%      0.17s  2.08%  github.com/itsmontoya/messagepack.(*Writer).EncodeBool
+     0.03s  0.37% 94.50%      0.10s  1.22%  github.com/itsmontoya/messagepack.(*Writer).EncodeFloat64
+     0.03s  0.37% 94.87%      7.39s 90.34%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encode
+     0.03s  0.37% 95.23%      6.41s 78.36%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodePointer
+     0.03s  0.37% 95.60%      0.21s  2.57%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeUint
+     0.03s  0.37% 95.97%      0.73s  8.92%  github.com/itsmontoya/messagepack.lookupReflectionPlan
+     0.03s  0.37% 96.33%      0.05s  0.61%  runtime.efaceeq
+     0.02s  0.24% 96.58%      0.46s  5.62%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeBytes
+     0.01s  0.12% 96.70%      7.59s 92.79%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.1.1
+
+===== ours-encode.cum.txt =====
+File: comparison.test
+Type: cpu
+Time: 2026-11-05 11:55:05 PST
+Duration: 9.99s, Total samples = 8.18s (81.87%)
+Showing nodes accounting for 6.96s, 85.09% of 8.18s total
+Dropped 25 nodes (cum <= 0.04s)
+Showing top 45 nodes out of 61
+      flat  flat%   sum%        cum   cum%
+     0.07s  0.86%  0.86%      7.66s 93.64%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.1
+         0     0%  0.86%      7.66s 93.64%  testing.(*B).launch
+         0     0%  0.86%      7.66s 93.64%  testing.(*B).runN
+     0.01s  0.12%  0.98%      7.59s 92.79%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.1.1
+     0.15s  1.83%  2.81%      7.58s 92.67%  github.com/itsmontoya/messagepack.(*Encoder).Encode
+     0.03s  0.37%  3.18%      7.39s 90.34%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encode
+     1.22s 14.91% 18.09%      6.63s 81.05%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodePlanned
+     0.06s  0.73% 18.83%      6.47s 79.10%  github.com/itsmontoya/messagepack.(*reflectionPlan).initializePointer.func1
+     0.03s  0.37% 19.19%      6.41s 78.36%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodePointer
+     0.12s  1.47% 20.66%      6.24s 76.28%  github.com/itsmontoya/messagepack.(*reflectionPlan).initializeStruct.func1
+     0.57s  6.97% 27.63%      6.12s 74.82%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeStruct
+     1.03s 12.59% 40.22%      1.68s 20.54%  github.com/itsmontoya/messagepack.(*Writer).write
+     0.05s  0.61% 40.83%      1.49s 18.22%  github.com/itsmontoya/messagepack.(*reflectionPlan).initializeArray.func1
+     0.24s  2.93% 43.77%      1.44s 17.60%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeArray
+     0.46s  5.62% 49.39%      1.07s 13.08%  github.com/itsmontoya/messagepack.(*Writer).writeEncoded
+     0.03s  0.37% 49.76%      0.73s  8.92%  github.com/itsmontoya/messagepack.lookupReflectionPlan
+     0.33s  4.03% 53.79%      0.70s  8.56%  internal/sync.(*HashTrieMap[go.shape.interface {},go.shape.interface {}]).Load
+         0     0% 53.79%      0.70s  8.56%  sync.(*Map).Load (inline)
+     0.08s  0.98% 54.77%      0.55s  6.72%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeString
+     0.10s  1.22% 55.99%      0.50s  6.11%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeInt
+         0     0% 55.99%      0.50s  6.11%  runtime.morestack
+         0     0% 55.99%      0.50s  6.11%  runtime.startm
+         0     0% 55.99%      0.50s  6.11%  runtime.wakep
+         0     0% 55.99%      0.49s  5.99%  runtime.gopreempt_m (inline)
+         0     0% 55.99%      0.49s  5.99%  runtime.goschedImpl
+         0     0% 55.99%      0.49s  5.99%  runtime.newstack
+         0     0% 55.99%      0.49s  5.99%  runtime.notewakeup
+     0.49s  5.99% 61.98%      0.49s  5.99%  runtime.pthread_cond_signal
+         0     0% 61.98%      0.49s  5.99%  runtime.semawakeup
+     0.07s  0.86% 62.84%      0.46s  5.62%  github.com/itsmontoya/messagepack.(*Writer).EncodeString
+     0.02s  0.24% 63.08%      0.46s  5.62%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeBytes
+     0.29s  3.55% 66.63%      0.45s  5.50%  reflect.Value.Field
+     0.13s  1.59% 68.22%      0.42s  5.13%  github.com/itsmontoya/messagepack.(*Writer).EncodeBytes
+     0.42s  5.13% 73.35%      0.42s  5.13%  github.com/itsmontoya/messagepack.(*Writer).ready (inline)
+     0.07s  0.86% 74.21%      0.37s  4.52%  github.com/itsmontoya/messagepack.(*Writer).EncodeInt64
+     0.13s  1.59% 75.79%      0.37s  4.52%  github.com/itsmontoya/messagepack.(*Writer).writePayloadHeader
+     0.13s  1.59% 77.38%      0.31s  3.79%  github.com/itsmontoya/messagepack.(*Writer).encodeUint64
+     0.29s  3.55% 80.93%      0.29s  3.55%  example.com/messagepack-tinylib-alloc.(*countingWriter).Write
+     0.08s  0.98% 81.91%      0.25s  3.06%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeBool
+         0     0% 81.91%      0.22s  2.69%  reflect.Value.Len (inline)
+     0.14s  1.71% 83.62%      0.22s  2.69%  reflect.Value.lenNonSlice
+     0.06s  0.73% 84.35%      0.22s  2.69%  runtime.nilinterhash
+     0.03s  0.37% 84.72%      0.21s  2.57%  github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeUint
+     0.03s  0.37% 85.09%      0.17s  2.08%  github.com/itsmontoya/messagepack.(*Writer).EncodeBool
+         0     0% 85.09%      0.17s  2.08%  sync.(*Once).Do (inline)
+
+===== ours-decode.top.txt =====
+File: comparison.test
+Type: cpu
+Time: 2026-11-05 11:55:15 PST
+Duration: 9.99s, Total samples = 8.29s (82.95%)
+Showing nodes accounting for 7.81s, 94.21% of 8.29s total
+Dropped 47 nodes (cum <= 0.04s)
+Showing top 45 nodes out of 70
+      flat  flat%   sum%        cum   cum%
+     1.57s 18.94% 18.94%      2.77s 33.41%  github.com/itsmontoya/messagepack.(*Reader).readFull
+     0.81s  9.77% 28.71%      0.81s  9.77%  runtime.madvise
+     0.50s  6.03% 34.74%      0.83s 10.01%  bytes.(*Reader).Read
+     0.47s  5.67% 40.41%      0.47s  5.67%  runtime.pthread_cond_signal
+     0.43s  5.19% 45.60%      0.43s  5.19%  runtime.memmove
+     0.40s  4.83% 50.42%      0.40s  4.83%  errors.Is
+     0.35s  4.22% 54.64%      2.34s 28.23%  github.com/itsmontoya/messagepack.(*Reader).readPayload
+     0.34s  4.10% 58.75%      6.56s 79.13%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodePlanned
+     0.34s  4.10% 62.85%      0.57s  6.88%  internal/runtime/maps.(*Map).getWithoutKeySmallFastStr
+     0.30s  3.62% 66.47%      2.09s 25.21%  github.com/itsmontoya/messagepack.(*Reader).readTag
+     0.18s  2.17% 68.64%      1.18s 14.23%  github.com/itsmontoya/messagepack.(*Reader).readPayloadHeader
+     0.14s  1.69% 70.33%      0.71s  8.56%  runtime.mapaccess2_faststr
+     0.13s  1.57% 71.89%      6.37s 76.84%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeStruct
+     0.13s  1.57% 73.46%      0.13s  1.57%  runtime.memequal
+     0.13s  1.57% 75.03%      0.29s  3.50%  runtime.slicebytetostring
+     0.12s  1.45% 76.48%      0.29s  3.50%  github.com/itsmontoya/messagepack.(*Reader).readContainerHeader
+     0.12s  1.45% 77.93%      0.16s  1.93%  reflect.Value.Field
+     0.10s  1.21% 79.13%      6.89s 83.11%  github.com/itsmontoya/messagepack.(*Decoder).Decode
+     0.10s  1.21% 80.34%      0.98s 11.82%  github.com/itsmontoya/messagepack.(*Reader).peekTag
+     0.10s  1.21% 81.54%      0.10s  1.21%  github.com/itsmontoya/messagepack.(*Reader).ready (inline)
+     0.10s  1.21% 82.75%      0.10s  1.21%  github.com/itsmontoya/messagepack.(*reflectedDecoder).visit (inline)
+     0.09s  1.09% 83.84%      0.09s  1.09%  internal/runtime/maps.memHashAES
+     0.08s  0.97% 84.80%      0.27s  3.26%  github.com/itsmontoya/messagepack.(*Reader).readInteger
+     0.08s  0.97% 85.77%      0.08s  0.97%  reflect.Value.lenNonSlice
+     0.07s  0.84% 86.61%      0.15s  1.81%  internal/sync.(*HashTrieMap[go.shape.interface {},go.shape.interface {}]).Load
+     0.05s   0.6% 87.21%      2.31s 27.86%  github.com/itsmontoya/messagepack.(*Reader).DecodeString (inline)
+     0.05s   0.6% 87.82%      0.05s   0.6%  internal/abi.(*Type).Size (inline)
+     0.05s   0.6% 88.42%      0.05s   0.6%  reflect.Value.SetInt
+     0.05s   0.6% 89.02%      0.05s   0.6%  reflect.flag.ro (inline)
+     0.04s  0.48% 89.51%      6.97s 84.08%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.2
+     0.04s  0.48% 89.99%      0.33s  3.98%  github.com/itsmontoya/messagepack.(*Reader).readScalarBody
+     0.04s  0.48% 90.47%      1.04s 12.55%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeArray
+     0.04s  0.48% 90.95%      0.06s  0.72%  reflect.Value.SetBytes
+     0.03s  0.36% 91.31%      0.25s  3.02%  github.com/itsmontoya/messagepack.(*Reader).DecodeInt64
+     0.03s  0.36% 91.68%      0.46s  5.55%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeBytes
+     0.03s  0.36% 92.04%      0.20s  2.41%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeFloat
+     0.03s  0.36% 92.40%      0.37s  4.46%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeInt
+     0.03s  0.36% 92.76%      1.07s 12.91%  github.com/itsmontoya/messagepack.(*reflectionPlan).initializeArray.func2
+     0.02s  0.24% 93.00%      6.93s 83.59%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.2.1
+     0.02s  0.24% 93.24%      0.08s  0.97%  github.com/itsmontoya/messagepack.(*Reader).DecodeBool
+     0.02s  0.24% 93.49%      0.15s  1.81%  github.com/itsmontoya/messagepack.(*Reader).DecodeFloat64
+     0.02s  0.24% 93.73%      0.10s  1.21%  github.com/itsmontoya/messagepack.(*Reader).DecodeUint64
+     0.02s  0.24% 93.97%      0.05s   0.6%  runtime.nilinterhash
+     0.01s  0.12% 94.09%      0.12s  1.45%  github.com/itsmontoya/messagepack.(*Reader).DecodeMapHeader (inline)
+     0.01s  0.12% 94.21%      0.38s  4.58%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeString
+
+===== ours-decode.cum.txt =====
+File: comparison.test
+Type: cpu
+Time: 2026-11-05 11:55:15 PST
+Duration: 9.99s, Total samples = 8.29s (82.95%)
+Showing nodes accounting for 6.81s, 82.15% of 8.29s total
+Dropped 47 nodes (cum <= 0.04s)
+Showing top 45 nodes out of 70
+      flat  flat%   sum%        cum   cum%
+     0.04s  0.48%  0.48%      6.97s 84.08%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.2
+         0     0%  0.48%      6.97s 84.08%  testing.(*B).launch
+         0     0%  0.48%      6.97s 84.08%  testing.(*B).runN
+     0.02s  0.24%  0.72%      6.93s 83.59%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.2.1
+     0.10s  1.21%  1.93%      6.89s 83.11%  github.com/itsmontoya/messagepack.(*Decoder).Decode
+         0     0%  1.93%      6.71s 80.94%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decode
+     0.34s  4.10%  6.03%      6.56s 79.13%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodePlanned
+     0.13s  1.57%  7.60%      6.37s 76.84%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeStruct
+         0     0%  7.60%      6.37s 76.84%  github.com/itsmontoya/messagepack.(*reflectionPlan).initializeStruct.func2
+     1.57s 18.94% 26.54%      2.77s 33.41%  github.com/itsmontoya/messagepack.(*Reader).readFull
+     0.35s  4.22% 30.76%      2.34s 28.23%  github.com/itsmontoya/messagepack.(*Reader).readPayload
+     0.05s   0.6% 31.36%      2.31s 27.86%  github.com/itsmontoya/messagepack.(*Reader).DecodeString (inline)
+     0.30s  3.62% 34.98%      2.09s 25.21%  github.com/itsmontoya/messagepack.(*Reader).readTag
+     0.18s  2.17% 37.15%      1.18s 14.23%  github.com/itsmontoya/messagepack.(*Reader).readPayloadHeader
+     0.03s  0.36% 37.52%      1.07s 12.91%  github.com/itsmontoya/messagepack.(*reflectionPlan).initializeArray.func2
+     0.04s  0.48% 38.00%      1.04s 12.55%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeArray
+     0.10s  1.21% 39.20%      0.98s 11.82%  github.com/itsmontoya/messagepack.(*Reader).peekTag
+     0.50s  6.03% 45.24%      0.83s 10.01%  bytes.(*Reader).Read
+         0     0% 45.24%      0.82s  9.89%  runtime.systemstack
+         0     0% 45.24%      0.81s  9.77%  runtime.(*mheap).alloc.func1
+         0     0% 45.24%      0.81s  9.77%  runtime.(*mheap).allocSpan
+     0.81s  9.77% 55.01%      0.81s  9.77%  runtime.madvise
+         0     0% 55.01%      0.81s  9.77%  runtime.sysUsed (inline)
+         0     0% 55.01%      0.81s  9.77%  runtime.sysUsedOS (inline)
+     0.14s  1.69% 56.69%      0.71s  8.56%  runtime.mapaccess2_faststr
+     0.34s  4.10% 60.80%      0.57s  6.88%  internal/runtime/maps.(*Map).getWithoutKeySmallFastStr
+         0     0% 60.80%      0.47s  5.67%  runtime.gopreempt_m (inline)
+         0     0% 60.80%      0.47s  5.67%  runtime.goschedImpl
+         0     0% 60.80%      0.47s  5.67%  runtime.morestack
+         0     0% 60.80%      0.47s  5.67%  runtime.newstack
+         0     0% 60.80%      0.47s  5.67%  runtime.notewakeup
+     0.47s  5.67% 66.47%      0.47s  5.67%  runtime.pthread_cond_signal
+         0     0% 66.47%      0.47s  5.67%  runtime.semawakeup
+         0     0% 66.47%      0.47s  5.67%  runtime.startm
+         0     0% 66.47%      0.47s  5.67%  runtime.wakep
+     0.03s  0.36% 66.83%      0.46s  5.55%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeBytes
+     0.43s  5.19% 72.01%      0.43s  5.19%  runtime.memmove
+     0.40s  4.83% 76.84%      0.40s  4.83%  errors.Is
+     0.01s  0.12% 76.96%      0.38s  4.58%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeString
+     0.03s  0.36% 77.32%      0.37s  4.46%  github.com/itsmontoya/messagepack.(*reflectedDecoder).decodeInt
+     0.04s  0.48% 77.80%      0.33s  3.98%  github.com/itsmontoya/messagepack.(*Reader).readScalarBody
+     0.12s  1.45% 79.25%      0.29s  3.50%  github.com/itsmontoya/messagepack.(*Reader).readContainerHeader
+     0.13s  1.57% 80.82%      0.29s  3.50%  runtime.slicebytetostring
+     0.08s  0.97% 81.79%      0.27s  3.26%  github.com/itsmontoya/messagepack.(*Reader).readInteger
+     0.03s  0.36% 82.15%      0.25s  3.02%  github.com/itsmontoya/messagepack.(*Reader).DecodeInt64
+
+===== tiny-encode.top.txt =====
+File: comparison.test
+Type: cpu
+Time: 2026-11-05 11:55:25 PST
+Duration: 14.03s, Total samples = 11.65s (83.05%)
+Showing nodes accounting for 11.51s, 98.80% of 11.65s total
+Dropped 32 nodes (cum <= 0.06s)
+      flat  flat%   sum%        cum   cum%
+     2.12s 18.20% 18.20%      2.13s 18.28%  github.com/tinylib/msgp/msgp.(*Writer).push
+     1.98s 17.00% 35.19%      3.67s 31.50%  github.com/tinylib/msgp/msgp.(*Writer).Append
+     1.93s 16.57% 51.76%      1.93s 16.57%  runtime.memmove
+     0.71s  6.09% 57.85%      0.72s  6.18%  runtime.pthread_cond_signal
+     0.65s  5.58% 63.43%      9.90s 84.98%  example.com/messagepack-tinylib-alloc.(*Mixed).EncodeMsg
+     0.53s  4.55% 67.98%      0.53s  4.55%  github.com/tinylib/msgp/msgp.(*Writer).avail (inline)
+     0.50s  4.29% 72.27%      0.52s  4.46%  github.com/tinylib/msgp/msgp.(*Writer).prefix64
+     0.41s  3.52% 75.79%      0.45s  3.86%  github.com/tinylib/msgp/msgp.(*Writer).prefix8
+     0.35s  3.00% 78.80%      0.49s  4.21%  github.com/tinylib/msgp/msgp.(*Writer).flush
+     0.34s  2.92% 81.72%      0.71s  6.09%  github.com/tinylib/msgp/msgp.(*Writer).writeString
+     0.32s  2.75% 84.46%      0.72s  6.18%  github.com/tinylib/msgp/msgp.(*Writer).Write
+     0.32s  2.75% 87.21%      1.23s 10.56%  github.com/tinylib/msgp/msgp.(*Writer).WriteInt64
+     0.29s  2.49% 89.70%     10.68s 91.67%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.1.2
+     0.23s  1.97% 91.67%      1.40s 12.02%  github.com/tinylib/msgp/msgp.(*Writer).WriteBytes
+     0.21s  1.80% 93.48%     10.90s 93.56%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.1
+     0.18s  1.55% 95.02%      1.07s  9.18%  github.com/tinylib/msgp/msgp.(*Writer).WriteString
+     0.14s  1.20% 96.22%      0.14s  1.20%  example.com/messagepack-tinylib-alloc.(*countingWriter).Write
+     0.13s  1.12% 97.34%      0.53s  4.55%  github.com/tinylib/msgp/msgp.(*Writer).WriteUint64
+     0.11s  0.94% 98.28%      0.38s  3.26%  github.com/tinylib/msgp/msgp.(*Writer).WriteBool
+     0.06s  0.52% 98.80%      0.45s  3.86%  github.com/tinylib/msgp/msgp.(*Writer).WriteArrayHeader
+         0     0% 98.80%      0.49s  4.21%  github.com/tinylib/msgp/msgp.(*Writer).Flush (inline)
+         0     0% 98.80%      0.52s  4.46%  github.com/tinylib/msgp/msgp.(*Writer).WriteFloat64 (inline)
+         0     0% 98.80%      0.73s  6.27%  runtime.gopreempt_m (inline)
+         0     0% 98.80%      0.73s  6.27%  runtime.goschedImpl
+         0     0% 98.80%      0.73s  6.27%  runtime.morestack
+         0     0% 98.80%      0.73s  6.27%  runtime.newstack
+         0     0% 98.80%      0.72s  6.18%  runtime.notewakeup
+         0     0% 98.80%      0.72s  6.18%  runtime.semawakeup
+         0     0% 98.80%      0.73s  6.27%  runtime.startm
+         0     0% 98.80%      0.74s  6.35%  runtime.wakep
+         0     0% 98.80%     10.90s 93.56%  testing.(*B).launch
+         0     0% 98.80%     10.90s 93.56%  testing.(*B).runN
+
+===== tiny-encode.cum.txt =====
+File: comparison.test
+Type: cpu
+Time: 2026-11-05 11:55:25 PST
+Duration: 14.03s, Total samples = 11.65s (83.05%)
+Showing nodes accounting for 11.51s, 98.80% of 11.65s total
+Dropped 32 nodes (cum <= 0.06s)
+      flat  flat%   sum%        cum   cum%
+     0.21s  1.80%  1.80%     10.90s 93.56%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.1
+         0     0%  1.80%     10.90s 93.56%  testing.(*B).launch
+         0     0%  1.80%     10.90s 93.56%  testing.(*B).runN
+     0.29s  2.49%  4.29%     10.68s 91.67%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.1.2
+     0.65s  5.58%  9.87%      9.90s 84.98%  example.com/messagepack-tinylib-alloc.(*Mixed).EncodeMsg
+     1.98s 17.00% 26.87%      3.67s 31.50%  github.com/tinylib/msgp/msgp.(*Writer).Append
+     2.12s 18.20% 45.06%      2.13s 18.28%  github.com/tinylib/msgp/msgp.(*Writer).push
+     1.93s 16.57% 61.63%      1.93s 16.57%  runtime.memmove
+     0.23s  1.97% 63.61%      1.40s 12.02%  github.com/tinylib/msgp/msgp.(*Writer).WriteBytes
+     0.32s  2.75% 66.35%      1.23s 10.56%  github.com/tinylib/msgp/msgp.(*Writer).WriteInt64
+     0.18s  1.55% 67.90%      1.07s  9.18%  github.com/tinylib/msgp/msgp.(*Writer).WriteString
+         0     0% 67.90%      0.74s  6.35%  runtime.wakep
+         0     0% 67.90%      0.73s  6.27%  runtime.gopreempt_m (inline)
+         0     0% 67.90%      0.73s  6.27%  runtime.goschedImpl
+         0     0% 67.90%      0.73s  6.27%  runtime.morestack
+         0     0% 67.90%      0.73s  6.27%  runtime.newstack
+         0     0% 67.90%      0.73s  6.27%  runtime.startm
+     0.32s  2.75% 70.64%      0.72s  6.18%  github.com/tinylib/msgp/msgp.(*Writer).Write
+         0     0% 70.64%      0.72s  6.18%  runtime.notewakeup
+     0.71s  6.09% 76.74%      0.72s  6.18%  runtime.pthread_cond_signal
+         0     0% 76.74%      0.72s  6.18%  runtime.semawakeup
+     0.34s  2.92% 79.66%      0.71s  6.09%  github.com/tinylib/msgp/msgp.(*Writer).writeString
+     0.13s  1.12% 80.77%      0.53s  4.55%  github.com/tinylib/msgp/msgp.(*Writer).WriteUint64
+     0.53s  4.55% 85.32%      0.53s  4.55%  github.com/tinylib/msgp/msgp.(*Writer).avail (inline)
+         0     0% 85.32%      0.52s  4.46%  github.com/tinylib/msgp/msgp.(*Writer).WriteFloat64 (inline)
+     0.50s  4.29% 89.61%      0.52s  4.46%  github.com/tinylib/msgp/msgp.(*Writer).prefix64
+         0     0% 89.61%      0.49s  4.21%  github.com/tinylib/msgp/msgp.(*Writer).Flush (inline)
+     0.35s  3.00% 92.62%      0.49s  4.21%  github.com/tinylib/msgp/msgp.(*Writer).flush
+     0.06s  0.52% 93.13%      0.45s  3.86%  github.com/tinylib/msgp/msgp.(*Writer).WriteArrayHeader
+     0.41s  3.52% 96.65%      0.45s  3.86%  github.com/tinylib/msgp/msgp.(*Writer).prefix8
+     0.11s  0.94% 97.60%      0.38s  3.26%  github.com/tinylib/msgp/msgp.(*Writer).WriteBool
+     0.14s  1.20% 98.80%      0.14s  1.20%  example.com/messagepack-tinylib-alloc.(*countingWriter).Write
+
+===== tiny-decode.top.txt =====
+File: comparison.test
+Type: cpu
+Time: 2026-11-05 11:55:39 PST
+Duration: 9.38s, Total samples = 7.82s (83.40%)
+Showing nodes accounting for 7.66s, 97.95% of 7.82s total
+Dropped 40 nodes (cum <= 0.04s)
+Showing top 45 nodes out of 59
+      flat  flat%   sum%        cum   cum%
+        1s 12.79% 12.79%      1.82s 23.27%  github.com/philhofer/fwd.(*Reader).Skip
+     0.83s 10.61% 23.40%      0.83s 10.61%  runtime.madvise
+     0.82s 10.49% 33.89%      6.04s 77.24%  example.com/messagepack-tinylib-alloc.(*Mixed).DecodeMsg
+     0.57s  7.29% 41.18%      0.99s 12.66%  github.com/philhofer/fwd.(*Reader).PeekByte (inline)
+     0.51s  6.52% 47.70%      1.94s 24.81%  github.com/tinylib/msgp/msgp.(*Reader).ReadMapKeyPtr
+     0.44s  5.63% 53.32%      0.44s  5.63%  github.com/philhofer/fwd.(*Reader).noEOF (inline)
+     0.41s  5.24% 58.57%      0.41s  5.24%  github.com/philhofer/fwd.(*Reader).buffered (inline)
+     0.39s  4.99% 63.55%      0.39s  4.99%  runtime.pthread_cond_signal
+     0.33s  4.22% 67.77%      0.33s  4.22%  github.com/philhofer/fwd.(*Reader).Next
+     0.24s  3.07% 70.84%      0.37s  4.73%  github.com/philhofer/fwd.(*Reader).ReadFull
+     0.21s  2.69% 73.53%      0.29s  3.71%  github.com/philhofer/fwd.(*Reader).Peek
+     0.18s  2.30% 75.83%      0.18s  2.30%  runtime.memmove
+     0.15s  1.92% 77.75%      0.15s  1.92%  github.com/tinylib/msgp/msgp.(*Reader).GetMaxStringLength (inline)
+     0.15s  1.92% 79.67%      0.15s  1.92%  runtime.kevent
+     0.14s  1.79% 81.46%      0.30s  3.84%  github.com/philhofer/fwd.(*Reader).more
+     0.12s  1.53% 82.99%      0.44s  5.63%  github.com/tinylib/msgp/msgp.(*Reader).ReadFloat64
+     0.11s  1.41% 84.40%      0.11s  1.41%  github.com/philhofer/fwd.(*Reader).Reset (inline)
+     0.10s  1.28% 85.68%      6.32s 80.82%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.2.2
+     0.10s  1.28% 86.96%      0.41s  5.24%  github.com/philhofer/fwd.(*Reader).peekByte
+     0.10s  1.28% 88.24%      0.18s  2.30%  runtime.mallocgcTinySC2
+     0.09s  1.15% 89.39%      0.16s  2.05%  bytes.(*Reader).Read
+     0.09s  1.15% 90.54%      0.58s  7.42%  github.com/tinylib/msgp/msgp.(*Reader).ReadInt64
+     0.08s  1.02% 91.56%      6.40s 81.84%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.2
+     0.08s  1.02% 92.58%      0.38s  4.86%  github.com/philhofer/fwd.(*Reader).discard (inline)
+     0.07s   0.9% 93.48%      0.48s  6.14%  github.com/tinylib/msgp/msgp.(*Reader).ReadBytes
+     0.07s   0.9% 94.37%      0.59s  7.54%  github.com/tinylib/msgp/msgp.(*Reader).ReadString
+     0.06s  0.77% 95.14%      0.06s  0.77%  bytes.(*Reader).Reset (inline)
+     0.06s  0.77% 95.91%      0.25s  3.20%  github.com/tinylib/msgp/msgp.(*Reader).ReadBool
+     0.05s  0.64% 96.55%      0.28s  3.58%  runtime.makeslice
+     0.05s  0.64% 97.19%      0.23s  2.94%  runtime.mallocgc
+     0.02s  0.26% 97.44%      0.15s  1.92%  github.com/tinylib/msgp/msgp.(*Reader).ReadUint64
+     0.01s  0.13% 97.57%      0.23s  2.94%  github.com/tinylib/msgp/msgp.(*Reader).ReadArrayHeader
+     0.01s  0.13% 97.70%      0.56s  7.16%  github.com/tinylib/msgp/msgp.(*Reader).ReadMapHeader
+     0.01s  0.13% 97.83%      0.12s  1.53%  github.com/tinylib/msgp/msgp.(*Reader).Reset (inline)
+     0.01s  0.13% 97.95%      0.05s  0.64%  runtime.(*mcentral).cacheSpan
+         0     0% 97.95%      0.05s  0.64%  runtime.(*mcache).nextFree
+         0     0% 97.95%      0.05s  0.64%  runtime.(*mcache).refill
+         0     0% 97.95%      0.04s  0.51%  runtime.(*mcentral).grow
+         0     0% 97.95%      0.85s 10.87%  runtime.(*mheap).alloc.func1
+         0     0% 97.95%      0.85s 10.87%  runtime.(*mheap).allocSpan
+         0     0% 97.95%      0.15s  1.92%  runtime.gcStart.func4
+         0     0% 97.95%      0.39s  4.99%  runtime.gopreempt_m (inline)
+         0     0% 97.95%      0.39s  4.99%  runtime.goschedImpl
+         0     0% 97.95%      0.04s  0.51%  runtime.mcall
+         0     0% 97.95%      0.39s  4.99%  runtime.morestack
+
+===== tiny-decode.cum.txt =====
+File: comparison.test
+Type: cpu
+Time: 2026-11-05 11:55:39 PST
+Duration: 9.38s, Total samples = 7.82s (83.40%)
+Showing nodes accounting for 7.32s, 93.61% of 7.82s total
+Dropped 40 nodes (cum <= 0.04s)
+Showing top 45 nodes out of 59
+      flat  flat%   sum%        cum   cum%
+     0.08s  1.02%  1.02%      6.40s 81.84%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.2
+         0     0%  1.02%      6.40s 81.84%  testing.(*B).launch
+         0     0%  1.02%      6.40s 81.84%  testing.(*B).runN
+     0.10s  1.28%  2.30%      6.32s 80.82%  example.com/messagepack-tinylib-alloc.BenchmarkComparison.func1.1.2.2
+     0.82s 10.49% 12.79%      6.04s 77.24%  example.com/messagepack-tinylib-alloc.(*Mixed).DecodeMsg
+     0.51s  6.52% 19.31%      1.94s 24.81%  github.com/tinylib/msgp/msgp.(*Reader).ReadMapKeyPtr
+        1s 12.79% 32.10%      1.82s 23.27%  github.com/philhofer/fwd.(*Reader).Skip
+         0     0% 32.10%      1.02s 13.04%  runtime.systemstack
+     0.57s  7.29% 39.39%      0.99s 12.66%  github.com/philhofer/fwd.(*Reader).PeekByte (inline)
+         0     0% 39.39%      0.85s 10.87%  runtime.(*mheap).alloc.func1
+         0     0% 39.39%      0.85s 10.87%  runtime.(*mheap).allocSpan
+     0.83s 10.61% 50.00%      0.83s 10.61%  runtime.madvise
+         0     0% 50.00%      0.83s 10.61%  runtime.sysUsed (inline)
+         0     0% 50.00%      0.83s 10.61%  runtime.sysUsedOS (inline)
+     0.07s   0.9% 50.90%      0.59s  7.54%  github.com/tinylib/msgp/msgp.(*Reader).ReadString
+     0.09s  1.15% 52.05%      0.58s  7.42%  github.com/tinylib/msgp/msgp.(*Reader).ReadInt64
+     0.01s  0.13% 52.17%      0.56s  7.16%  github.com/tinylib/msgp/msgp.(*Reader).ReadMapHeader
+     0.07s   0.9% 53.07%      0.48s  6.14%  github.com/tinylib/msgp/msgp.(*Reader).ReadBytes
+     0.44s  5.63% 58.70%      0.44s  5.63%  github.com/philhofer/fwd.(*Reader).noEOF (inline)
+     0.12s  1.53% 60.23%      0.44s  5.63%  github.com/tinylib/msgp/msgp.(*Reader).ReadFloat64
+     0.41s  5.24% 65.47%      0.41s  5.24%  github.com/philhofer/fwd.(*Reader).buffered (inline)
+     0.10s  1.28% 66.75%      0.41s  5.24%  github.com/philhofer/fwd.(*Reader).peekByte
+         0     0% 66.75%      0.39s  4.99%  runtime.gopreempt_m (inline)
+         0     0% 66.75%      0.39s  4.99%  runtime.goschedImpl
+         0     0% 66.75%      0.39s  4.99%  runtime.morestack
+         0     0% 66.75%      0.39s  4.99%  runtime.newstack
+         0     0% 66.75%      0.39s  4.99%  runtime.notewakeup
+     0.39s  4.99% 71.74%      0.39s  4.99%  runtime.pthread_cond_signal
+         0     0% 71.74%      0.39s  4.99%  runtime.semawakeup
+         0     0% 71.74%      0.39s  4.99%  runtime.startm
+         0     0% 71.74%      0.39s  4.99%  runtime.wakep
+     0.08s  1.02% 72.76%      0.38s  4.86%  github.com/philhofer/fwd.(*Reader).discard (inline)
+     0.24s  3.07% 75.83%      0.37s  4.73%  github.com/philhofer/fwd.(*Reader).ReadFull
+     0.33s  4.22% 80.05%      0.33s  4.22%  github.com/philhofer/fwd.(*Reader).Next
+     0.14s  1.79% 81.84%      0.30s  3.84%  github.com/philhofer/fwd.(*Reader).more
+     0.21s  2.69% 84.53%      0.29s  3.71%  github.com/philhofer/fwd.(*Reader).Peek
+     0.05s  0.64% 85.17%      0.28s  3.58%  runtime.makeslice
+     0.06s  0.77% 85.93%      0.25s  3.20%  github.com/tinylib/msgp/msgp.(*Reader).ReadBool
+     0.01s  0.13% 86.06%      0.23s  2.94%  github.com/tinylib/msgp/msgp.(*Reader).ReadArrayHeader
+     0.05s  0.64% 86.70%      0.23s  2.94%  runtime.mallocgc
+     0.10s  1.28% 87.98%      0.18s  2.30%  runtime.mallocgcTinySC2
+     0.18s  2.30% 90.28%      0.18s  2.30%  runtime.memmove
+     0.09s  1.15% 91.43%      0.16s  2.05%  bytes.(*Reader).Read
+     0.15s  1.92% 93.35%      0.15s  1.92%  github.com/tinylib/msgp/msgp.(*Reader).GetMaxStringLength (inline)
+     0.02s  0.26% 93.61%      0.15s  1.92%  github.com/tinylib/msgp/msgp.(*Reader).ReadUint64
+
+===== typed-encode.top.txt =====
+File: native.test
+Type: cpu
+Time: 2026-11-05 11:55:49 PST
+Duration: 15.64s, Total samples = 12.91s (82.53%)
+Showing nodes accounting for 12.86s, 99.61% of 12.91s total
+Dropped 12 nodes (cum <= 0.06s)
+      flat  flat%   sum%        cum   cum%
+     3.57s 27.65% 27.65%      6.26s 48.49%  github.com/itsmontoya/messagepack.(*Writer).write
+     1.58s 12.24% 39.89%      1.58s 12.24%  github.com/itsmontoya/messagepack.(*Writer).ready (inline)
+     1.45s 11.23% 51.12%      4.06s 31.45%  github.com/itsmontoya/messagepack.(*Writer).writeEncoded
+     1.31s 10.15% 61.27%      1.31s 10.15%  github.com/itsmontoya/messagepack.(*streamBenchmarkWriter).Write
+     1.29s  9.99% 71.26%     11.44s 88.61%  github.com/itsmontoya/messagepack.(*cpuBenchmarkMessage).encode
+        1s  7.75% 79.01%         1s  7.75%  runtime.pthread_cond_signal
+     0.38s  2.94% 81.95%      1.18s  9.14%  github.com/itsmontoya/messagepack.(*Writer).writePayloadHeader
+     0.36s  2.79% 84.74%      1.42s 11.00%  github.com/itsmontoya/messagepack.(*Writer).EncodeInt64
+     0.34s  2.63% 87.37%      1.62s 12.55%  github.com/itsmontoya/messagepack.(*Writer).EncodeString
+     0.30s  2.32% 89.70%      1.14s  8.83%  github.com/itsmontoya/messagepack.(*Writer).encodeUint64
+     0.24s  1.86% 91.56%     11.82s 91.56%  github.com/itsmontoya/messagepack.BenchmarkCPUTraversal.func1.1.1
+     0.21s  1.63% 93.18%      1.22s  9.45%  github.com/itsmontoya/messagepack.(*Writer).EncodeBytes
+     0.21s  1.63% 94.81%      0.21s  1.63%  runtime.memmove
+     0.18s  1.39% 96.20%      0.45s  3.49%  github.com/itsmontoya/messagepack.(*Writer).EncodeBool
+     0.15s  1.16% 97.37%      0.45s  3.49%  github.com/itsmontoya/messagepack.(*Writer).EncodeFloat64
+     0.14s  1.08% 98.45%     11.58s 89.70%  github.com/itsmontoya/messagepack.BenchmarkCPUTraversal.func1.1.1.2
+     0.11s  0.85% 99.30%      0.43s  3.33%  github.com/itsmontoya/messagepack.(*Writer).EncodeArrayHeader
+     0.02s  0.15% 99.46%      1.04s  8.06%  runtime.semawakeup
+     0.01s 0.077% 99.54%      1.05s  8.13%  runtime.notewakeup
+     0.01s 0.077% 99.61%      1.06s  8.21%  runtime.startm
+         0     0% 99.61%      0.50s  3.87%  github.com/itsmontoya/messagepack.(*Writer).EncodeUint64 (inline)
+         0     0% 99.61%      1.05s  8.13%  runtime.gopreempt_m (inline)
+         0     0% 99.61%      1.05s  8.13%  runtime.goschedImpl
+         0     0% 99.61%      1.06s  8.21%  runtime.morestack
+         0     0% 99.61%      1.05s  8.13%  runtime.newstack
+         0     0% 99.61%      1.06s  8.21%  runtime.wakep
+         0     0% 99.61%     11.82s 91.56%  testing.(*B).launch
+         0     0% 99.61%     11.82s 91.56%  testing.(*B).runN
+
+===== typed-encode.cum.txt =====
+File: native.test
+Type: cpu
+Time: 2026-11-05 11:55:49 PST
+Duration: 15.64s, Total samples = 12.91s (82.53%)
+Showing nodes accounting for 12.86s, 99.61% of 12.91s total
+Dropped 12 nodes (cum <= 0.06s)
+      flat  flat%   sum%        cum   cum%
+     0.24s  1.86%  1.86%     11.82s 91.56%  github.com/itsmontoya/messagepack.BenchmarkCPUTraversal.func1.1.1
+         0     0%  1.86%     11.82s 91.56%  testing.(*B).launch
+         0     0%  1.86%     11.82s 91.56%  testing.(*B).runN
+     0.14s  1.08%  2.94%     11.58s 89.70%  github.com/itsmontoya/messagepack.BenchmarkCPUTraversal.func1.1.1.2
+     1.29s  9.99% 12.94%     11.44s 88.61%  github.com/itsmontoya/messagepack.(*cpuBenchmarkMessage).encode
+     3.57s 27.65% 40.59%      6.26s 48.49%  github.com/itsmontoya/messagepack.(*Writer).write
+     1.45s 11.23% 51.82%      4.06s 31.45%  github.com/itsmontoya/messagepack.(*Writer).writeEncoded
+     0.34s  2.63% 54.45%      1.62s 12.55%  github.com/itsmontoya/messagepack.(*Writer).EncodeString
+     1.58s 12.24% 66.69%      1.58s 12.24%  github.com/itsmontoya/messagepack.(*Writer).ready (inline)
+     0.36s  2.79% 69.48%      1.42s 11.00%  github.com/itsmontoya/messagepack.(*Writer).EncodeInt64
+     1.31s 10.15% 79.63%      1.31s 10.15%  github.com/itsmontoya/messagepack.(*streamBenchmarkWriter).Write
+     0.21s  1.63% 81.25%      1.22s  9.45%  github.com/itsmontoya/messagepack.(*Writer).EncodeBytes
+     0.38s  2.94% 84.20%      1.18s  9.14%  github.com/itsmontoya/messagepack.(*Writer).writePayloadHeader
+     0.30s  2.32% 86.52%      1.14s  8.83%  github.com/itsmontoya/messagepack.(*Writer).encodeUint64
+         0     0% 86.52%      1.06s  8.21%  runtime.morestack
+     0.01s 0.077% 86.60%      1.06s  8.21%  runtime.startm
+         0     0% 86.60%      1.06s  8.21%  runtime.wakep
+         0     0% 86.60%      1.05s  8.13%  runtime.gopreempt_m (inline)
+         0     0% 86.60%      1.05s  8.13%  runtime.goschedImpl
+         0     0% 86.60%      1.05s  8.13%  runtime.newstack
+     0.01s 0.077% 86.68%      1.05s  8.13%  runtime.notewakeup
+     0.02s  0.15% 86.83%      1.04s  8.06%  runtime.semawakeup
+        1s  7.75% 94.58%         1s  7.75%  runtime.pthread_cond_signal
+         0     0% 94.58%      0.50s  3.87%  github.com/itsmontoya/messagepack.(*Writer).EncodeUint64 (inline)
+     0.18s  1.39% 95.97%      0.45s  3.49%  github.com/itsmontoya/messagepack.(*Writer).EncodeBool
+     0.15s  1.16% 97.13%      0.45s  3.49%  github.com/itsmontoya/messagepack.(*Writer).EncodeFloat64
+     0.11s  0.85% 97.99%      0.43s  3.33%  github.com/itsmontoya/messagepack.(*Writer).EncodeArrayHeader
+     0.21s  1.63% 99.61%      0.21s  1.63%  runtime.memmove
+
+===== typed-decode.top.txt =====
+File: native.test
+Type: cpu
+Time: 2026-11-05 11:56:04 PST
+Duration: 9.99s, Total samples = 8.30s (83.08%)
+Showing nodes accounting for 8.20s, 98.80% of 8.30s total
+Dropped 28 nodes (cum <= 0.04s)
+Showing top 45 nodes out of 51
+      flat  flat%   sum%        cum   cum%
+     1.68s 20.24% 20.24%      3.52s 42.41%  github.com/itsmontoya/messagepack.(*Reader).readFull
+     0.74s  8.92% 29.16%      0.74s  8.92%  runtime.memmove
+     0.71s  8.55% 37.71%      0.71s  8.55%  runtime.madvise
+     0.66s  7.95% 45.66%      1.26s 15.18%  bytes.(*Reader).Read
+     0.58s  6.99% 52.65%      0.58s  6.99%  errors.Is
+     0.53s  6.39% 59.04%      0.53s  6.39%  runtime.pthread_cond_signal
+     0.52s  6.27% 65.30%      0.86s 10.36%  internal/runtime/maps.(*Map).getWithoutKeySmallFastStr
+     0.49s  5.90% 71.20%      3.07s 36.99%  github.com/itsmontoya/messagepack.(*Reader).readPayload
+     0.24s  2.89% 74.10%      6.92s 83.37%  github.com/itsmontoya/messagepack.(*cpuBenchmarkMessage).decode
+     0.24s  2.89% 76.99%      0.50s  6.02%  runtime.slicebytetostring
+     0.23s  2.77% 79.76%      2.41s 29.04%  github.com/itsmontoya/messagepack.(*Reader).readTag
+     0.20s  2.41% 82.17%      1.57s 18.92%  github.com/itsmontoya/messagepack.(*Reader).readPayloadHeader
+     0.19s  2.29% 84.46%      0.19s  2.29%  internal/runtime/maps.memHashAES
+     0.15s  1.81% 86.27%      0.15s  1.81%  runtime.memequal
+     0.13s  1.57% 87.83%      0.13s  1.57%  github.com/itsmontoya/messagepack.(*Reader).ready (inline)
+     0.13s  1.57% 89.40%      0.99s 11.93%  runtime.mapaccess2_faststr
+     0.11s  1.33% 90.72%      0.63s  7.59%  github.com/itsmontoya/messagepack.(*Reader).readScalarBody
+     0.09s  1.08% 91.81%      0.60s  7.23%  github.com/itsmontoya/messagepack.(*Reader).readContainerHeader
+     0.08s  0.96% 92.77%      0.08s  0.96%  github.com/itsmontoya/messagepack.(*Reader).decodeInt64
+     0.07s  0.84% 93.61%      0.35s  4.22%  github.com/itsmontoya/messagepack.(*Reader).DecodeFloat64
+     0.07s  0.84% 94.46%      0.75s  9.04%  github.com/itsmontoya/messagepack.(*Reader).readInteger
+     0.06s  0.72% 95.18%      0.06s  0.72%  github.com/itsmontoya/messagepack.(*Reader).fail (inline)
+     0.06s  0.72% 95.90%      0.94s 11.33%  github.com/itsmontoya/messagepack.(*cpuBenchmarkMessage).decodeSamples
+     0.05s   0.6% 96.51%      0.05s   0.6%  runtime.kevent
+     0.04s  0.48% 96.99%      0.12s  1.45%  runtime.mallocgc
+     0.03s  0.36% 97.35%         3s 36.14%  github.com/itsmontoya/messagepack.(*Reader).DecodeString (inline)
+     0.03s  0.36% 97.71%      6.99s 84.22%  github.com/itsmontoya/messagepack.BenchmarkCPUTraversal.func1.1.2
+     0.03s  0.36% 98.07%      0.08s  0.96%  runtime.mallocgcTinySC2
+     0.02s  0.24% 98.31%      0.22s  2.65%  github.com/itsmontoya/messagepack.(*Reader).DecodeBool
+     0.02s  0.24% 98.55%      0.60s  7.23%  github.com/itsmontoya/messagepack.(*Reader).DecodeInt64
+     0.01s  0.12% 98.67%      0.26s  3.13%  github.com/itsmontoya/messagepack.(*Reader).DecodeUint64
+     0.01s  0.12% 98.80%      6.93s 83.49%  github.com/itsmontoya/messagepack.BenchmarkCPUTraversal.func1.1.2.2
+         0     0% 98.80%      0.28s  3.37%  github.com/itsmontoya/messagepack.(*Reader).DecodeArrayHeader (inline)
+         0     0% 98.80%      0.32s  3.86%  github.com/itsmontoya/messagepack.(*Reader).DecodeMapHeader (inline)
+         0     0% 98.80%      0.72s  8.67%  runtime.(*mheap).alloc.func1
+         0     0% 98.80%      0.72s  8.67%  runtime.(*mheap).allocSpan
+         0     0% 98.80%      0.54s  6.51%  runtime.gopreempt_m (inline)
+         0     0% 98.80%      0.54s  6.51%  runtime.goschedImpl
+         0     0% 98.80%      0.54s  6.51%  runtime.morestack
+         0     0% 98.80%      0.05s   0.6%  runtime.netpoll
+         0     0% 98.80%      0.54s  6.51%  runtime.newstack
+         0     0% 98.80%      0.54s  6.51%  runtime.notewakeup
+         0     0% 98.80%      0.54s  6.51%  runtime.semawakeup
+         0     0% 98.80%      0.05s   0.6%  runtime.startTheWorldWithSema
+         0     0% 98.80%      0.54s  6.51%  runtime.startm
+
+===== typed-decode.cum.txt =====
+File: native.test
+Type: cpu
+Time: 2026-11-05 11:56:04 PST
+Duration: 9.99s, Total samples = 8.30s (83.08%)
+Showing nodes accounting for 7.98s, 96.14% of 8.30s total
+Dropped 28 nodes (cum <= 0.04s)
+Showing top 45 nodes out of 51
+      flat  flat%   sum%        cum   cum%
+     0.03s  0.36%  0.36%      6.99s 84.22%  github.com/itsmontoya/messagepack.BenchmarkCPUTraversal.func1.1.2
+         0     0%  0.36%      6.99s 84.22%  testing.(*B).launch
+         0     0%  0.36%      6.99s 84.22%  testing.(*B).runN
+     0.01s  0.12%  0.48%      6.93s 83.49%  github.com/itsmontoya/messagepack.BenchmarkCPUTraversal.func1.1.2.2
+     0.24s  2.89%  3.37%      6.92s 83.37%  github.com/itsmontoya/messagepack.(*cpuBenchmarkMessage).decode
+     1.68s 20.24% 23.61%      3.52s 42.41%  github.com/itsmontoya/messagepack.(*Reader).readFull
+     0.49s  5.90% 29.52%      3.07s 36.99%  github.com/itsmontoya/messagepack.(*Reader).readPayload
+     0.03s  0.36% 29.88%         3s 36.14%  github.com/itsmontoya/messagepack.(*Reader).DecodeString (inline)
+     0.23s  2.77% 32.65%      2.41s 29.04%  github.com/itsmontoya/messagepack.(*Reader).readTag
+     0.20s  2.41% 35.06%      1.57s 18.92%  github.com/itsmontoya/messagepack.(*Reader).readPayloadHeader
+     0.66s  7.95% 43.01%      1.26s 15.18%  bytes.(*Reader).Read
+     0.13s  1.57% 44.58%      0.99s 11.93%  runtime.mapaccess2_faststr
+     0.06s  0.72% 45.30%      0.94s 11.33%  github.com/itsmontoya/messagepack.(*cpuBenchmarkMessage).decodeSamples
+     0.52s  6.27% 51.57%      0.86s 10.36%  internal/runtime/maps.(*Map).getWithoutKeySmallFastStr
+         0     0% 51.57%      0.77s  9.28%  runtime.systemstack
+     0.07s  0.84% 52.41%      0.75s  9.04%  github.com/itsmontoya/messagepack.(*Reader).readInteger
+     0.74s  8.92% 61.33%      0.74s  8.92%  runtime.memmove
+         0     0% 61.33%      0.72s  8.67%  runtime.(*mheap).alloc.func1
+         0     0% 61.33%      0.72s  8.67%  runtime.(*mheap).allocSpan
+     0.71s  8.55% 69.88%      0.71s  8.55%  runtime.madvise
+         0     0% 69.88%      0.71s  8.55%  runtime.sysUsed (inline)
+         0     0% 69.88%      0.71s  8.55%  runtime.sysUsedOS (inline)
+     0.11s  1.33% 71.20%      0.63s  7.59%  github.com/itsmontoya/messagepack.(*Reader).readScalarBody
+     0.02s  0.24% 71.45%      0.60s  7.23%  github.com/itsmontoya/messagepack.(*Reader).DecodeInt64
+     0.09s  1.08% 72.53%      0.60s  7.23%  github.com/itsmontoya/messagepack.(*Reader).readContainerHeader
+     0.58s  6.99% 79.52%      0.58s  6.99%  errors.Is
+         0     0% 79.52%      0.54s  6.51%  runtime.gopreempt_m (inline)
+         0     0% 79.52%      0.54s  6.51%  runtime.goschedImpl
+         0     0% 79.52%      0.54s  6.51%  runtime.morestack
+         0     0% 79.52%      0.54s  6.51%  runtime.newstack
+         0     0% 79.52%      0.54s  6.51%  runtime.notewakeup
+         0     0% 79.52%      0.54s  6.51%  runtime.semawakeup
+         0     0% 79.52%      0.54s  6.51%  runtime.startm
+         0     0% 79.52%      0.54s  6.51%  runtime.wakep
+     0.53s  6.39% 85.90%      0.53s  6.39%  runtime.pthread_cond_signal
+     0.24s  2.89% 88.80%      0.50s  6.02%  runtime.slicebytetostring
+     0.07s  0.84% 89.64%      0.35s  4.22%  github.com/itsmontoya/messagepack.(*Reader).DecodeFloat64
+         0     0% 89.64%      0.32s  3.86%  github.com/itsmontoya/messagepack.(*Reader).DecodeMapHeader (inline)
+         0     0% 89.64%      0.28s  3.37%  github.com/itsmontoya/messagepack.(*Reader).DecodeArrayHeader (inline)
+     0.01s  0.12% 89.76%      0.26s  3.13%  github.com/itsmontoya/messagepack.(*Reader).DecodeUint64
+     0.02s  0.24% 90.00%      0.22s  2.65%  github.com/itsmontoya/messagepack.(*Reader).DecodeBool
+     0.19s  2.29% 92.29%      0.19s  2.29%  internal/runtime/maps.memHashAES
+     0.15s  1.81% 94.10%      0.15s  1.81%  runtime.memequal
+     0.13s  1.57% 95.66%      0.13s  1.57%  github.com/itsmontoya/messagepack.(*Reader).ready (inline)
+     0.04s  0.48% 96.14%      0.12s  1.45%  runtime.mallocgc
+
+===== encode-source.txt =====
+Total: 8.18s
+ROUTINE ======================== github.com/itsmontoya/messagepack.(*reflectedEncoder).encodePlanned in /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflected_encoder.go
+     1.22s      7.65s (flat, cum) 93.52% of Total
+     360ms      360ms     25:func (e *reflectedEncoder) encodePlanned(value reflect.Value, plan *reflectionPlan, depth int) (err error) {
+      30ms       30ms     26:	if depth == maximumReflectionDepth {
+         .          .     27:		return e.fail(ErrLimitExceeded)
+         .          .     28:	}
+         .          .     29:
+     340ms      510ms     30:	plan.once.Do(plan.initialize)
+     150ms      150ms     31:	if (plan.encodeHook || plan.kind == reflect.Interface) && value.CanInterface() {
+         .          .     32:		if hook, ok := value.Interface().(Encodee); ok {
+         .          .     33:			return hook.EncodeMessagePack(e.writer)
+         .          .     34:		}
+         .          .     35:	}
+         .          .     36:
+     110ms      110ms     37:	if plan.encodeAddressHook && value.CanAddr() && value.Addr().CanInterface() {
+         .          .     38:		if hook, ok := value.Addr().Interface().(Encodee); ok {
+         .          .     39:			return hook.EncodeMessagePack(e.writer)
+         .          .     40:		}
+         .          .     41:	}
+         .          .     42:
+     230ms      6.49s     43:	return plan.encode(e, value, depth)
+         .          .     44:}
+         .          .     45:
+         .          .     46:func (e *reflectedEncoder) encodeIndirect(value reflect.Value, depth int) (err error) {
+         .          .     47:	if value.IsNil() {
+         .          .     48:		return e.writer.EncodeNil()
+ROUTINE ======================== github.com/itsmontoya/messagepack.(*reflectedEncoder).encodeStruct in /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflected_encoder.go
+     570ms      6.12s (flat, cum) 74.82% of Total
+      30ms       30ms    158:func (e *reflectedEncoder) encodeStruct(value reflect.Value, fields []reflectionField, prefix []byte, depth int) (err error) {
+         .          .    159:	if len(fields) == 0 {
+         .          .    160:		return e.writer.writeEncoded(prefix)
+         .          .    161:	}
+         .          .    162:
+     200ms      200ms    163:	for _, field := range fields {
+     100ms      1.17s    164:		if err = e.writer.writeEncoded(field.prefix); err != nil {
+         .          .    165:			return err
+         .          .    166:		}
+         .          .    167:
+     210ms      4.69s    168:		if err = e.encodePlanned(value.Field(field.index), field.plan, depth+1); err != nil {
+         .          .    169:			return err
+         .          .    170:		}
+         .          .    171:	}
+      30ms       30ms    172:	return nil
+         .          .    173:}
+ROUTINE ======================== github.com/itsmontoya/messagepack.lookupReflectionPlan in /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection.go
+      30ms      730ms (flat, cum)  8.92% of Total
+      30ms       30ms     23:func lookupReflectionPlan(typ reflect.Type) (plan *reflectionPlan) {
+         .          .     24:	var (
+         .          .     25:		cached any
+         .          .     26:		ok     bool
+         .          .     27:	)
+         .          .     28:
+         .      700ms     29:	if cached, ok = reflectionPlans.Load(typ); !ok {
+         .          .     30:		cached, _ = reflectionPlans.LoadOrStore(typ, newReflectionPlan(typ))
+         .          .     31:	}
+         .          .     32:
+         .          .     33:	plan = cached.(*reflectionPlan)
+         .          .     34:	return plan
+
+===== decode-source.txt =====
+Total: 8.29s
+ROUTINE ======================== github.com/itsmontoya/messagepack.(*Reader).readFull in /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader.go
+     1.57s      2.77s (flat, cum) 33.41% of Total
+     190ms      190ms    697:func (r *Reader) readFull(operation string, dst []byte, started bool) (n int, err error) {
+         .          .    698:	var (
+         .          .    699:		read  int
+         .          .    700:		empty int
+         .          .    701:	)
+         .          .    702:
+     220ms      220ms    703:	if len(dst) > 0 && r.state.hasTag {
+      40ms       40ms    704:		dst[0] = r.state.tag
+         .          .    705:		r.state.hasTag = false
+         .          .    706:		n = 1
+         .          .    707:	}
+         .          .    708:
+     330ms      330ms    709:	for n < len(dst) {
+      40ms       40ms    710:		if r.state.eof {
+         .          .    711:			err = io.EOF
+         .          .    712:			read = 0
+         .          .    713:		} else {
+     240ms      1.07s    714:			read, err = r.state.reader.Read(dst[n:])
+         .          .    715:		}
+         .          .    716:
+      30ms       30ms    717:		n += read
+      70ms      440ms    718:		if errors.Is(err, io.EOF) {
+         .          .    719:			r.state.eof = true
+         .          .    720:			if n == len(dst) {
+         .          .    721:				return n, nil
+         .          .    722:			}
+         .          .    723:
+      20ms       20ms    724:			if started || n > 0 {
+         .          .    725:				err = io.ErrUnexpectedEOF
+         .          .    726:			}
+         .          .    727:
+         .          .    728:			return n, fmt.Errorf("messagepack: %s source: %w", operation, err)
+         .          .    729:		}
+         .          .    730:
+      60ms       60ms    731:		if err != nil {
+      70ms       70ms    732:			return n, fmt.Errorf("messagepack: %s source: %w", operation, err)
+         .          .    733:		}
+         .          .    734:
+      20ms       20ms    735:		if read > 0 {
+         .          .    736:			empty = 0
+         .          .    737:			continue
+         .          .    738:		}
+         .          .    739:
+         .          .    740:		empty++
+         .          .    741:		if empty == maximumConsecutiveEmptyReads {
+         .          .    742:			return n, fmt.Errorf("messagepack: %s source: %w", operation, io.ErrNoProgress)
+         .          .    743:		}
+         .          .    744:	}
+     240ms      240ms    745:	return n, nil
+         .          .    746:}
+ROUTINE ======================== github.com/itsmontoya/messagepack.(*reflectedDecoder).decodePlanned in /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflected_decoder.go
+     340ms      7.68s (flat, cum) 92.64% of Total
+      80ms       80ms     16:func (d *reflectedDecoder) decodePlanned(value reflect.Value, plan *reflectionPlan, depth int) (err error) {
+         .       30ms     17:	if err = d.visit(depth); err != nil {
+         .          .     18:		return err
+         .          .     19:	}
+         .          .     20:
+      40ms       60ms     21:	plan.once.Do(plan.initialize)
+         .          .     22:	if plan.kind == reflect.Pointer && value.IsNil() && value.CanSet() {
+         .          .     23:		value.Set(reflect.New(value.Type().Elem()))
+         .          .     24:	}
+         .          .     25:
+      50ms       50ms     26:	if (plan.decodeHook || plan.kind == reflect.Interface) && value.CanInterface() {
+         .          .     27:		if hook, ok := value.Interface().(Decodee); ok {
+         .          .     28:			return hook.DecodeMessagePack(d.reader)
+         .          .     29:		}
+         .          .     30:	}
+         .          .     31:
+      40ms       40ms     32:	if plan.decodeAddressHook && value.CanAddr() && value.Addr().CanInterface() {
+         .          .     33:		if hook, ok := value.Addr().Interface().(Decodee); ok {
+         .          .     34:			return hook.DecodeMessagePack(d.reader)
+         .          .     35:		}
+         .          .     36:	}
+         .          .     37:
+         .          .     38:	var tag byte
+      10ms      990ms     39:	if tag, err = d.reader.peekTag(); err != nil {
+         .          .     40:		return err
+         .          .     41:	}
+         .          .     42:
+      50ms       50ms     43:	d.started = true
+         .          .     44:	if tag == 0xc0 && plan.nullable {
+         .          .     45:		if err = d.reader.DecodeNil(); err != nil {
+         .          .     46:			return err
+         .          .     47:		}
+         .          .     48:
+         .          .     49:		value.SetZero()
+         .          .     50:		return nil
+         .          .     51:	}
+         .          .     52:
+      70ms      6.38s     53:	return plan.decode(d, value, tag, depth)
+         .          .     54:}
+         .          .     55:
+         .          .     56:func (d *reflectedDecoder) visit(depth int) (err error) {
+         .          .     57:	if depth == maximumReflectionDepth || d.remainingVisits == 0 {
+         .          .     58:		return d.reader.fail(ErrLimitExceeded)
+
+===== runner run.py =====
+from pathlib import Path
+import subprocess, time
+root = Path(__file__).parent
+jobs = [
+    ("native", root / "native.test", "^BenchmarkCPUTraversal$"),
+    ("comparison", root / "comparison.test", "^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/./^(Encode|Decode)$/^(ClearTargetfalse)?$"),
+    ("buffered", root / "comparison.test", "^BenchmarkBufferedOurs$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$"),
+    ("copy", root / "comparison.test", "^BenchmarkEncodeCopy$"),
+]
+with (root / "artifacts" / "timings.txt").open("w") as out:
+    for round_index in range(5):
+        order = jobs[round_index % len(jobs):] + jobs[:round_index % len(jobs)]
+        if round_index % 2:
+            order = list(reversed(order))
+        for name, binary, pattern in order:
+            args = [str(binary), "-test.run", "^$", "-test.bench", pattern, "-test.benchmem", "-test.benchtime=200ms", "-test.count=1"]
+            out.write(f"\nROUND {round_index + 1} GROUP {name}\nCOMMAND {args!r}\n")
+            out.flush()
+            subprocess.run(args, stdout=out, stderr=subprocess.STDOUT, check=True)
+            print(f"round {round_index + 1}: {name} complete", flush=True)
+
+===== runner encode.py =====
+from pathlib import Path
+import subprocess
+root = Path(__file__).parent
+with (root / "artifacts" / "encode-timings.txt").open("w") as out:
+    for round_index in range(5):
+        libraries = ["Ours", "Tinylib"] if round_index % 2 == 0 else ["Tinylib", "Ours"]
+        for library in libraries:
+            pattern = f"^BenchmarkComparison$/^(Scalars|Mixed|Nested|Binary64KiB|String1KiB)$/{library}/^Encode$"
+            args = [str(root / "comparison.test"), "-test.run", "^$", "-test.bench", pattern, "-test.benchmem", "-test.benchtime=200ms", "-test.count=1"]
+            out.write(f"ROUND {round_index + 1} COMMAND {args!r}\n")
+            out.flush()
+            subprocess.run(args, stdout=out, stderr=subprocess.STDOUT, check=True)
+        print(f"encode round {round_index + 1} complete", flush=True)
+
+===== runner profile.py =====
+from pathlib import Path
+import subprocess
+root = Path(__file__).parent
+jobs = [
+    ("ours-encode", "comparison", "^BenchmarkComparison$/^Mixed$/^Ours$/^Encode$"),
+    ("ours-decode", "comparison", "^BenchmarkComparison$/^Mixed$/^Ours$/^Decode$/^ClearTargetfalse$"),
+    ("tiny-encode", "comparison", "^BenchmarkComparison$/^Mixed$/^Tinylib$/^Encode$"),
+    ("tiny-decode", "comparison", "^BenchmarkComparison$/^Mixed$/^Tinylib$/^Decode$/^ClearTargetfalse$"),
+    ("typed-encode", "native", "^BenchmarkCPUTraversal$/^Mixed$/^Typed$/^Encode$"),
+    ("typed-decode", "native", "^BenchmarkCPUTraversal$/^Mixed$/^Typed$/^Decode$"),
+]
+with (root / "artifacts" / "profile-runs.txt").open("w") as out:
+    for name, binary, pattern in jobs:
+        profile = root / "artifacts" / f"{name}.cpu.pprof"
+        args = [str(root / f"{binary}.test"), "-test.run", "^$", "-test.bench", pattern, "-test.benchtime=8s", "-test.cpuprofile", str(profile)]
+        out.write(f"COMMAND {args!r}\n")
+        out.flush()
+        subprocess.run(args, stdout=out, stderr=subprocess.STDOUT, check=True)
+        for mode, flags in [("top", []), ("cum", ["-cum"])]:
+            with (root / "artifacts" / f"{name}.{mode}.txt").open("w") as summary:
+                subprocess.run([str(root / "pprof"), "-top", "-nodecount=45", *flags, str(root / f"{binary}.test"), str(profile)], stdout=summary, stderr=subprocess.STDOUT, check=True)
+        print(f"profile {name} complete", flush=True)
+
+===== runner experiments.py =====
+from pathlib import Path
+import subprocess, os
+root = Path(__file__).parent
+env = dict(os.environ, GOCACHE="/private/tmp/messagepack-go-build")
+with (root / "artifacts" / "experiment-validation.txt").open("w") as out:
+    for variant in ("nil-error", "empty-body", "combined"):
+        args = ["go", "test", "-overlay", str(root / f"{variant}-overlay.json"), "-c", "-o", str(root / f"{variant}.test"), "."]
+        out.write(f"COMMAND {args!r}\n")
+        out.flush()
+        subprocess.run(args, stdout=out, stderr=subprocess.STDOUT, env=env, check=True)
+        args = [str(root / f"{variant}.test"), "-test.run", "^Test(Reader|Decoder)"]
+        subprocess.run(args, stdout=out, stderr=subprocess.STDOUT, check=True)
+        print(f"built and checked {variant}", flush=True)
+with (root / "artifacts" / "experiment-timings.txt").open("w") as out:
+    variants = ["native", "nil-error", "empty-body", "combined"]
+    for round_index in range(5):
+        order = variants[round_index % 4:] + variants[:round_index % 4]
+        if round_index % 2:
+            order.reverse()
+        for variant in order:
+            args = [str(root / f"{variant}.test"), "-test.run", "^$", "-test.bench", "^BenchmarkCPUTraversal$/./^Reflection$/^Decode$", "-test.benchmem", "-test.benchtime=200ms"]
+            out.write(f"ROUND {round_index + 1} VARIANT {variant} COMMAND {args!r}\n")
+            out.flush()
+            subprocess.run(args, stdout=out, stderr=subprocess.STDOUT, check=True)
+        print(f"experiment round {round_index + 1} complete", flush=True)
+
+===== combined-overlay.json =====
+{"Replace": {"/Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader.go": "/private/tmp/messagepack-cpu-20261105.ezkm_8cr/combined-reader.go"}}
+
+===== empty-body-overlay.json =====
+{"Replace": {"/Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader.go": "/private/tmp/messagepack-cpu-20261105.ezkm_8cr/empty-body-reader.go"}}
+
+===== nil-error-overlay.json =====
+{"Replace": {"/Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader.go": "/private/tmp/messagepack-cpu-20261105.ezkm_8cr/nil-error-reader.go"}}
