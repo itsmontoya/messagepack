@@ -1,6 +1,7 @@
 package messagepack
 
 import (
+	"bytes"
 	"reflect"
 	"sync"
 )
@@ -24,8 +25,12 @@ type reflectionPlan struct {
 	decodeAddressHook bool
 	encode            func(*reflectedEncoder, reflect.Value, int) error
 	decode            func(*reflectedDecoder, reflect.Value, byte, int) error
-	fields            []int
+	fields            []reflectionField
 	fieldsByName      map[string]int
+	prefix            []byte
+	encodeErr         error
+	element           *reflectionPlan
+	key               *reflectionPlan
 }
 
 func (p *reflectionPlan) initialize() {
@@ -73,7 +78,10 @@ func (p *reflectionPlan) initialize() {
 }
 
 func (p *reflectionPlan) initializePointer() {
-	p.encode = (*reflectedEncoder).encodeIndirect
+	p.element = lookupReflectionPlan(p.typ.Elem())
+	p.encode = func(e *reflectedEncoder, value reflect.Value, depth int) (err error) {
+		return e.encodePointer(value, p.element, depth)
+	}
 	p.decode = (*reflectedDecoder).decodePointer
 }
 
@@ -84,12 +92,19 @@ func (p *reflectionPlan) initializeArray() {
 		return
 	}
 
-	p.encode = (*reflectedEncoder).encodeArray
+	p.element = lookupReflectionPlan(p.typ.Elem())
+	p.encode = func(e *reflectedEncoder, value reflect.Value, depth int) (err error) {
+		return e.encodeArray(value, p.element, depth)
+	}
 	p.decode = (*reflectedDecoder).decodeArray
 }
 
 func (p *reflectionPlan) initializeMap() {
-	p.encode = (*reflectedEncoder).encodeMap
+	p.key = lookupReflectionPlan(p.typ.Key())
+	p.element = lookupReflectionPlan(p.typ.Elem())
+	p.encode = func(e *reflectedEncoder, value reflect.Value, depth int) (err error) {
+		return e.encodeMap(value, p.key, p.element, depth)
+	}
 	p.decode = (*reflectedDecoder).decodeMap
 }
 
@@ -101,13 +116,45 @@ func (p *reflectionPlan) initializeStruct() {
 			continue
 		}
 
-		p.fields = append(p.fields, index)
+		p.fields = append(p.fields, reflectionField{index: index, plan: lookupReflectionPlan(field.Type)})
 		p.fieldsByName[field.Name] = index
 	}
+	// Resolve child plans during traversal so recursive types cannot deadlock initialization.
 	p.encode = func(e *reflectedEncoder, value reflect.Value, depth int) (err error) {
-		return e.encodeStruct(value, p.fields, depth)
+		if p.encodeErr != nil {
+			return e.fail(p.encodeErr)
+		}
+
+		return e.encodeStruct(value, p.fields, p.prefix, depth)
 	}
 	p.decode = func(d *reflectedDecoder, value reflect.Value, _ byte, depth int) (err error) {
 		return d.decodeStruct(value, p.fieldsByName, depth)
+	}
+	p.initializePrefixes()
+}
+
+func (p *reflectionPlan) initializePrefixes() {
+	var (
+		prefix bytes.Buffer
+		writer = NewWriter(&prefix)
+	)
+
+	if p.encodeErr = writer.EncodeMapHeader(uint32(len(p.fields))); p.encodeErr != nil {
+		return
+	}
+
+	if len(p.fields) == 0 {
+		p.prefix = append([]byte(nil), prefix.Bytes()...)
+		return
+	}
+
+	for index := range p.fields {
+		var field = p.typ.Field(p.fields[index].index)
+		if p.encodeErr = writer.EncodeString(field.Name); p.encodeErr != nil {
+			return
+		}
+
+		p.fields[index].prefix = append([]byte(nil), prefix.Bytes()...)
+		prefix.Reset()
 	}
 }

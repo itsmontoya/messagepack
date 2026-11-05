@@ -19,7 +19,15 @@ func (e *reflectedEncoder) encode(value reflect.Value, depth int) (err error) {
 		return e.writer.EncodeNil()
 	}
 
-	var plan = loadReflectionPlan(value.Type())
+	return e.encodePlanned(value, lookupReflectionPlan(value.Type()), depth)
+}
+
+func (e *reflectedEncoder) encodePlanned(value reflect.Value, plan *reflectionPlan, depth int) (err error) {
+	if depth == maximumReflectionDepth {
+		return e.fail(ErrLimitExceeded)
+	}
+
+	plan.once.Do(plan.initialize)
 	if (plan.encodeHook || plan.kind == reflect.Interface) && value.CanInterface() {
 		if hook, ok := value.Interface().(Encodee); ok {
 			return hook.EncodeMessagePack(e.writer)
@@ -43,6 +51,14 @@ func (e *reflectedEncoder) encodeIndirect(value reflect.Value, depth int) (err e
 	return e.encode(value.Elem(), depth+1)
 }
 
+func (e *reflectedEncoder) encodePointer(value reflect.Value, element *reflectionPlan, depth int) (err error) {
+	if value.IsNil() {
+		return e.writer.EncodeNil()
+	}
+
+	return e.encodePlanned(value.Elem(), element, depth+1)
+}
+
 func (e *reflectedEncoder) encodeBool(value reflect.Value, _ int) (err error) {
 	return e.writer.EncodeBool(value.Bool())
 }
@@ -56,6 +72,15 @@ func (e *reflectedEncoder) encodeUint(value reflect.Value, _ int) (err error) {
 }
 
 func (e *reflectedEncoder) encodeFloat32(value reflect.Value, _ int) (err error) {
+	if value.CanAddr() {
+		// A typed pointer preserves NaN bits without boxing the field value.
+		return e.writer.EncodeFloat32(*value.Addr().Convert(reflect.TypeFor[*float32]()).Interface().(*float32))
+	}
+
+	if value.Type() == reflect.TypeFor[float32]() {
+		return e.writer.EncodeFloat32(value.Interface().(float32))
+	}
+
 	return e.writer.EncodeFloat32(value.Convert(reflect.TypeFor[float32]()).Interface().(float32))
 }
 
@@ -75,7 +100,7 @@ func (e *reflectedEncoder) encodeUnsupported(_ reflect.Value, _ int) (err error)
 	return e.fail(ErrUnsupportedType)
 }
 
-func (e *reflectedEncoder) encodeArray(value reflect.Value, depth int) (err error) {
+func (e *reflectedEncoder) encodeArray(value reflect.Value, element *reflectionPlan, depth int) (err error) {
 	if value.Kind() == reflect.Slice && value.IsNil() {
 		return e.writer.EncodeNil()
 	}
@@ -89,7 +114,7 @@ func (e *reflectedEncoder) encodeArray(value reflect.Value, depth int) (err erro
 	}
 
 	for index := 0; index < value.Len(); index++ {
-		if err = e.encode(value.Index(index), depth+1); err != nil {
+		if err = e.encodePlanned(value.Index(index), element, depth+1); err != nil {
 			return err
 		}
 	}
@@ -104,7 +129,7 @@ func (e *reflectedEncoder) fail(err error) (out error) {
 	return e.writer.state.err
 }
 
-func (e *reflectedEncoder) encodeMap(value reflect.Value, depth int) (err error) {
+func (e *reflectedEncoder) encodeMap(value reflect.Value, key, element *reflectionPlan, depth int) (err error) {
 	if value.IsNil() {
 		return e.writer.EncodeNil()
 	}
@@ -119,28 +144,28 @@ func (e *reflectedEncoder) encodeMap(value reflect.Value, depth int) (err error)
 
 	var entries = value.MapRange()
 	for entries.Next() {
-		if err = e.encode(entries.Key(), depth+1); err != nil {
+		if err = e.encodePlanned(entries.Key(), key, depth+1); err != nil {
 			return err
 		}
 
-		if err = e.encode(entries.Value(), depth+1); err != nil {
+		if err = e.encodePlanned(entries.Value(), element, depth+1); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (e *reflectedEncoder) encodeStruct(value reflect.Value, fields []int, depth int) (err error) {
-	if err = e.writer.EncodeMapHeader(uint32(len(fields))); err != nil {
-		return err
+func (e *reflectedEncoder) encodeStruct(value reflect.Value, fields []reflectionField, prefix []byte, depth int) (err error) {
+	if len(fields) == 0 {
+		return e.writer.writeEncoded(prefix)
 	}
 
-	for _, index := range fields {
-		if err = e.writer.EncodeString(value.Type().Field(index).Name); err != nil {
+	for _, field := range fields {
+		if err = e.writer.writeEncoded(field.prefix); err != nil {
 			return err
 		}
 
-		if err = e.encode(value.Field(index), depth+1); err != nil {
+		if err = e.encodePlanned(value.Field(field.index), field.plan, depth+1); err != nil {
 			return err
 		}
 	}

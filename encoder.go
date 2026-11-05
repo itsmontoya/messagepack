@@ -10,16 +10,17 @@ import (
 // A nil interface leaves the Encoder unattached.
 func NewEncoder(w io.Writer) (out *Encoder) {
 	var e Encoder
-	e.writer.Reset(w)
+	e.reflected.writer.Reset(w)
 	return &e
 }
 
 // Encoder writes Go values to a caller-owned writer, preferring Encodee hooks.
+// Reflection encoding reuses instance-owned scratch and cached per-type handlers.
 // Its zero value is unattached. Encoding failures are terminal;
 // instances must not be copied after first use or used concurrently.
 type Encoder struct {
-	writer Writer
-	closed bool
+	reflected reflectedEncoder
+	closed    bool
 }
 
 // Encode uses Encodee when available and otherwise reflects supported Go values.
@@ -30,7 +31,7 @@ func (e *Encoder) Encode(value any) (err error) {
 		return ErrClosed
 	}
 
-	if err = e.writer.ready(); err != nil {
+	if err = e.reflected.writer.ready(); err != nil {
 		return err
 	}
 
@@ -40,7 +41,7 @@ func (e *Encoder) Encode(value any) (err error) {
 	)
 
 	if encodee, ok = value.(Encodee); ok {
-		err = encodee.EncodeMessagePack(e.writer)
+		err = encodee.EncodeMessagePack(e.reflected.writer)
 	} else {
 		var reflected = reflect.ValueOf(value)
 
@@ -48,17 +49,16 @@ func (e *Encoder) Encode(value any) (err error) {
 			return ErrUnsupportedType
 		}
 
-		var codec = reflectedEncoder{writer: e.writer}
-		err = codec.encode(reflected, 0)
+		err = e.reflected.encode(reflected, 0)
 	}
 
-	if e.writer.state.err != nil {
-		return e.writer.state.err
+	if e.reflected.writer.state.err != nil {
+		return e.reflected.writer.state.err
 	}
 
 	if err != nil {
-		e.writer.state.err = fmt.Errorf("messagepack: encode value: %w", err)
-		return e.writer.state.err
+		e.reflected.writer.state.err = fmt.Errorf("messagepack: encode value: %w", err)
+		return e.reflected.writer.state.err
 	}
 
 	return nil
@@ -68,10 +68,10 @@ func (e *Encoder) Encode(value any) (err error) {
 // Repeated calls return the stored encoding failure, if any.
 func (e *Encoder) Close() (err error) {
 	e.closed = true
-	if e.writer.state == nil {
+	if e.reflected.writer.state == nil {
 		return nil
 	}
 
-	e.writer.state.writer = nil
-	return e.writer.state.err
+	e.reflected.writer.state.writer = nil
+	return e.reflected.writer.state.err
 }

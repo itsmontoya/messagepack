@@ -401,3 +401,20 @@ func (w *Writer) write(operation string, src []byte) (n int, err error) {
 
 	return n, nil
 }
+
+// writeEncoded emits cached wire fragments using the same bounded output requests.
+func (w *Writer) writeEncoded(src []byte) (err error) {
+	for len(src) > 0 {
+		var size = len(src)
+		if size > payloadBufferSize {
+			size = payloadBufferSize
+		}
+
+		if _, err = w.write("encode cached prefix", src[:size]); err != nil {
+			return err
+		}
+
+		src = src[size:]
+	}
+	return nil
+}

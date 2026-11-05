@@ -3,6 +3,7 @@ package messagepack
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"reflect"
@@ -187,6 +188,179 @@ func TestEncoderReflectionCachedHookAddressability(t *testing.T) {
 	output.Reset()
 	if err = e.Encode(&value); err != nil || value.Value.calls != 1 || !bytes.Equal(output.Bytes(), append(prefix, 0xc3)) {
 		t.Fatalf("addressable cached hook field = (%x, %v), calls %d", output.Bytes(), err, value.Value.calls)
+	}
+}
+
+func TestEncoderReflectionWarmedAllocations(t *testing.T) {
+	type score float32
+	tests := []struct {
+		name  string
+		value any
+	}{
+		{name: "scalars", value: &struct {
+			ID     uint64
+			Count  int64
+			Active bool
+			Ratio  float64
+		}{ID: 42, Count: -3, Active: true, Ratio: 1.5}},
+		{name: "mixed", value: &struct {
+			Name    string
+			Payload []byte
+			Samples [2]int64
+		}{Name: "Ada", Payload: []byte{1, 2}, Samples: [2]int64{-1, 2}}},
+		{name: "nested", value: &struct{ Child struct{ ID uint64 } }{Child: struct{ ID uint64 }{ID: 42}}},
+		{name: "float32", value: &struct{ Score float32 }{Score: math.Float32frombits(0x7f800001)}},
+		{name: "named float32", value: &struct{ Score score }{Score: score(math.Float32frombits(0x7f800001))}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				e   = NewEncoder(io.Discard)
+				err error
+			)
+
+			if err = e.Encode(tt.value); err != nil {
+				t.Fatal(err)
+			}
+
+			var allocs = testing.AllocsPerRun(100, func() {
+				err = e.Encode(tt.value)
+			})
+			if err != nil || allocs != 0 {
+				t.Fatalf("warmed struct Encode = %v, %.0f allocations, want zero", err, allocs)
+			}
+		})
+	}
+}
+
+func TestEncoderReflectionCachedPrefixes(t *testing.T) {
+	tests := []struct {
+		name       string
+		count      int
+		nameLength int
+	}{
+		{name: "empty"},
+		{name: "one field", count: 1},
+		{name: "fixmap maximum", count: 15},
+		{name: "map16", count: 16},
+		{name: "fixstr maximum", count: 1, nameLength: 31},
+		{name: "str8", count: 1, nameLength: 32},
+		{name: "str16", count: 1, nameLength: 256},
+		{name: "str32 and chunking", count: 1, nameLength: 65536},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				fields   = make([]reflect.StructField, tt.count)
+				output   = &encoderTestWriter{}
+				expected bytes.Buffer
+				writer   = NewWriter(&expected)
+				err      error
+			)
+
+			for index := range fields {
+				var name = fmt.Sprintf("Field%d", index)
+				if tt.nameLength > 0 {
+					name = strings.Repeat("K", tt.nameLength)
+				}
+
+				fields[index] = reflect.StructField{Name: name, Type: reflect.TypeFor[uint64]()}
+			}
+			var value = reflect.New(reflect.StructOf(fields))
+			if err = writer.EncodeMapHeader(uint32(tt.count)); err != nil {
+				t.Fatal(err)
+			}
+
+			for index, field := range fields {
+				value.Elem().Field(index).SetUint(uint64(index + 1))
+				if err = writer.EncodeString(field.Name); err != nil {
+					t.Fatal(err)
+				}
+
+				if err = writer.EncodeUint64(uint64(index + 1)); err != nil {
+					t.Fatal(err)
+				}
+			}
+			var e = NewEncoder(output)
+			for iteration := 0; iteration < 2; iteration++ {
+				output.data = output.data[:0]
+				if err = e.Encode(value.Interface()); err != nil {
+					t.Fatal(err)
+				}
+
+				if !bytes.Equal(output.data, expected.Bytes()) || output.maxRequest > payloadBufferSize {
+					t.Fatalf("cached output differs from typed encoding; max request %d", output.maxRequest)
+				}
+			}
+		})
+	}
+}
+
+func TestEncoderReflectionCachedPrefixFailures(t *testing.T) {
+	var failure = errors.New("test: cached prefix failure")
+	tests := []struct {
+		name    string
+		limit   int
+		err     error
+		wantErr error
+	}{
+		{name: "short write", limit: 3, wantErr: io.ErrShortWrite},
+		{name: "partial error", limit: 2, err: failure, wantErr: failure},
+		{name: "full prefix error", limit: 7, err: failure, wantErr: failure},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				output = &encoderTestWriter{limited: true, limit: tt.limit, err: tt.err}
+				e      = NewEncoder(output)
+				hook   = &encoderTestEncodee{encode: func(w Writer) (err error) { return w.EncodeBool(true) }}
+				first  = e.Encode(&struct{ Value *encoderTestEncodee }{Value: hook})
+				err    error
+			)
+
+			if !errors.Is(first, tt.wantErr) || output.writes != 1 || hook.calls != 0 || len(output.data) != tt.limit {
+				t.Fatalf("prefix Encode = %v, writes %d, dispatches %d, bytes %x", first, output.writes, hook.calls, output.data)
+			}
+
+			if err = e.Encode(hook); err != first || output.writes != 1 || hook.calls != 0 {
+				t.Fatalf("terminal Encode = %v, writes %d, dispatches %d", err, output.writes, hook.calls)
+			}
+
+			if err = e.Close(); err != first || output.closes != 0 || output.flushes != 0 {
+				t.Fatalf("Close = %v, closes %d, flushes %d", err, output.closes, output.flushes)
+			}
+		})
+	}
+}
+
+func TestEncoderReflectionReusedContext(t *testing.T) {
+	var (
+		output bytes.Buffer
+		e      = NewEncoder(&output)
+		value  = struct{ ID uint64 }{ID: 1}
+		err    error
+	)
+
+	if err = e.Encode(&value); err != nil {
+		t.Fatal(err)
+	}
+
+	value.ID = 42
+	if err = e.Encode(&value); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = e.Encode(true); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = e.Encode(&struct{ Name string }{Name: "Ada"}); err != nil {
+		t.Fatal(err)
+	}
+
+	var want = []byte{0x81, 0xa2, 'I', 'D', 1, 0x81, 0xa2, 'I', 'D', 42, 0xc3, 0x81, 0xa4, 'N', 'a', 'm', 'e', 0xa3, 'A', 'd', 'a'}
+	if !bytes.Equal(output.Bytes(), want) {
+		t.Fatalf("reused context output = %x, want %x", output.Bytes(), want)
 	}
 }
 
