@@ -257,7 +257,7 @@ func (r *Reader) readContainerHeader(operation string, isMap bool) (count uint32
 // Failures return an empty string and may consume input; no UTF-8 validation occurs.
 func (r *Reader) DecodeString() (value string, err error) {
 	var payload []byte
-	if payload, err = r.readPayload("decode string", true); err != nil {
+	if payload, err = r.readPayload("decode string", true, nil); err != nil {
 		return "", err
 	}
 
@@ -267,7 +267,7 @@ func (r *Reader) DecodeString() (value string, err error) {
 // DecodeBytes returns owned binary contents within MaxPayloadBytes.
 // Empty binary succeeds with a non-nil slice; failures return nil.
 func (r *Reader) DecodeBytes() (value []byte, err error) {
-	return r.readPayload("decode bytes", false)
+	return r.readPayload("decode bytes", false, nil)
 }
 
 // DecodeStringTo copies a string's original bytes to dst using bounded memory.
@@ -501,7 +501,8 @@ func (r *Reader) readPayloadHeader(operation string, isString bool) (length uint
 	}
 }
 
-func (r *Reader) readPayload(operation string, isString bool) (value []byte, err error) {
+// readPayload checks limits before reusing dst, which partial failed reads may overwrite.
+func (r *Reader) readPayload(operation string, isString bool, dst []byte) (value []byte, err error) {
 	var length uint64
 	if length, err = r.readPayloadHeader(operation, isString); err != nil {
 		return nil, err
@@ -518,6 +519,8 @@ func (r *Reader) readPayload(operation string, isString bool) (value []byte, err
 	if isString && length <= uint64(len(r.scratch)) {
 		// DecodeString copies these bytes before scratch can be reused.
 		value = r.scratch[:int(length)]
+	} else if dst != nil && length <= uint64(cap(dst)) {
+		value = dst[:int(length)]
 	} else {
 		value = make([]byte, int(length))
 	}

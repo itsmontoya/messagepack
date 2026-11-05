@@ -136,7 +136,7 @@ func (d *reflectedDecoder) decodeFloat(value reflect.Value, _ byte, _ int) (err 
 
 func (d *reflectedDecoder) decodeBytes(value reflect.Value, _ byte, _ int) (err error) {
 	var decoded []byte
-	if decoded, err = d.reader.DecodeBytes(); err != nil {
+	if decoded, err = d.reader.readPayload("decode reflected bytes", false, value.Bytes()); err != nil {
 		return err
 	}
 

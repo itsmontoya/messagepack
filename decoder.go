@@ -27,6 +27,7 @@ type Decoder struct {
 // Invalid targets and unsupported root kinds return ErrUnsupportedType before input.
 // Failures during decoding may consume partial input and prevent further decoding.
 // Returned hook errors preserve schema context; ignored Reader failures still surface.
+// Reflected byte slices reuse capacity; reads may overwrite retained aliases even on failure.
 func (d *Decoder) Decode(value any) (err error) {
 	if d.closed {
 		return ErrClosed

@@ -3,6 +3,7 @@ package messagepack
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"reflect"
@@ -135,6 +136,212 @@ func TestDecoderReflection(t *testing.T) {
 
 			if err = d.Decode(&tail); err != nil || !tail || input.position != len(input.data) {
 				t.Fatalf("Decode next = (%v, %v), position %d", tail, err, input.position)
+			}
+		})
+	}
+}
+
+func TestDecoderReflectionBytesReuse(t *testing.T) {
+	tests := []struct {
+		name       string
+		length     int
+		capacity   int
+		nilInitial bool
+		wire       []byte
+		want       []byte
+		reuse      bool
+	}{
+		{name: "grow nil", nilInitial: true, wire: []byte{0xc4, 2, 1, 2}, want: []byte{1, 2}},
+		{name: "grow small", length: 1, capacity: 1, wire: []byte{0xc4, 2, 1, 2}, want: []byte{1, 2}},
+		{name: "same length", length: 2, capacity: 2, wire: []byte{0xc4, 2, 1, 2}, want: []byte{1, 2}, reuse: true},
+		{name: "extend length", length: 1, capacity: 8, wire: []byte{0xc4, 2, 1, 2}, want: []byte{1, 2}, reuse: true},
+		{name: "shorten length", length: 4, capacity: 8, wire: []byte{0xc4, 2, 1, 2}, want: []byte{1, 2}, reuse: true},
+		{name: "zero length capacity", capacity: 8, wire: []byte{0xc4, 2, 1, 2}, want: []byte{1, 2}, reuse: true},
+		{name: "empty binary retains capacity", length: 4, capacity: 8, wire: []byte{0xc4, 0}, want: []byte{}, reuse: true},
+		{name: "empty binary from nil", nilInitial: true, wire: []byte{0xc4, 0}, want: []byte{}},
+		{name: "nil clears capacity", length: 4, capacity: 8, wire: []byte{0xc0}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var initial = make([]byte, tt.length, tt.capacity)
+			if tt.nilInitial {
+				initial = nil
+			}
+
+			var storage = initial[:cap(initial)]
+			for index := range storage {
+				storage[index] = 9
+			}
+			var (
+				before = append([]byte(nil), storage...)
+				value  = struct{ Payload []byte }{Payload: initial}
+				wire   = append([]byte{0x81, 0xa7, 'P', 'a', 'y', 'l', 'o', 'a', 'd'}, tt.wire...)
+				input  = &decoderTestReader{data: append(wire, 0xc3), maxRead: 1, endErr: io.EOF}
+				d      = NewDecoder(input)
+				tail   bool
+				err    = d.Decode(&value)
+			)
+
+			if err != nil || !reflect.DeepEqual(value.Payload, tt.want) || input.position != len(wire) {
+				t.Fatalf("Decode = (%x, %v), position %d, want %x", value.Payload, err, input.position, tt.want)
+			}
+
+			if tt.reuse {
+				if cap(value.Payload) != cap(initial) || &value.Payload[:cap(value.Payload)][0] != &storage[0] {
+					t.Fatal("Decode replaced sufficient destination capacity")
+				}
+
+				copy(before, tt.want)
+			} else if len(value.Payload) > 0 && len(storage) > 0 && &value.Payload[0] == &storage[0] {
+				t.Fatal("Decode reused insufficient capacity")
+			}
+
+			if !bytes.Equal(storage, before) {
+				t.Fatalf("original backing array = %x, want %x", storage, before)
+			}
+
+			if tt.want == nil && cap(value.Payload) != 0 {
+				t.Fatal("wire nil retained destination capacity")
+			}
+
+			if err = d.Decode(&tail); err != nil || !tail {
+				t.Fatalf("Decode next = (%v, %v)", tail, err)
+			}
+		})
+	}
+}
+
+func TestDecoderReflectionNamedBytesReuse(t *testing.T) {
+	type octet byte
+	type payload []octet
+	var (
+		value   = make(payload, 1, 8)
+		backing = &value[0]
+		err     = NewDecoder(bytes.NewReader([]byte{0xc4, 2, 1, 2})).Decode(&value)
+	)
+
+	if err != nil || !reflect.DeepEqual(value, payload{1, 2}) || cap(value) != 8 || &value[0] != backing {
+		t.Fatalf("Decode named bytes = (%v, %v), capacity %d", value, err, cap(value))
+	}
+}
+
+func TestDecoderReflectionBytesReuseAliases(t *testing.T) {
+	var (
+		firstWire = []byte{0x81, 0xa7, 'P', 'a', 'y', 'l', 'o', 'a', 'd', 0xc4, 2, 1, 2}
+		wire      = append(append([]byte(nil), firstWire...), firstWire...)
+		value     = struct{ Payload []byte }{Payload: make([]byte, 0, 8)}
+		d         = NewDecoder(bytes.NewReader(wire))
+		err       error
+	)
+
+	wire[len(wire)-2], wire[len(wire)-1] = 3, 4
+	if err = d.Decode(&value); err != nil {
+		t.Fatal(err)
+	}
+
+	var alias = value.Payload
+	wire[len(firstWire)-2], wire[len(firstWire)-1] = 0, 0
+	if !bytes.Equal(alias, []byte{1, 2}) {
+		t.Fatal("decoded bytes alias input storage")
+	}
+
+	if err = d.Decode(&value); err != nil || !bytes.Equal(value.Payload, []byte{3, 4}) || !bytes.Equal(alias, value.Payload) {
+		t.Fatalf("repeated Decode = (%x, %v), retained alias %x", value.Payload, err, alias)
+	}
+
+	if &value.Payload[0] != &alias[0] {
+		t.Fatal("repeated Decode replaced destination storage")
+	}
+}
+
+func TestDecoderReflectionBytesReuseFailures(t *testing.T) {
+	var (
+		sourceFailure = errors.New("test: reused bytes source failure")
+		tests         = []struct {
+			name    string
+			wire    []byte
+			limit   uint64
+			endErr  error
+			wantErr error
+			changed []byte
+		}{
+			{name: "limit before writes", wire: []byte{0xc4, 4, 1, 2, 3, 4}, limit: 3, wantErr: ErrLimitExceeded},
+			{name: "wrong family", wire: []byte{0xa0}, wantErr: ErrTypeMismatch},
+			{name: "truncated header", wire: []byte{0xc5, 0}, wantErr: io.ErrUnexpectedEOF},
+			{name: "truncated reused body", wire: []byte{0xc4, 4, 1, 2}, wantErr: io.ErrUnexpectedEOF, changed: []byte{1, 2}},
+			{name: "truncated grown body", wire: []byte{0xc4, 9, 1, 2}, wantErr: io.ErrUnexpectedEOF},
+			{name: "source failure", wire: []byte{0xc4, 4, 1, 2, 3, 4}, endErr: sourceFailure, wantErr: sourceFailure, changed: []byte{1, 2, 3, 4}},
+		}
+	)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				storage = bytes.Repeat([]byte{9}, 8)
+				value   = storage[:3]
+				input   = &decoderTestReader{data: tt.wire, maxRead: 1, endErr: tt.endErr}
+				d       = NewDecoder(input)
+				err     error
+			)
+
+			if err = d.reader.SetLimits(ReaderLimits{MaxPayloadBytes: tt.limit}); err != nil {
+				t.Fatal(err)
+			}
+
+			var (
+				first = d.Decode(&value)
+				reads = input.reads
+				want  = bytes.Repeat([]byte{9}, 8)
+			)
+
+			copy(want, tt.changed)
+			if !errors.Is(first, tt.wantErr) || len(value) != 3 || cap(value) != 8 || &value[0] != &storage[0] {
+				t.Fatalf("Decode = (%x, %v), capacity %d, want %v without replacing the slice", value, first, cap(value), tt.wantErr)
+			}
+
+			if !bytes.Equal(storage, want) {
+				t.Fatalf("backing array after failure = %x, want %x", storage, want)
+			}
+
+			if err = d.Decode(&value); err != first || input.reads != reads {
+				t.Fatalf("terminal Decode = %v, reads %d, want (%v, %d)", err, input.reads, first, reads)
+			}
+		})
+	}
+}
+
+func TestDecoderReflectionBytesReuseAllocations(t *testing.T) {
+	for _, size := range []int{2, 1024, 65536} {
+		t.Run(fmt.Sprintf("Bytes%d", size), func(t *testing.T) {
+			var (
+				value  = struct{ Payload []byte }{Payload: bytes.Repeat([]byte{7}, size)}
+				output bytes.Buffer
+				err    error
+			)
+
+			if err = NewEncoder(&output).Encode(&value); err != nil {
+				t.Fatal(err)
+			}
+
+			var (
+				input = bytes.NewReader(output.Bytes())
+				d     = NewDecoder(input)
+			)
+
+			if err = d.Decode(&value); err != nil {
+				t.Fatal(err)
+			}
+
+			var allocs = testing.AllocsPerRun(100, func() {
+				input.Reset(output.Bytes())
+				err = d.Decode(&value)
+			})
+			if err != nil || allocs > 1 {
+				t.Fatalf("reused bytes Decode = %v, %.0f allocations, want at most one", err, allocs)
+			}
+
+			if len(value.Payload) != size || value.Payload[0] != 7 || value.Payload[size-1] != 7 || input.Len() != 0 {
+				t.Fatalf("reused payload length %d, remaining %d", len(value.Payload), input.Len())
 			}
 		})
 	}
