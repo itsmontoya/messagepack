@@ -555,6 +555,9 @@ The [SIMD follow-up](docs/numeric-simd-benchmarks.md) measures the optional vect
 paths and separates contiguous conversion kernels from complete Reader calls.
 It also compares reflection workloads through `Decoder.Decode` before and after
 the batch integration, separately for ordinary and SIMD builds.
+The [tinylib comparison](docs/tinylib-numeric-comparison.md) measures where the
+updated reflection codec leads or trails generated tinylib streaming codecs,
+including destination reuse, allocations, buffering, and codec construction.
 
 Package-level marshal/unmarshal functions, struct tags, extensions/timestamps,
 code generation, map sorting, pooling, concurrency machinery, unsafe conversions,
