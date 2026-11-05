@@ -505,6 +505,11 @@ led to the applied short-string and Skip optimizations, recorded with
 [before and after timings](docs/allocation-improvements.md).
 A [follow-up profiling pass](docs/allocation-followup.md) also removes temporary
 payload allocations when decoding strings of at most nine bytes.
+The [CPU profiling report](docs/cpu-profiling.md) separates generic reflection
+traversal from typed codec costs, compares generated tinylib codecs, and records
+isolated reader fast-path experiments.
+The [reader fast-path follow-up](docs/reader-cpu-optimizations.md) applies two small
+successful-read optimizations and records their before/after results.
 
 Package-level marshal/unmarshal functions, struct tags, extensions/timestamps,
 code generation, map sorting, pooling, concurrency machinery, unsafe conversions,

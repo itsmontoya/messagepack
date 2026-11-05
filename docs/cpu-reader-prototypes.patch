@@ -1,0 +1,12 @@
+diff --git a/reader.go b/reader.go
+index b8daa67..16139a2 100644
+--- a/reader.go
++++ b/reader.go
+@@ -691,0 +692,4 @@ func (r *Reader) readScalarBody(operation string, size int) (err error) {
++	if size == 1 {
++		return nil
++	}
++
+@@ -718 +722 @@ func (r *Reader) readFull(operation string, dst []byte, started bool) (n int, er
+-		if errors.Is(err, io.EOF) {
++		if err != nil && errors.Is(err, io.EOF) {

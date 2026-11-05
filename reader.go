@@ -689,6 +689,10 @@ func (r *Reader) readInteger(operation string) (wire []byte, err error) {
 }
 
 func (r *Reader) readScalarBody(operation string, size int) (err error) {
+	if size == 1 {
+		return nil
+	}
+
 	_, err = r.readFull(operation, r.scratch[1:size], true)
 	return r.fail(err)
 }
@@ -715,7 +719,7 @@ func (r *Reader) readFull(operation string, dst []byte, started bool) (n int, er
 		}
 
 		n += read
-		if errors.Is(err, io.EOF) {
+		if err != nil && errors.Is(err, io.EOF) {
 			r.state.eof = true
 			if n == len(dst) {
 				return n, nil

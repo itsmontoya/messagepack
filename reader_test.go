@@ -351,20 +351,28 @@ func TestReaderScalarTruncation(t *testing.T) {
 
 func TestReaderReadErrorsAndEOF(t *testing.T) {
 	var (
-		failure = errors.New("test source failure")
-		tests   = []struct {
+		failure    = errors.New("test source failure")
+		wrappedEOF = fmt.Errorf("test source: %w", io.EOF)
+		tests      = []struct {
 			name string
 			data []byte
 			end  error
 			want error
 		}{
 			{name: "no byte error", end: failure, want: failure},
+			{name: "no byte EOF", end: io.EOF, want: io.EOF},
+			{name: "no byte wrapped EOF", end: wrappedEOF, want: io.EOF},
+			{name: "tag-only value and EOF", data: []byte{0x07}, end: io.EOF},
+			{name: "tag-only value and wrapped EOF", data: []byte{0x07}, end: wrappedEOF},
 			{name: "tag and error", data: []byte{0xcf}, end: failure, want: failure},
 			{name: "partial body and error", data: []byte{0xcf, 0, 0, 0}, end: failure, want: failure},
 			{name: "full body and error", data: []byte{0xcf, 0, 0, 0, 0, 0, 0, 0, 7}, end: failure, want: failure},
 			{name: "tag and EOF", data: []byte{0xcf}, end: io.EOF, want: io.ErrUnexpectedEOF},
 			{name: "partial body and EOF", data: []byte{0xcf, 0, 0, 0}, end: io.EOF, want: io.ErrUnexpectedEOF},
 			{name: "full body and EOF", data: []byte{0xcf, 0, 0, 0, 0, 0, 0, 0, 7}, end: io.EOF},
+			{name: "tag and wrapped EOF", data: []byte{0xcf}, end: wrappedEOF, want: io.ErrUnexpectedEOF},
+			{name: "partial body and wrapped EOF", data: []byte{0xcf, 0, 0, 0}, end: wrappedEOF, want: io.ErrUnexpectedEOF},
+			{name: "full body and wrapped EOF", data: []byte{0xcf, 0, 0, 0, 0, 0, 0, 0, 7}, end: wrappedEOF},
 		}
 	)
 

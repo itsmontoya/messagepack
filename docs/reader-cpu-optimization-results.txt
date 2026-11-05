@@ -1,0 +1,775 @@
+Applied reader CPU fast paths, 2026-11-05
+All before/after samples retained; no profiling during timing.
+
+===== metadata.json =====
+{
+  "date": "2026-11-05 America/Los_Angeles",
+  "baseline_production_commit": "4432a357d5c0bd0adb4cdb749554b4723fd98ee6",
+  "go": "go version go1.27.2 darwin/arm64",
+  "machine": "darwin/arm64, Apple M3, default GOMAXPROCS=8",
+  "changes": "Reader.readScalarBody size==1 early return; Reader.readFull nil-error guard before errors.Is",
+  "method": "Identical benchmark source; original reader.go supplied by overlay to the before build; 200ms targets, five alternating/rotating rounds; tests and fuzzing completed before timing.",
+  "artifacts": "/private/tmp/messagepack-reader-fast-paths-c_ac4fp8"
+}
+
+
+===== build-commands.txt =====
+GOCACHE=/private/tmp/messagepack-go-build go test -overlay /private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before-overlay.json -c -o /private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test .
+GOCACHE=/private/tmp/messagepack-go-build go test -c -o /private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test .
+
+
+===== before-overlay.json =====
+{"Replace": {"/Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader.go": "/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before-reader.go"}}
+
+===== sha256.txt =====
+d588db041fe248654a55b1ca1475b952fd43f29f746a6b9b17ad5970ea8c3809  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/allocation_benchmark_noop_test.go
+cd82cea91a631e90f8374a03639e48984548e56786386132e5fe15de0aa50f59  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/allocation_benchmark_test.go
+7a8b1444f85b2ee04325cf13a09eb908f9abfeec8ce6a8db5998878304de7115  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/allocation_benchmark_value_test.go
+54d9db034345aa5e5e6a57b70ce1d5fb891ca8f647d7a3c19388c0d2c7d48f4a  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/application_message_test.go
+83969241516009f7f3bff51a3dc6acb8df8f6d65b664030245348bf25404befc  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/benchmark_test.go
+8483bba329bc34eb1bab51caadc35e0a35c0f3328f94f41adb480268c54ab974  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/cpu_benchmark_message_test.go
+38f82762e55b716db575b107b5fb0a72284cca8afb712c5be1ea3b9ef3095f57  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/cpu_benchmark_test.go
+59115bf5d41f01dbefbf31e834edbc50fbea5f1610d3b301f36f374cfd5bdc90  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decodee.go
+5051bf2ad92bf0acf8ebc28463c1ec3211e80587d6e6e548206bd25e6d3cb3bf  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decoder.go
+ea4f64e368f7686bb869663c65415d51c998ce2af58453fd1fafbf9cc797319b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decoder_counting_writer_test.go
+e018211d45fd1475a7b9b86483fb9d94ff7d0480dcd3cdb7a08934b34703474c  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decoder_example_test.go
+0b8f0e03dcfbff18d732dfc1d098307e60e6dd51038f58499275f6eb501a348f  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decoder_test.go
+f1934b36cff0060f0e2b76e696e317951ff03f44cbc9a5c1f09a5aa35a1cedfc  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decoder_test_decodee_test.go
+f34f24daa914b5bce67ecbbe0074204a15beeaed345f8bece4193917a8a3ff37  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/decoder_test_reader_test.go
+7ddd9fdc1f9cfcfb7a07481fbe2e36e069ee82f007d04f7771d5caf7d859edf2  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/doc.go
+8200fadf9d90c965f2d6a9dc60ab8169422b31f0d9cd7f58a6d9f90b10e4a6e4  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encodee.go
+5db8a315f21feed4599626337e0accdaeb1cae223b2d48a339988ec0f9a66714  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder.go
+b73f7436e5ab063b0ac6ee37438ce32c1584af71b1d4d005a672acf1555cced1  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_counting_writer_test.go
+1bef6c8285aca6be215e2c271de56ddedacba72d585db3f8716ee8d60f593766  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_example_test.go
+85604ec106a51757da8d24fc42f11cf79c59fe650acbca3e793c95e199ec59fb  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_generated_reader_test.go
+a39b7727d53162bd9637fdfe9bd61e8f9b45d01d3f10d36ee50c62c7aae165b1  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_payload_writer_test.go
+ab41898a1a232192528f21f64401eb794d9c301813f728a766ad1e3dc66b540f  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_test.go
+ec9a0174945eb1e6d5557a5dcc7a0edec982c5811cf6f7512517e42474da6f98  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_test_encodee_test.go
+b773c7ea700515c273d197169f2e419bd43a202a8885e102919f6da510867c28  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/encoder_test_writer_test.go
+c8ace15e440ad95f1f613e09d7e706d90eb4b82947762490d9527dd94a71e893  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/errors.go
+6b345591c8a1db25de9ed6b0c598145131e7bcf1cfc18dc3d324c196e631db54  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/example_message_test.go
+b2506fcff70606194a3a1ec26767d198727111982d680c629d9e2849c0fdb05b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/example_test.go
+43f10b24448fbc6f860bd6cf610d671f6b3281b0659e650b84eac5b68550ad10  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/integration_test.go
+ea11352fc17af06a3dec600774c9203537ad1e73dc7c1b32def423e17300b9d7  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader.go
+fa580b9281390cd709249447775f3353caf226e8c9d58bbc3427731ff0049b0d  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader_limits.go
+3fa5a7f0d9f67b79f98eb224c98ed1a529bbfa51c8d1d21fa3355fdd4df22b51  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader_state.go
+d2c371ecd810f1c5689ad59400d29c1e29f3ec4bb552007f27dcadae9a08a4b3  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader_test.go
+b75321a6644a2be118b3090dfaab51e85f796718baa000b3a2b8bdeae49ea460  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reader_writer_test.go
+23f779b140b734711bfa11c73a3285ea8996181d58d64817a28722cdd2297c6b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflected_decoder.go
+27b9b03a95c8a804822a73e4f45a4c41ca878bbe7e60f9e6925ef14401b5819a  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflected_encoder.go
+2f1bc29505c7bb3bac2f4f444350582cb337e34080e6aaea73b30f7075f5e42b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection.go
+35923fc0bfd82ebb41ce976ccd55c32076505e7b0748f2e3c2377ef45b82c102  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection_benchmark_test.go
+d62ff9c04e8bd2b6083df19e8efc07c00bc1fbbdfa5dc994e88f785e7c31da06  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection_encode_fuzz_test.go
+bcdc4243cac5748b002784e7e9472b2d195956ec7029a51f2237cfeb719f6425  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection_field.go
+2ce773c2bb508cbae47d4ca8b00ec7685f8fe5391ed56de3a82f7190d892b4e8  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection_fuzz_test.go
+e550cc11e10c1e83963313c19f65cbe79c38f0af4fe10d76f6624e90e9f1871c  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection_plan.go
+fcf5ea2cdda48e339f8928445916b09a9d8d16c2b3d04f9c57a11dbe76fc9e99  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/reflection_plan_test.go
+609f056a9923b38eabdb4ce7f4eece1e4ae171ba8e907f1380fb93df8755a118  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/roundtrip_fuzz_test.go
+9b9c7109a619bd4c951999e93ddc0920b7bde6e46526cd6d8f7c745c07a37428  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/skip_repeating_reader_test.go
+1e4fcdfb418fe0e90b671694e44fcd762723b578b83e66605a01e56016e87f89  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/skip_state.go
+4dbeb9fb0e99610b5ef24bb740ce3d9cee48d983bfa8cb2a526afa8c7115634c  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_application_message_test.go
+886219ed763a321cdbdb6e7d733561d86b8764ce58549e32d130e278492d1812  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_array_reader_test.go
+a6c4a4feb302309ad4a2a574a44b760e24f511113b716db92cd456ce13479d5c  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_array_writer_test.go
+bbd36162a349adff557d58d1c6dfe4cfc685bfc0b3fa9d9d7f9976fd53165a0d  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_benchmark_array_reader_test.go
+5f769f9df34ce60176e5aa5b55acb9b0135ee1df606038aeae306f327f322612  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_benchmark_fixture_reader_test.go
+5684fde1a1f0f9e94578ede211e85a6fa7ba0e83d61d676ce2e93004693ae60b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_benchmark_payload_reader_test.go
+b4ae69ea12e0661d2b50203731722aeef83492a9b4ee0171b47fb7e0b09d1e41  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_benchmark_test.go
+90c3f52e71a526addfe7e0bca490de60b79271159d1f1e745536c802684249b8  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_benchmark_writer_test.go
+fe90d102889ecc75a5243f13199ea2c31e263fcf4d5449ce6192adfe36b761dc  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_boundary_workflow_test.go
+ea3836b38b7993414436b499226b403783553fbbbc0baddc138b450075aaa084  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_checking_writer_test.go
+09cbb798edd2883cd1cb3e1d97bb9889a65a68eba2c5d6de9dc9c53c45d25ccd  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_decode_fuzz_test.go
+3993e46a3b3b16e7a05ec6afa12b924abcf0c71f41b314518cdb05830caf4b18  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_example_test.go
+3fb28fe493734f76601b09a24a49971bc9508bc28906933c342f4331a87cd201  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_file_workflow_test.go
+a2adcef173a42ccc260645f6c568cc47e0344e3b224fcb1af22ff4d017708c65  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_file_writer_test.go
+05ecdcb8c5d89e7d9596324593df1bbcc5cdf034ba61b47b40dbc2eb7424cddb  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_flexible_integration_test.go
+981f38c18788a0a243df261d4ce6c7f30f62c5ecac05e88fb2b463259edb0e0b  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_flexible_schema_test.go
+d18bd3dc2b2fca5b60c6d55302cf8e1354fe445d7dfba7df505b8a14229b5e56  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_fuzz_reader_test.go
+de27669b60de3708724df3a36211859d0261d8cb21636dab6c88c46e1eca7f5d  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_fuzz_test.go
+3ba7e6b4e9d8e46b58ced401ef695f85a459bd08ed3076f50456f782dce2f8ad  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_fuzz_writer_test.go
+bbff4f73a2fd0ccf4f26df2010c24ed8e5018f4c4f2d39a937f8c58a30b9aa9e  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_gated_reader_test.go
+6ffc23d3957905f5a8ecc27e4dcce437612c2972545f046040acd589d6b356d9  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_http_integration_test.go
+809defb7309cdaf9bd084af35f614420f5d0740e08f12bc8701ff3b746658738  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_http_writer_test.go
+a6ef61001bd29ee44e20c543297196b662df20801e5f8f8b14ed653e1ac2fea7  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_integration_test.go
+6bcdf036139eaddafe5be91472c85be0386e437849f3982273a507d5c1419ec4  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_owned_body_test.go
+7df61d753cb26cd6d004c5a2918c9063327d8322ef1a94f77ad6d3c69469dbdb  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_payload_benchmark_test.go
+4d7da79f85977053a6a426ce179a2cde118dbac3c9288a06ee5cd3fffa888b76  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_payload_schema_test.go
+bb4a8cabbb657105e8edd697a3b7ee701ba0269bcfcb16914a0f723524e182d2  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_roundtrip_fuzz_test.go
+b946231fa3529491706cf138221fa0fcc153a98e57382350fcfa8f3e3cbb0488  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_skip_fuzz_test.go
+373a73de4d79ac9d26f1dd4b929fbdef3aaceaa512489da38d022ab737976afc  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/stream_transfer_fuzz_test.go
+55fffda2c3bca2b7f784d4ba722fcf5321234a587c016dea8c57bc138078aec0  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/writer.go
+e0db96dbae7469328144e12ec067085ec46e550fd7164d51d020bb0e20e5a1d5  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/writer_state.go
+4f6e56814000fab5cea54b5f875892d382e9d15d07d5bbb284270ef7469a9850  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/writer_test.go
+ec3420ed07f6a2b960deeb27fe086ad83357fa77118d62e3c97ec4b8aaf15794  /Users/itsmontoya/go/src/github.com/itsmontoya/messagepack/go.mod
+40ccdf793def459d5b37f1b102fd0c26dbac5ffa2a78cc3f81d5f4e922f73e5b  /private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before-reader.go
+a0be0252a8ff1af57f29cfa6b3734907765fb4a67f4a2b7ded0ed18b8f2c9936  /private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test
+ec07ab0eb89b353bc24610be50f665e51ac8c3b8682868738b63b049142a2818  /private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test
+
+
+===== validation.txt =====
+Validation summary
+
+GOCACHE=/private/tmp/messagepack-go-build go test ./...
+PASS: ok github.com/itsmontoya/messagepack 1.301s
+
+GOCACHE=/private/tmp/messagepack-go-build go test -race ./...
+PASS: ok github.com/itsmontoya/messagepack 14.469s
+Both full-suite commands used previously authorized localhost listener access for existing HTTP integration tests.
+
+GOCACHE=/private/tmp/messagepack-go-build go vet ./...
+PASS: exit 0, no diagnostics
+
+/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test -test.run '^Test(Reader|Decoder)'
+PASS
+
+GOCACHE=/private/tmp/messagepack-go-build go test -run '^$' -fuzz '^FuzzStreamTypedDecode$' -fuzztime=10s -parallel=2 .
+PASS: 207556 executions, 9106 total interesting inputs, 10.391s package runtime
+
+GOCACHE=/private/tmp/messagepack-go-build go test -run '^$' -fuzz '^FuzzDecoderReflection$' -fuzztime=10s -parallel=2 .
+PASS: 300491 executions, 26 new interesting inputs (208 total), 10.373s package runtime
+
+
+===== reader-changes.patch =====
+diff --git a/reader.go b/reader.go
+index b8daa67..16139a2 100644
+--- a/reader.go
++++ b/reader.go
+@@ -691,0 +692,4 @@ func (r *Reader) readScalarBody(operation string, size int) (err error) {
++	if size == 1 {
++		return nil
++	}
++
+@@ -718 +722 @@ func (r *Reader) readFull(operation string, dst []byte, started bool) (n int, er
+-		if errors.Is(err, io.EOF) {
++		if err != nil && errors.Is(err, io.EOF) {
+diff --git a/reader_test.go b/reader_test.go
+index 1df9e59..41486bd 100644
+--- a/reader_test.go
++++ b/reader_test.go
+@@ -354,2 +354,3 @@ func TestReaderReadErrorsAndEOF(t *testing.T) {
+-		failure = errors.New("test source failure")
+-		tests   = []struct {
++		failure    = errors.New("test source failure")
++		wrappedEOF = fmt.Errorf("test source: %w", io.EOF)
++		tests      = []struct {
+@@ -361,0 +363,4 @@ func TestReaderReadErrorsAndEOF(t *testing.T) {
++			{name: "no byte EOF", end: io.EOF, want: io.EOF},
++			{name: "no byte wrapped EOF", end: wrappedEOF, want: io.EOF},
++			{name: "tag-only value and EOF", data: []byte{0x07}, end: io.EOF},
++			{name: "tag-only value and wrapped EOF", data: []byte{0x07}, end: wrappedEOF},
+@@ -367,0 +373,3 @@ func TestReaderReadErrorsAndEOF(t *testing.T) {
++			{name: "tag and wrapped EOF", data: []byte{0xcf}, end: wrappedEOF, want: io.ErrUnexpectedEOF},
++			{name: "partial body and wrapped EOF", data: []byte{0xcf, 0, 0, 0}, end: wrappedEOF, want: io.ErrUnexpectedEOF},
++			{name: "full body and wrapped EOF", data: []byte{0xcf, 0, 0, 0, 0, 0, 0, 0, 7}, end: wrappedEOF},
+
+===== summary.csv =====
+version,case,samples,median_ns,min_ns,max_ns,bytes_min,bytes_max,allocs_min,allocs_max
+before,BenchmarkCPUTraversal/Mixed/Reflection/Encode-8,5,131.7,129.1,133.3,0,0,0,0
+before,BenchmarkCPUTraversal/Mixed/Reflection/Decode-8,5,441.9,441.5,444.6,3,3,1,1
+before,BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8,5,133.3,132.6,137.0,0,0,0,0
+before,BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8,5,1190.0,1178.0,1294.0,3,3,1,1
+before,BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8,5,143.1,140.3,144.7,0,0,0,0
+before,BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8,5,502.9,494.0,505.1,1024,1024,1,1
+after,BenchmarkCPUTraversal/Mixed/Reflection/Encode-8,5,131.5,129.2,160.0,0,0,0,0
+after,BenchmarkCPUTraversal/Mixed/Reflection/Decode-8,5,406.0,400.6,411.4,3,3,1,1
+after,BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8,5,133.6,132.6,136.2,0,0,0,0
+after,BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8,5,1172.0,1159.0,1259.0,3,3,1,1
+after,BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8,5,141.0,140.0,141.9,0,0,0,0
+after,BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8,5,467.6,464.7,473.5,1024,1024,1,1
+after,BenchmarkReflectionStruct/SingleField/Encode-8,5,34.35,34.13,34.49,0,0,0,0
+after,BenchmarkReflectionStruct/SingleField/Decode-8,5,80.94,79.86,82.21,0,0,0,0
+after,BenchmarkReflectionStruct/Scalars/Encode-8,5,71.23,71.12,72.06,0,0,0,0
+after,BenchmarkReflectionStruct/Scalars/Decode-8,5,228.5,228.0,231.1,0,0,0,0
+after,BenchmarkReflectionStruct/Mixed/Encode-8,5,129.1,127.6,129.1,0,0,0,0
+after,BenchmarkReflectionStruct/Mixed/Decode-8,5,402.5,400.1,404.4,3,3,1,1
+after,BenchmarkReflectionStruct/Nested/Encode-8,5,67.34,66.63,67.75,0,0,0,0
+after,BenchmarkReflectionStruct/Nested/Decode-8,5,217.7,216.9,221.5,0,0,0,0
+before,BenchmarkReflectionStruct/SingleField/Encode-8,5,34.51,34.17,36.04,0,0,0,0
+before,BenchmarkReflectionStruct/SingleField/Decode-8,5,91.63,91.29,92.76,0,0,0,0
+before,BenchmarkReflectionStruct/Scalars/Encode-8,5,72.73,70.92,74.79,0,0,0,0
+before,BenchmarkReflectionStruct/Scalars/Decode-8,5,248.5,248.1,250.0,0,0,0,0
+before,BenchmarkReflectionStruct/Mixed/Encode-8,5,128.5,128.2,131.3,0,0,0,0
+before,BenchmarkReflectionStruct/Mixed/Decode-8,5,439.9,435.4,448.1,3,3,1,1
+before,BenchmarkReflectionStruct/Nested/Encode-8,5,67.58,66.22,68.03,0,0,0,0
+before,BenchmarkReflectionStruct/Nested/Decode-8,5,242.6,242.4,244.8,0,0,0,0
+before,BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8,5,20.81,20.69,20.86,0,0,0,0
+before,BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8,5,83.58,83.35,83.98,0,0,0,0
+before,BenchmarkStreamMessage/Encode/Unbuffered/Reset-8,5,101.3,100.4,102.1,0,0,0,0
+before,BenchmarkStreamMessage/Decode/Unbuffered/Reset-8,5,328.6,326.8,329.6,40,40,8,8
+after,BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8,5,20.84,20.7,20.86,0,0,0,0
+after,BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8,5,74.9,74.54,74.97,0,0,0,0
+after,BenchmarkStreamMessage/Encode/Unbuffered/Reset-8,5,101.6,101.0,101.9,0,0,0,0
+after,BenchmarkStreamMessage/Decode/Unbuffered/Reset-8,5,295.8,293.2,300.0,40,40,8,8
+after,BenchmarkAllocationOwnedSmall/Bytes8/Binary-8,5,45.04,44.18,45.48,8,8,1,1
+after,BenchmarkAllocationOwnedSmall/Bytes8/String-8,5,36.03,35.74,36.68,8,8,1,1
+before,BenchmarkAllocationOwnedSmall/Bytes8/Binary-8,5,47.36,46.89,51.61,8,8,1,1
+before,BenchmarkAllocationOwnedSmall/Bytes8/String-8,5,37.39,37.23,37.54,8,8,1,1
+before,BenchmarkAllocationSkip/Scalar/Unbuffered/Reset-8,5,36.8,36.52,37.27,0,0,0,0
+before,BenchmarkAllocationSkip/Message/Unbuffered/Reset-8,5,265.7,264.8,266.7,0,0,0,0
+after,BenchmarkAllocationSkip/Scalar/Unbuffered/Reset-8,5,35.14,34.68,35.33,0,0,0,0
+after,BenchmarkAllocationSkip/Message/Unbuffered/Reset-8,5,245.0,243.9,246.2,0,0,0,0
+
+
+===== timings.txt =====
+ROUND 1 GROUP traversal VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1539549	       133.3 ns/op	 450.26 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  569276	       441.9 ns/op	 135.77 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1803720	       133.3 ns/op	492190.00 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  215980	      1294 ns/op	50680.67 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1714609	       144.7 ns/op	7482.45 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  451807	       494.0 ns/op	2192.45 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 1 GROUP traversal VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1845577	       160.0 ns/op	 375.07 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  587832	       411.4 ns/op	 145.83 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1771963	       136.2 ns/op	481458.67 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  223722	      1259 ns/op	52087.20 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1709764	       141.0 ns/op	7679.83 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  483285	       464.7 ns/op	2330.68 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 1 GROUP structs VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkReflectionStruct$/./^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkReflectionStruct/SingleField/Encode-8  	 6968328	        34.49 ns/op	 144.96 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/SingleField/Decode-8  	 2953225	        80.74 ns/op	  61.93 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Encode-8      	 3358964	        71.23 ns/op	 491.39 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Decode-8      	 1000000	       229.0 ns/op	 152.86 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Encode-8        	 1849798	       129.1 ns/op	 464.64 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Decode-8        	  602712	       403.9 ns/op	 148.56 MB/s	       3 B/op	       1 allocs/op
+BenchmarkReflectionStruct/Nested/Encode-8       	 3540352	        67.34 ns/op	 386.08 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Nested/Decode-8       	 1000000	       221.5 ns/op	 117.38 MB/s	       0 B/op	       0 allocs/op
+PASS
+ROUND 1 GROUP structs VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkReflectionStruct$/./^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkReflectionStruct/SingleField/Encode-8  	 7076548	        34.17 ns/op	 146.33 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/SingleField/Decode-8  	 2580062	        92.76 ns/op	  53.90 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Encode-8      	 3273368	        72.73 ns/op	 481.26 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Decode-8      	  953389	       249.9 ns/op	 140.05 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Encode-8        	 1866325	       128.5 ns/op	 466.92 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Decode-8        	  559564	       439.9 ns/op	 136.39 MB/s	       3 B/op	       1 allocs/op
+BenchmarkReflectionStruct/Nested/Encode-8       	 3543796	        67.58 ns/op	 384.73 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Nested/Decode-8       	 1000000	       244.8 ns/op	 106.22 MB/s	       0 B/op	       0 allocs/op
+PASS
+ROUND 1 GROUP stream VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkStream(Primitives|Message)$/^(Encode|Decode)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	11498864	        20.69 ns/op	1450.01 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 2895958	        83.35 ns/op	 359.92 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8            	 2366767	       101.0 ns/op	 564.11 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8            	  760274	       329.4 ns/op	 173.07 MB/s	        25.00 readcalls/op	         0 writecalls/op	      40 B/op	       8 allocs/op
+PASS
+ROUND 1 GROUP stream VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkStream(Primitives|Message)$/^(Encode|Decode)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	11645420	        20.84 ns/op	1439.49 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 3220674	        74.54 ns/op	 402.49 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8            	 2349986	       101.9 ns/op	 559.42 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8            	  825544	       293.2 ns/op	 194.44 MB/s	        25.00 readcalls/op	         0 writecalls/op	      40 B/op	       8 allocs/op
+PASS
+ROUND 1 GROUP owned VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationOwnedSmall$/^Bytes8$/^(Binary|String)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationOwnedSmall/Bytes8/Binary-8  	 5191190	        45.48 ns/op	 219.89 MB/s	       8 B/op	       1 allocs/op
+BenchmarkAllocationOwnedSmall/Bytes8/String-8  	 6602655	        35.74 ns/op	 251.83 MB/s	       8 B/op	       1 allocs/op
+PASS
+ROUND 1 GROUP owned VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationOwnedSmall$/^Bytes8$/^(Binary|String)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationOwnedSmall/Bytes8/Binary-8  	 5054622	        51.61 ns/op	 193.76 MB/s	       8 B/op	       1 allocs/op
+BenchmarkAllocationOwnedSmall/Bytes8/String-8  	 6195279	        37.27 ns/op	 241.50 MB/s	       8 B/op	       1 allocs/op
+PASS
+ROUND 1 GROUP skip VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationSkip$/^(Scalar|Message)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/Scalar/Unbuffered/Reset-8         	 6552170	        36.67 ns/op	  27.27 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8        	  937453	       265.4 ns/op	 214.76 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 1 GROUP skip VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationSkip$/^(Scalar|Message)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/Scalar/Unbuffered/Reset-8         	 6816349	        34.68 ns/op	  28.84 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8        	 1000000	       243.9 ns/op	 233.70 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 2 GROUP traversal VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1826752	       131.5 ns/op	 456.26 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  601183	       400.6 ns/op	 149.78 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1790821	       133.3 ns/op	492022.08 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  209366	      1159 ns/op	56587.43 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1690795	       141.6 ns/op	7649.40 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  477421	       470.1 ns/op	2303.92 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 2 GROUP traversal VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1803862	       132.3 ns/op	 453.67 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  555121	       441.5 ns/op	 135.90 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1761022	       137.0 ns/op	478650.46 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  208132	      1180 ns/op	55590.27 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1651448	       144.5 ns/op	7493.49 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  458156	       505.1 ns/op	2144.18 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 2 GROUP skip VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationSkip$/^(Scalar|Message)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/Scalar/Unbuffered/Reset-8         	 6528162	        36.80 ns/op	  27.17 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8        	  950871	       264.8 ns/op	 215.24 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 2 GROUP skip VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationSkip$/^(Scalar|Message)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/Scalar/Unbuffered/Reset-8         	 6815551	        35.27 ns/op	  28.35 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8        	  971364	       244.6 ns/op	 233.07 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 2 GROUP owned VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationOwnedSmall$/^Bytes8$/^(Binary|String)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationOwnedSmall/Bytes8/Binary-8  	 5356046	        45.04 ns/op	 222.03 MB/s	       8 B/op	       1 allocs/op
+BenchmarkAllocationOwnedSmall/Bytes8/String-8  	 6615716	        36.03 ns/op	 249.78 MB/s	       8 B/op	       1 allocs/op
+PASS
+ROUND 2 GROUP owned VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationOwnedSmall$/^Bytes8$/^(Binary|String)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationOwnedSmall/Bytes8/Binary-8  	 5072060	        46.89 ns/op	 213.26 MB/s	       8 B/op	       1 allocs/op
+BenchmarkAllocationOwnedSmall/Bytes8/String-8  	 6417476	        37.23 ns/op	 241.71 MB/s	       8 B/op	       1 allocs/op
+PASS
+ROUND 2 GROUP stream VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkStream(Primitives|Message)$/^(Encode|Decode)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	11642972	        20.81 ns/op	1441.72 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 2873406	        83.56 ns/op	 359.04 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8            	 2365660	       101.3 ns/op	 562.91 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8            	  758722	       327.8 ns/op	 173.87 MB/s	        25.00 readcalls/op	         0 writecalls/op	      40 B/op	       8 allocs/op
+PASS
+ROUND 2 GROUP stream VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkStream(Primitives|Message)$/^(Encode|Decode)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	11711577	        20.70 ns/op	1449.61 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 3204313	        74.90 ns/op	 400.55 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8            	 2381331	       101.0 ns/op	 564.27 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8            	  816696	       295.8 ns/op	 192.67 MB/s	        25.00 readcalls/op	         0 writecalls/op	      40 B/op	       8 allocs/op
+PASS
+ROUND 2 GROUP structs VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkReflectionStruct$/./^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkReflectionStruct/SingleField/Encode-8  	 7038621	        34.35 ns/op	 145.56 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/SingleField/Decode-8  	 2925196	        81.31 ns/op	  61.49 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Encode-8      	 3277650	        72.06 ns/op	 485.71 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Decode-8      	 1000000	       228.2 ns/op	 153.37 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Encode-8        	 1852596	       129.1 ns/op	 464.86 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Decode-8        	  593403	       404.4 ns/op	 148.37 MB/s	       3 B/op	       1 allocs/op
+BenchmarkReflectionStruct/Nested/Encode-8       	 3620748	        67.30 ns/op	 386.35 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Nested/Decode-8       	 1000000	       218.0 ns/op	 119.26 MB/s	       0 B/op	       0 allocs/op
+PASS
+ROUND 2 GROUP structs VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkReflectionStruct$/./^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkReflectionStruct/SingleField/Encode-8  	 6916924	        34.49 ns/op	 144.95 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/SingleField/Decode-8  	 2548425	        91.63 ns/op	  54.57 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Encode-8      	 3385399	        70.92 ns/op	 493.50 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Decode-8      	  986452	       248.5 ns/op	 140.83 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Encode-8        	 1868714	       128.2 ns/op	 467.97 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Decode-8        	  561228	       443.8 ns/op	 135.20 MB/s	       3 B/op	       1 allocs/op
+BenchmarkReflectionStruct/Nested/Encode-8       	 3537092	        67.80 ns/op	 383.49 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Nested/Decode-8       	  983085	       243.3 ns/op	 106.87 MB/s	       0 B/op	       0 allocs/op
+PASS
+ROUND 3 GROUP stream VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkStream(Primitives|Message)$/^(Encode|Decode)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	11662420	        20.69 ns/op	1450.26 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 2878876	        83.62 ns/op	 358.78 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8            	 2381516	       100.4 ns/op	 567.78 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8            	  720666	       326.8 ns/op	 174.44 MB/s	        25.00 readcalls/op	         0 writecalls/op	      40 B/op	       8 allocs/op
+PASS
+ROUND 3 GROUP stream VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkStream(Primitives|Message)$/^(Encode|Decode)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	11692748	        20.86 ns/op	1438.46 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 3223125	        74.87 ns/op	 400.67 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8            	 2347522	       101.6 ns/op	 560.94 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8            	  807808	       300.0 ns/op	 190.02 MB/s	        25.00 readcalls/op	         0 writecalls/op	      40 B/op	       8 allocs/op
+PASS
+ROUND 3 GROUP owned VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationOwnedSmall$/^Bytes8$/^(Binary|String)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationOwnedSmall/Bytes8/Binary-8  	 5411870	        44.18 ns/op	 226.36 MB/s	       8 B/op	       1 allocs/op
+BenchmarkAllocationOwnedSmall/Bytes8/String-8  	 6487626	        35.88 ns/op	 250.87 MB/s	       8 B/op	       1 allocs/op
+PASS
+ROUND 3 GROUP owned VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationOwnedSmall$/^Bytes8$/^(Binary|String)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationOwnedSmall/Bytes8/Binary-8  	 5021371	        47.45 ns/op	 210.75 MB/s	       8 B/op	       1 allocs/op
+BenchmarkAllocationOwnedSmall/Bytes8/String-8  	 6479954	        37.54 ns/op	 239.76 MB/s	       8 B/op	       1 allocs/op
+PASS
+ROUND 3 GROUP skip VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationSkip$/^(Scalar|Message)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/Scalar/Unbuffered/Reset-8         	 6452211	        36.52 ns/op	  27.38 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8        	  885349	       266.7 ns/op	 213.71 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 3 GROUP skip VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationSkip$/^(Scalar|Message)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/Scalar/Unbuffered/Reset-8         	 6694101	        35.33 ns/op	  28.31 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8        	 1000000	       245.9 ns/op	 231.84 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 3 GROUP traversal VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1821045	       131.6 ns/op	 456.01 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  564301	       405.2 ns/op	 148.08 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1765495	       135.3 ns/op	484704.85 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  210327	      1161 ns/op	56512.95 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1676628	       141.9 ns/op	7629.50 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  506925	       467.6 ns/op	2315.94 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 3 GROUP traversal VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1825764	       131.7 ns/op	 455.72 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  532578	       442.0 ns/op	 135.75 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1779104	       135.1 ns/op	485673.01 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  209382	      1190 ns/op	55127.44 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1669854	       143.1 ns/op	7570.74 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  447568	       502.9 ns/op	2153.55 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 3 GROUP structs VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkReflectionStruct$/./^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkReflectionStruct/SingleField/Encode-8  	 6971752	        34.51 ns/op	 144.87 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/SingleField/Decode-8  	 2616727	        91.29 ns/op	  54.77 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Encode-8      	 3212190	        74.21 ns/op	 471.64 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Decode-8      	  966248	       250.0 ns/op	 140.01 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Encode-8        	 1851772	       128.4 ns/op	 467.22 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Decode-8        	  564716	       435.4 ns/op	 137.79 MB/s	       3 B/op	       1 allocs/op
+BenchmarkReflectionStruct/Nested/Encode-8       	 3641107	        66.22 ns/op	 392.66 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Nested/Decode-8       	  990762	       242.6 ns/op	 107.18 MB/s	       0 B/op	       0 allocs/op
+PASS
+ROUND 3 GROUP structs VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkReflectionStruct$/./^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkReflectionStruct/SingleField/Encode-8  	 7053532	        34.13 ns/op	 146.50 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/SingleField/Decode-8  	 2987836	        79.86 ns/op	  62.61 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Encode-8      	 3337850	        71.15 ns/op	 491.90 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Decode-8      	 1000000	       228.0 ns/op	 153.50 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Encode-8        	 1867012	       128.0 ns/op	 468.73 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Decode-8        	  583982	       401.2 ns/op	 149.56 MB/s	       3 B/op	       1 allocs/op
+BenchmarkReflectionStruct/Nested/Encode-8       	 3565867	        67.75 ns/op	 383.74 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Nested/Decode-8       	 1000000	       216.9 ns/op	 119.89 MB/s	       0 B/op	       0 allocs/op
+PASS
+ROUND 4 GROUP stream VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkStream(Primitives|Message)$/^(Encode|Decode)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	11612340	        20.71 ns/op	1448.30 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 3208674	        74.90 ns/op	 400.53 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8            	 2366763	       101.0 ns/op	 564.26 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8            	  836552	       294.5 ns/op	 193.54 MB/s	        25.00 readcalls/op	         0 writecalls/op	      40 B/op	       8 allocs/op
+PASS
+ROUND 4 GROUP stream VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkStream(Primitives|Message)$/^(Encode|Decode)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	11560716	        20.81 ns/op	1441.93 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 2718369	        83.98 ns/op	 357.22 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8            	 2342306	       101.4 ns/op	 561.92 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8            	  724327	       328.6 ns/op	 173.45 MB/s	        25.00 readcalls/op	         0 writecalls/op	      40 B/op	       8 allocs/op
+PASS
+ROUND 4 GROUP structs VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkReflectionStruct$/./^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkReflectionStruct/SingleField/Encode-8  	 6915844	        34.82 ns/op	 143.59 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/SingleField/Decode-8  	 2623185	        91.29 ns/op	  54.77 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Encode-8      	 3228505	        74.79 ns/op	 468.01 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Decode-8      	  953325	       248.3 ns/op	 140.93 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Encode-8        	 1837803	       131.3 ns/op	 457.02 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Decode-8        	  536062	       438.7 ns/op	 136.75 MB/s	       3 B/op	       1 allocs/op
+BenchmarkReflectionStruct/Nested/Encode-8       	 3515834	        68.03 ns/op	 382.19 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Nested/Decode-8       	 1000000	       242.4 ns/op	 107.26 MB/s	       0 B/op	       0 allocs/op
+PASS
+ROUND 4 GROUP structs VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkReflectionStruct$/./^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkReflectionStruct/SingleField/Encode-8  	 6994322	        34.24 ns/op	 146.01 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/SingleField/Decode-8  	 2961801	        80.94 ns/op	  61.77 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Encode-8      	 3363231	        71.12 ns/op	 492.14 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Decode-8      	 1000000	       228.5 ns/op	 153.21 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Encode-8        	 1855106	       127.6 ns/op	 470.09 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Decode-8        	  626904	       400.1 ns/op	 149.98 MB/s	       3 B/op	       1 allocs/op
+BenchmarkReflectionStruct/Nested/Encode-8       	 3554232	        67.69 ns/op	 384.09 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Nested/Decode-8       	 1000000	       217.1 ns/op	 119.73 MB/s	       0 B/op	       0 allocs/op
+PASS
+ROUND 4 GROUP traversal VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1850179	       129.2 ns/op	 464.46 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  593092	       406.0 ns/op	 147.77 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1813052	       132.6 ns/op	494771.46 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  196119	      1205 ns/op	54434.89 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1711101	       140.0 ns/op	7733.43 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  472258	       473.5 ns/op	2287.13 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 4 GROUP traversal VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1849460	       129.1 ns/op	 464.80 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  551348	       441.9 ns/op	 135.79 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1803205	       133.0 ns/op	493219.21 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  212563	      1178 ns/op	55680.47 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1686789	       141.2 ns/op	7670.63 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  430412	       502.5 ns/op	2155.30 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 4 GROUP skip VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationSkip$/^(Scalar|Message)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/Scalar/Unbuffered/Reset-8         	 6431564	        37.27 ns/op	  26.83 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8        	  947913	       265.7 ns/op	 214.57 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 4 GROUP skip VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationSkip$/^(Scalar|Message)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/Scalar/Unbuffered/Reset-8         	 6925864	        35.14 ns/op	  28.46 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8        	  993103	       245.0 ns/op	 232.66 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 4 GROUP owned VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationOwnedSmall$/^Bytes8$/^(Binary|String)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationOwnedSmall/Bytes8/Binary-8  	 5354542	        44.27 ns/op	 225.89 MB/s	       8 B/op	       1 allocs/op
+BenchmarkAllocationOwnedSmall/Bytes8/String-8  	 6469561	        36.21 ns/op	 248.56 MB/s	       8 B/op	       1 allocs/op
+PASS
+ROUND 4 GROUP owned VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationOwnedSmall$/^Bytes8$/^(Binary|String)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationOwnedSmall/Bytes8/Binary-8  	 5103306	        46.95 ns/op	 213.00 MB/s	       8 B/op	       1 allocs/op
+BenchmarkAllocationOwnedSmall/Bytes8/String-8  	 6392676	        37.44 ns/op	 240.39 MB/s	       8 B/op	       1 allocs/op
+PASS
+ROUND 5 GROUP skip VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationSkip$/^(Scalar|Message)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/Scalar/Unbuffered/Reset-8         	 6472440	        36.96 ns/op	  27.06 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8        	  943442	       266.5 ns/op	 213.89 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 5 GROUP skip VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationSkip$/^(Scalar|Message)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationSkip/Scalar/Unbuffered/Reset-8         	 6774955	        34.88 ns/op	  28.67 MB/s	         1.000 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkAllocationSkip/Message/Unbuffered/Reset-8        	 1000000	       246.2 ns/op	 231.49 MB/s	        25.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+PASS
+ROUND 5 GROUP traversal VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1849309	       130.1 ns/op	 461.12 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  589293	       409.3 ns/op	 146.60 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1791534	       133.6 ns/op	491076.78 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  220614	      1172 ns/op	55964.19 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1713798	       140.2 ns/op	7725.16 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  486436	       466.8 ns/op	2320.09 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 5 GROUP traversal VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkCPUTraversal$/./^Reflection$/^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkCPUTraversal/Mixed/Reflection/Encode-8  	 1843020	       130.0 ns/op	 461.47 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Mixed/Reflection/Decode-8  	  547720	       444.6 ns/op	 134.94 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Encode-8         	 1800474	       132.6 ns/op	494686.81 MB/s	        17.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/Binary64KiB/Reflection/Decode-8         	  200283	      1210 ns/op	54196.56 MB/s	       3 B/op	       1 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Encode-8          	 1706606	       140.3 ns/op	7720.90 MB/s	        16.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkCPUTraversal/String1KiB/Reflection/Decode-8          	  451852	       503.1 ns/op	2152.47 MB/s	    1024 B/op	       1 allocs/op
+PASS
+ROUND 5 GROUP structs VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkReflectionStruct$/./^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkReflectionStruct/SingleField/Encode-8  	 6626516	        36.04 ns/op	 138.74 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/SingleField/Decode-8  	 2585985	        92.46 ns/op	  54.08 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Encode-8      	 3350430	        71.43 ns/op	 490.01 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Decode-8      	  948679	       248.1 ns/op	 141.09 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Encode-8        	 1834050	       130.1 ns/op	 461.32 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Decode-8        	  542576	       448.1 ns/op	 133.91 MB/s	       3 B/op	       1 allocs/op
+BenchmarkReflectionStruct/Nested/Encode-8       	 3631111	        66.32 ns/op	 392.02 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Nested/Decode-8       	  976767	       242.6 ns/op	 107.16 MB/s	       0 B/op	       0 allocs/op
+PASS
+ROUND 5 GROUP structs VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkReflectionStruct$/./^(Encode|Decode)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkReflectionStruct/SingleField/Encode-8  	 6977445	        34.38 ns/op	 145.43 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/SingleField/Decode-8  	 2947146	        82.21 ns/op	  60.82 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Encode-8      	 3337282	        71.34 ns/op	 490.61 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Scalars/Decode-8      	 1000000	       231.1 ns/op	 151.48 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Encode-8        	 1851054	       129.1 ns/op	 464.60 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Mixed/Decode-8        	  582630	       402.5 ns/op	 149.07 MB/s	       3 B/op	       1 allocs/op
+BenchmarkReflectionStruct/Nested/Encode-8       	 3601039	        66.63 ns/op	 390.23 MB/s	       0 B/op	       0 allocs/op
+BenchmarkReflectionStruct/Nested/Decode-8       	 1000000	       217.7 ns/op	 119.43 MB/s	       0 B/op	       0 allocs/op
+PASS
+ROUND 5 GROUP stream VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkStream(Primitives|Message)$/^(Encode|Decode)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	11591636	        20.85 ns/op	1438.80 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 3197050	        74.97 ns/op	 400.13 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8            	 2370010	       101.6 ns/op	 560.75 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8            	  792688	       296.2 ns/op	 192.46 MB/s	        25.00 readcalls/op	         0 writecalls/op	      40 B/op	       8 allocs/op
+PASS
+ROUND 5 GROUP stream VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkStream(Primitives|Message)$/^(Encode|Decode)$/^Unbuffered$/^Reset$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkStreamPrimitives/Encode/Unbuffered/Reset-8         	11502010	        20.86 ns/op	1438.42 MB/s	         0 readcalls/op	         6.000 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamPrimitives/Decode/Unbuffered/Reset-8         	 2843391	        83.58 ns/op	 358.92 MB/s	        10.00 readcalls/op	         0 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Encode/Unbuffered/Reset-8            	 2345937	       102.1 ns/op	 558.52 MB/s	         0 readcalls/op	        23.00 writecalls/op	       0 B/op	       0 allocs/op
+BenchmarkStreamMessage/Decode/Unbuffered/Reset-8            	  752911	       329.6 ns/op	 172.92 MB/s	        25.00 readcalls/op	         0 writecalls/op	      40 B/op	       8 allocs/op
+PASS
+ROUND 5 GROUP owned VERSION before COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/before.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationOwnedSmall$/^Bytes8$/^(Binary|String)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationOwnedSmall/Bytes8/Binary-8  	 5018352	        47.36 ns/op	 211.16 MB/s	       8 B/op	       1 allocs/op
+BenchmarkAllocationOwnedSmall/Bytes8/String-8  	 6327667	        37.39 ns/op	 240.68 MB/s	       8 B/op	       1 allocs/op
+PASS
+ROUND 5 GROUP owned VERSION after COMMAND ['/private/tmp/messagepack-reader-fast-paths-c_ac4fp8/after.test', '-test.run', '^$', '-test.bench', '^BenchmarkAllocationOwnedSmall$/^Bytes8$/^(Binary|String)$', '-test.benchmem', '-test.benchtime=200ms', '-test.count=1']
+goos: darwin
+goarch: arm64
+pkg: github.com/itsmontoya/messagepack
+cpu: Apple M3
+BenchmarkAllocationOwnedSmall/Bytes8/Binary-8  	 5338206	        45.21 ns/op	 221.20 MB/s	       8 B/op	       1 allocs/op
+BenchmarkAllocationOwnedSmall/Bytes8/String-8  	 6383869	        36.68 ns/op	 245.39 MB/s	       8 B/op	       1 allocs/op
+PASS
+
+
+===== run.py =====
+from pathlib import Path
+import subprocess, re, statistics, csv
+root = Path(__file__).parent
+jobs = [
+    ("traversal", "^BenchmarkCPUTraversal$/./^Reflection$/^(Encode|Decode)$"),
+    ("structs", "^BenchmarkReflectionStruct$/./^(Encode|Decode)$"),
+    ("stream", "^BenchmarkStream(Primitives|Message)$/^(Encode|Decode)$/^Unbuffered$/^Reset$"),
+    ("owned", "^BenchmarkAllocationOwnedSmall$/^Bytes8$/^(Binary|String)$"),
+    ("skip", "^BenchmarkAllocationSkip$/^(Scalar|Message)$/^Unbuffered$/^Reset$"),
+]
+values = {}
+with (root / "timings.txt").open("w") as out:
+    for round_index in range(5):
+        order = jobs[round_index:] + jobs[:round_index]
+        if round_index % 2:
+            order.reverse()
+        for job_index, (name, pattern) in enumerate(order):
+            versions = ["before", "after"] if (round_index + job_index) % 2 == 0 else ["after", "before"]
+            for version in versions:
+                args = [str(root / f"{version}.test"), "-test.run", "^$", "-test.bench", pattern, "-test.benchmem", "-test.benchtime=200ms", "-test.count=1"]
+                out.write(f"ROUND {round_index + 1} GROUP {name} VERSION {version} COMMAND {args!r}\n")
+                result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=True)
+                out.write(result.stdout)
+                out.flush()
+                for line in result.stdout.splitlines():
+                    match = re.match(r"(Benchmark\S+)\s+\d+\s+([\d.]+) ns/op.*?\s+(\d+) B/op\s+(\d+) allocs/op", line)
+                    if match:
+                        benchmark, ns, allocated, count = match.groups()
+                        values.setdefault((version, benchmark), []).append((float(ns), int(allocated), int(count)))
+            print(f"round {round_index + 1} {name} complete", flush=True)
+with (root / "summary.csv").open("w") as out:
+    writer = csv.writer(out)
+    writer.writerow(["version", "case", "samples", "median_ns", "min_ns", "max_ns", "bytes_min", "bytes_max", "allocs_min", "allocs_max"])
+    for (version, benchmark), samples in values.items():
+        assert len(samples) == 5, (version, benchmark, len(samples))
+        times = [sample[0] for sample in samples]
+        allocated = [sample[1] for sample in samples]
+        counts = [sample[2] for sample in samples]
+        writer.writerow([version, benchmark, len(samples), statistics.median(times), min(times), max(times), min(allocated), max(allocated), min(counts), max(counts)])
+print(f"{len(values)} version/case pairs, {sum(len(samples) for samples in values.values())} samples", flush=True)
