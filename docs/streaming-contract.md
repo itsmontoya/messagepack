@@ -6,11 +6,13 @@
 The original streaming tasks and their implementation evidence remain recorded in
 their [handoffs](../TODO.md). The maintainer subsequently requested that the typed
 Encoder become a concrete Writer, with Encoder exposing only Encode and Close.
-Encode accepts only Encodee for now; reflection remains deferred. Close leaves
-the supplied output open. The maintainer also requested moving all Append encoding
-logic into Writer methods and removing the package-level Append functions.
+Close leaves the supplied output open. The maintainer also requested moving all
+Append encoding logic into Writer methods and removing the package-level Append functions.
 The maintainer then requested the same decoding split: concrete Reader, Decoder
 with Decode and Close, Decodee hooks, and removal of the package-level Read API.
+The maintainer subsequently requested reflection as a fallback when no Encodee
+or Decodee hook matches. Its mapping and limits are documented below and in the
+[README](../README.md#reflect-ordinary-go-values).
 The public surface and lifecycle below reflect those revisions.
 
 The maintainer also requested updating the [agent policy](../AGENTS.md) to permit
@@ -25,9 +27,9 @@ dependency, and style-guide changes are outside this refactor.
 Add typed streaming operations for nil, bool, signed/unsigned 64-bit integers,
 float32/float64, strings, binary, and container headers. Add bounded copying and
 skipping of one complete supported value. Callers retain responsibility for their
-schemas and for iterating container children. There is no generic object tree,
-reflection, automatic mapping, struct tags, extension
-support, pooling, code generation, or shared-codec concurrency in this phase.
+schemas and for iterating container children when using the typed API. Encoder
+and Decoder also provide reflection mapping. Struct tags, extension support,
+pooling, code generation, and shared-codec concurrency remain outside scope.
 
 Writer and Reader methods own encoding and decoding directly. The package-level
 Append and Read functions and their slice-only helpers are removed. ReaderLimits
@@ -124,8 +126,8 @@ Decoder exposes only Decode and Close.
 ## Custom value encoding
 
 - `Encode` checks closure and stream readiness before dispatching to
-  `EncodeMessagePack(Writer)`. Unsupported inputs, including nil and built-in
-  scalars, return `ErrUnsupportedType` directly without I/O or a terminal failure.
+  `EncodeMessagePack(Writer)` or reflecting the value. Unsupported root kinds
+  return `ErrUnsupportedType` directly without I/O or a terminal failure.
 - The concrete Writer passed by value shares output, payload buffering, and error
   state with its Encoder. Typed nil Encodee pointers retain normal Go method behavior.
 - Hook errors are wrapped with encode context and retained as terminal failures.
@@ -141,8 +143,9 @@ Decoder exposes only Decode and Close.
 ## Custom value decoding
 
 - Decode checks closure and stream readiness before dispatching to
-  DecodeMessagePack(Reader). Targets without Decodee return ErrUnsupportedType
-  directly, without I/O or a terminal failure. Reflection remains deferred.
+  DecodeMessagePack(Reader) or reflecting a non-nil pointer target. Invalid targets
+  and unsupported root kinds return ErrUnsupportedType directly without I/O or
+  a terminal failure.
 - Initialized Reader copies share input, EOF, limits, buffering, and failure state.
   A hook can configure ReaderLimits through SetLimits. Typed nil Decodee pointers
   retain normal Go method behavior.
@@ -156,6 +159,59 @@ Decoder exposes only Decode and Close.
   Repeated Close calls return the same result.
 - Zero-value Decoders and NewDecoder(nil) are unattached. Decoder has no Reset;
   construct a new Decoder to attach or replace input.
+
+## Reflection fallback
+
+Reflection supports Go booleans, integer kinds (including uintptr), floats,
+strings, pointers, interfaces, arrays, slices, maps, and structs. Named types use
+their underlying kind. Hooks take priority in nested values too; addressable
+values can use pointer-receiver hooks. Top-level typed nil hook receivers retain
+ordinary Go method behavior. Missing nested decode pointers are allocated.
+
+Codec plans are cached by reflect.Type across Encoder and Decoder instances.
+Each type's dispatch functions, hook eligibility, and struct field metadata are
+initialized once, with synchronized cache publication. Plans are retained for
+the process lifetime and do not retain application values or stream state.
+Recursive child types are resolved through the cache during traversal.
+Encoding plans hold child plan references so static struct fields, pointers,
+array/slice elements, and map keys/values do not repeat global cache lookups.
+Child initialization stays lazy to support recursive types. Struct headers and
+keys are encoded once with the typed Writer, with the map header fused into the
+first key prefix. Cached prefixes use bounded writes of at most 32 KiB.
+Encoder owns and reuses its reflection context and Writer scratch across calls.
+Field values remain reflective; no generator or additional build step is used.
+
+Structs encode maps with exact exported Go field names in declaration order;
+embedded fields keep their own names. Unexported fields and tags are ignored.
+Unknown fields are consumed with Skip, missing fields retain their values, and
+the last duplicate field wins. Map iteration order is unspecified. Arrays require
+exact lengths. Numeric conversions retain typed Reader rules and check the
+target Go type's range.
+
+Byte slices use binary and nil byte slices encode empty binary. Other nil slices,
+maps, pointers, and interfaces encode nil. Wire nil clears nullable targets.
+Reflected byte-slice fields and targets reuse sufficient destination capacity;
+larger payloads allocate new storage. Empty binary preserves existing capacity.
+Length and payload limits are checked before reslicing or modifying storage, even
+when the destination has ample capacity. Reusing a target can overwrite earlier
+slice aliases, and a failed payload read can leave a partially overwritten
+buffer. Input and destination storage must be disjoint. Typed Reader.DecodeBytes
+continues to return fresh owned results independent of subsequent reads.
+An empty interface materializes bool, uint64 for positive fixints and unsigned
+wire encodings, int64 for signed wire encodings, float32/float64, string, []byte,
+[]any, map[any]any, or nil. An interface holding a non-nil pointer decodes into
+that pointer. Non-comparable map keys fail with ErrTypeMismatch.
+
+Reflection is capped at 256 recursive calls, counting pointer/interface wrappers.
+Each decode has 1048576 visits, including wrappers, keys, and values; unknown
+fields additionally use Skip's own limits. Container child counts are checked
+against the remaining visit budget before traversal. Slices and maps grow only
+as children arrive. Owned payload limits still apply. These traversal limits are
+fixed; hook code retains responsibility for its own traversal. ErrLimitExceeded
+also covers reflection limits, including cyclic encoding input reaching the
+depth cap. Missing reflected children convert Reader EOF to io.ErrUnexpectedEOF;
+EOF before a new root remains io.EOF. Traversal failures are terminal and may
+leave partial output or target updates.
 
 ## Initialization, ownership, and reset
 
@@ -203,7 +259,7 @@ stream state unchanged. There is no partial update.
 
 | Field | Default | Valid effective values | Applies to |
 | --- | --- | --- | --- |
-| `MaxPayloadBytes` | 16 MiB (`16777216`) | 1–`4294967295` bytes | Each `DecodeString`/`DecodeBytes` result only. |
+| `MaxPayloadBytes` | 16 MiB (`16777216`) | 1–`4294967295` bytes | Each owned string/binary result and reflected binary payload, including reused storage. |
 | `MaxSkipDepth` | 64 | 1–256 container levels | One `Skip` call; 256 is a fixed hard ceiling. |
 | `MaxSkipValues` | `1048576` | 1–`18446744073709551615` values | One `Skip` call, including its root and every key/value separately. |
 | `MaxSkipBytes` | 64 MiB (`67108864`) | 1–`18446744073709551615` bytes | All wire bytes consumed by one `Skip`, including tags and headers. |
@@ -332,9 +388,9 @@ remember its root's completeness, so missing children there are unexpected EOF.
 The codec sentinels, each with
 GoDoc, are `ErrUninitialized` for no attached stream, `ErrInvalidArgument` for
 invalid limits or required nil transfer interfaces, `ErrLimitExceeded` for consumed
-values exceeding configured reader limits, and `ErrClosed` for a closed Encoder
-or Decoder. ErrUnsupportedType also covers values without the required Encodee
-or Decodee hook.
+values exceeding reader or reflection traversal limits, and `ErrClosed` for a closed Encoder
+or Decoder. ErrUnsupportedType also covers unsupported Go kinds and invalid
+decode targets.
 Error strings are not part of the contract.
 
 Wrap external source/destination errors with operation and side context using
