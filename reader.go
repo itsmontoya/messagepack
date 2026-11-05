@@ -34,6 +34,7 @@ func (r *Reader) Reset(src io.Reader) {
 	r.state.reader = src
 	r.state.err = nil
 	r.state.eof = false
+	r.state.hasTag = false
 
 	if r.state.limits.MaxPayloadBytes == 0 {
 		r.state.limits = makeReaderLimitsWithDefault()
@@ -633,6 +634,25 @@ func (r *Reader) readTag(operation string) (tag byte, err error) {
 	return r.scratch[0], nil
 }
 
+// peekTag retains only the current value's tag for the next typed operation or hook.
+func (r *Reader) peekTag() (tag byte, err error) {
+	if err = r.ready(); err != nil {
+		return 0, err
+	}
+
+	if r.state.hasTag {
+		return r.state.tag, nil
+	}
+
+	if tag, err = r.readTag("decode reflected value"); err != nil {
+		return 0, err
+	}
+
+	r.state.tag = tag
+	r.state.hasTag = true
+	return tag, nil
+}
+
 func (r *Reader) readInteger(operation string) (wire []byte, err error) {
 	var (
 		tag  byte
@@ -674,6 +694,12 @@ func (r *Reader) readFull(operation string, dst []byte, started bool) (n int, er
 		read  int
 		empty int
 	)
+
+	if len(dst) > 0 && r.state.hasTag {
+		dst[0] = r.state.tag
+		r.state.hasTag = false
+		n = 1
+	}
 
 	for n < len(dst) {
 		if r.state.eof {
