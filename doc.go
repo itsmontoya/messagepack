@@ -60,6 +60,14 @@
 // Strings preserve bytes without UTF-8 validation or normalization. String/binary
 // families are distinct; nil binary input encodes empty binary, not nil.
 //
+// Reader.DecodeInt64s, Reader.DecodeUint64s, and Reader.DecodeFloat64s fill a
+// caller-provided slice from consecutive numeric values without a container header.
+// They return the completed element count, preserve the unfilled suffix on failure,
+// and follow scalar conversion and EOF rules without additional read-ahead.
+// GOEXPERIMENT=simd builds enable standard-library SIMD for supported numeric
+// prefixes on arm64 and AVX-capable amd64, inspecting in-memory inputs or bytes
+// already available in caller-supplied bufio.Reader buffers. Other cases use scalars.
+//
 // # Failures and message boundaries
 //
 // EOF before any byte of a requested value matches io.EOF; an incomplete operation

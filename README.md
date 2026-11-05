@@ -298,6 +298,7 @@ remain caller responsibilities; a failed write may leave a partial file.
 | Boolean | `EncodeBool` | `DecodeBool` |
 | Signed/unsigned integer | `EncodeInt64`, `EncodeUint64` | `DecodeInt64`, `DecodeUint64` |
 | Floating point | `EncodeFloat32`, `EncodeFloat64` | `DecodeFloat32`, `DecodeFloat64` |
+| Consecutive numeric values | — | `DecodeInt64s(dst)`, `DecodeUint64s(dst)`, `DecodeFloat64s(dst)` |
 | Owned string/binary | `EncodeString`, `EncodeBytes` | `DecodeString`, `DecodeBytes` |
 | Known-length source | `EncodeStringFrom(length, src)`, `EncodeBytesFrom(length, src)` | — |
 | Payload to writer | — | `DecodeStringTo(dst)`, `DecodeBytesTo(dst)` |
@@ -328,6 +329,37 @@ when the value fits, rejecting negative-to-unsigned and overflowing
 unsigned-to-signed conversions. Float encoders preserve width and bits.
 `DecodeFloat64` also widens float32; widened NaN payload bits are unspecified.
 `DecodeFloat32` rejects float64. Integer/float coercion is unsupported.
+
+Numeric batch methods fill a caller-provided slice with `len(dst)` consecutive
+values and return `(n int, err error)`. They consume no container header; read
+an array header separately when the schema requires one. Each element follows
+the matching scalar method's conversion rules. On failure, `dst[:n]` contains
+completed values and `dst[n:]` is unchanged. EOF before any byte of the next
+element remains `io.EOF`, even after a completed prefix; an incomplete element
+returns `io.ErrUnexpectedEOF`. Failures remain terminal until Reset.
+Nil and empty slices perform no I/O but still check attachment and stored errors.
+See [the executable batch example](reader_example_test.go).
+
+Default builds use scalar decoding. To enable the standard library's experimental
+SIMD intrinsics, build the application with:
+
+```sh
+GOEXPERIMENT=simd go build ./...
+```
+
+On arm64 (NEON) and amd64 (AVX checked at runtime), batches vectorize supported
+prefixes of 64-bit integer/float encodings in pairs, and positive fixints in blocks
+of 16. The fast path inspects `bytes.Reader`, `bytes.Buffer`, or bytes already
+buffered in a caller-supplied `bufio.Reader`; it never fills that buffer itself.
+Other inputs, encodings, and remaining elements use scalar decoding. Cached tags
+and pending EOF also use the scalar path. Successful batches add no heap allocation.
+Other architectures and CPUs without the required instructions use scalar decoding.
+See [Go's experimental SIMD support](https://go.dev/doc/go1.27) and
+[the SIMD measurements](docs/numeric-simd-benchmarks.md).
+
+Values must be consecutive on the wire: map keys separate struct field values,
+so adjacent numeric Go fields alone do not form a batch. The batch API also
+provides a target for future generated decoders.
 
 Strings preserve bytes, including invalid UTF-8 and NULs, without validation or
 normalization. Strings and binary are distinct families. `EncodeBytes(nil)`
@@ -510,6 +542,10 @@ traversal from typed codec costs, compares generated tinylib codecs, and records
 isolated reader fast-path experiments.
 The [reader fast-path follow-up](docs/reader-cpu-optimizations.md) applies two small
 successful-read optimizations and records their before/after results.
+The [numeric batch baseline](docs/numeric-batch-benchmarks.md) compares the initial
+scalar batch methods with per-value calls for 1–1024 values.
+The [SIMD follow-up](docs/numeric-simd-benchmarks.md) measures the optional vector
+paths and separates contiguous conversion kernels from complete Reader calls.
 
 Package-level marshal/unmarshal functions, struct tags, extensions/timestamps,
 code generation, map sorting, pooling, concurrency machinery, unsafe conversions,

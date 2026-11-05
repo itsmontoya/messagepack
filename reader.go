@@ -99,6 +99,34 @@ func (r *Reader) DecodeInt64() (value int64, err error) {
 	return r.decodeInt64(wire)
 }
 
+// DecodeInt64s fills dst with consecutive values using DecodeInt64's rules.
+// It reads no container header and returns the number of completed elements.
+// On failure, dst[n:] is unchanged; EOF before an element remains io.EOF.
+// Empty dst performs no I/O but still checks attachment and stored failures.
+func (r *Reader) DecodeInt64s(dst []int64) (n int, err error) {
+	if err = r.ready(); err != nil {
+		return 0, err
+	}
+
+	if numericSIMDEnabled && len(dst) >= 2 && !r.state.hasTag && !r.state.eof {
+		if n, err = decodeInt64sSIMD(r.state.reader, dst); err != nil {
+			return n, r.fail(err)
+		}
+	}
+
+	var value int64
+	for n < len(dst) {
+		if value, err = r.DecodeInt64(); err != nil {
+			return n, err
+		}
+
+		dst[n] = value
+		n++
+	}
+
+	return n, nil
+}
+
 // decodeInt64 converts an integer whose tag and width were validated by readInteger.
 func (r *Reader) decodeInt64(wire []byte) (value int64, err error) {
 	if wire[0] <= 0x7f {
@@ -158,6 +186,34 @@ func (r *Reader) DecodeUint64() (value uint64, err error) {
 	return uint64(signed), nil
 }
 
+// DecodeUint64s fills dst with consecutive values using DecodeUint64's rules.
+// It reads no container header and returns the number of completed elements.
+// On failure, dst[n:] is unchanged; EOF before an element remains io.EOF.
+// Empty dst performs no I/O but still checks attachment and stored failures.
+func (r *Reader) DecodeUint64s(dst []uint64) (n int, err error) {
+	if err = r.ready(); err != nil {
+		return 0, err
+	}
+
+	if numericSIMDEnabled && len(dst) >= 2 && !r.state.hasTag && !r.state.eof {
+		if n, err = decodeUint64sSIMD(r.state.reader, dst); err != nil {
+			return n, r.fail(err)
+		}
+	}
+
+	var value uint64
+	for n < len(dst) {
+		if value, err = r.DecodeUint64(); err != nil {
+			return n, err
+		}
+
+		dst[n] = value
+		n++
+	}
+
+	return n, nil
+}
+
 // DecodeFloat32 accepts float32 encodings and preserves their bits.
 // It does not narrow float64; failures return positive zero.
 func (r *Reader) DecodeFloat32() (value float32, err error) {
@@ -206,6 +262,34 @@ func (r *Reader) DecodeFloat64() (value float64, err error) {
 	}
 
 	return math.Float64frombits(binary.BigEndian.Uint64(r.scratch[1:9])), nil
+}
+
+// DecodeFloat64s fills dst with consecutive values using DecodeFloat64's rules.
+// It reads no container header and returns the number of completed elements.
+// On failure, dst[n:] is unchanged; EOF before an element remains io.EOF.
+// Empty dst performs no I/O but still checks attachment and stored failures.
+func (r *Reader) DecodeFloat64s(dst []float64) (n int, err error) {
+	if err = r.ready(); err != nil {
+		return 0, err
+	}
+
+	if numericSIMDEnabled && len(dst) >= 2 && !r.state.hasTag && !r.state.eof {
+		if n, err = decodeFloat64sSIMD(r.state.reader, dst); err != nil {
+			return n, r.fail(err)
+		}
+	}
+
+	var value float64
+	for n < len(dst) {
+		if value, err = r.DecodeFloat64(); err != nil {
+			return n, err
+		}
+
+		dst[n] = value
+		n++
+	}
+
+	return n, nil
 }
 
 // DecodeArrayHeader consumes only a header and returns its element count.

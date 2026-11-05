@@ -94,9 +94,12 @@ func (r *Reader) SetLimits(limits ReaderLimits) (err error)
 func (r *Reader) DecodeNil() (err error)
 func (r *Reader) DecodeBool() (value bool, err error)
 func (r *Reader) DecodeInt64() (value int64, err error)
+func (r *Reader) DecodeInt64s(dst []int64) (n int, err error)
 func (r *Reader) DecodeUint64() (value uint64, err error)
+func (r *Reader) DecodeUint64s(dst []uint64) (n int, err error)
 func (r *Reader) DecodeFloat32() (value float32, err error)
 func (r *Reader) DecodeFloat64() (value float64, err error)
+func (r *Reader) DecodeFloat64s(dst []float64) (n int, err error)
 func (r *Reader) DecodeString() (value string, err error)
 func (r *Reader) DecodeBytes() (value []byte, err error)
 func (r *Reader) DecodeStringTo(dst io.Writer) (n uint64, err error)
@@ -122,6 +125,47 @@ No configuration framework, exported option functions, error accessor, or flush
 is included. Each operation reports its own error. Writer and Reader retain
 Reset; Reader also exposes SetLimits. Encoder exposes only Encode and Close;
 Decoder exposes only Decode and Close.
+
+## Numeric batches
+
+`Reader.DecodeInt64s`, `DecodeUint64s`, and `DecodeFloat64s` consume exactly
+`len(dst)` consecutive numeric values on success, without consuming a container
+header. Callers read headers and enforce schema counts separately. Map keys
+separate field values; adjacent Go struct fields do not imply consecutive wire
+values. Default builds call the matching scalar decoder per element. Successful
+batches add no heap allocation or stream read-ahead.
+
+With `GOEXPERIMENT=simd`, standard-library `simd/archsimd` intrinsics accelerate
+supported prefixes on arm64 and AVX-capable amd64. Signed batches accept int64
+encodings and fitting uint64 encodings; unsigned batches accept uint64 encodings
+and nonnegative int64 encodings. Float batches accelerate float64 encodings and
+preserve their bits. Those nine-byte values are handled in pairs. Both integer
+batches also expand blocks of sixteen positive fixints. Other integer widths,
+negative fixints, float32 widening, unsupported CPUs/architectures, cached tags,
+pending EOF, and any unhandled suffix retain the scalar path.
+
+Vector paths inspect only known in-memory sources (`bytes.Reader` or
+`bytes.Buffer`) or bytes already buffered in a caller-supplied `bufio.Reader`.
+They never request a buffer fill. `bytes.Reader` inspection uses a bounded
+144-byte stack buffer and non-consuming ReadAt; other inputs expose their existing
+bytes. Only complete validated values advance the logical input position.
+Arbitrary io.Reader implementations retain their scalar I/O and error behavior.
+
+The returned `n` counts completed elements. Each completed value is assigned to
+`dst` immediately; a failing element and all later elements remain unchanged.
+The batch stops at the first failure without rollback or draining. Element
+conversion, error identity, source-error precedence, and terminal state follow
+the corresponding scalar method. EOF before an element remains `io.EOF` even
+when `n > 0`; a truncated element returns `io.ErrUnexpectedEOF`. A schema decoder
+must translate a missing required element into its incomplete-message error.
+EOF accompanying the final complete element succeeds and remains pending for
+the next value operation.
+
+Nil and empty destinations return `(0, nil)` on a healthy attached Reader
+without reading input. Stored errors and missing attachment are checked first,
+including for empty batches. Batches use caller-owned destination storage and
+do not retain it. ReaderLimits remain limited to their existing payload and Skip
+operations; batch work is bounded by the supplied destination length.
 
 ## Custom value encoding
 
@@ -346,7 +390,7 @@ a simultaneous non-EOF source or destination error.
 
 ## Incremental I/O and error observation
 
-There is no hidden input read-ahead or buffered output. Each read request is at
+There is no hidden input read-ahead or buffered output. Each stream Read request is at
 most the bytes remaining in the current tag, header, scalar body, or payload
 chunk. Caller-supplied `bufio.Reader`/`bufio.Writer` may read ahead or retain output;
 the caller must keep using those wrappers for subsequent access and perform its

@@ -1,11 +1,14 @@
 package messagepack
 
 import (
+	"bufio"
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -215,6 +218,523 @@ func TestReaderFloat64Wire(t *testing.T) {
 			if narrowErr != ErrTypeMismatch || math.Float32bits(narrow) != 0 {
 				t.Fatalf("narrowed float64 = (%v, %v)", narrow, narrowErr)
 			}
+		})
+	}
+}
+
+func TestReaderDecodeInt64s(t *testing.T) {
+	tests := []struct {
+		name     string
+		wire     []byte
+		want     []int64
+		n        int
+		consumed int
+		err      error
+	}{
+		{
+			name: "integer widths",
+			wire: []byte{0x7f, 0xe0, 0xcc, 0xff, 0xcd, 1, 0, 0xce, 0, 1, 0, 0,
+				0xcf, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+				0xd0, 0x80, 0xd1, 0x80, 0, 0xd2, 0x80, 0, 0, 0,
+				0xd3, 0x80, 0, 0, 0, 0, 0, 0, 0, 0xc3},
+			want: []int64{127, -32, 255, 256, 65536, math.MaxInt64,
+				math.MinInt8, math.MinInt16, math.MinInt32, math.MinInt64},
+			n: 10, consumed: 40,
+		},
+		{name: "unsigned overflow", wire: []byte{7, 0xcf, 0x80, 0, 0, 0, 0, 0, 0, 0, 8},
+			want: []int64{7, 99, 99}, n: 1, consumed: 10, err: ErrOverflow},
+		{name: "wrong family", wire: []byte{7, 0xa1, 'x', 8},
+			want: []int64{7, 99, 99}, n: 1, consumed: 2, err: ErrTypeMismatch},
+		{name: "container header", wire: []byte{0x93, 1, 2, 3},
+			want: []int64{99, 99, 99}, consumed: 1, err: ErrTypeMismatch},
+		{name: "truncated element", wire: []byte{7, 0xd1, 0xff},
+			want: []int64{7, 99, 99}, n: 1, consumed: 3, err: io.ErrUnexpectedEOF},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				source = &decoderTestReader{data: tt.wire, maxRead: 1}
+				r      = NewReader(source)
+				dst    = make([]int64, len(tt.want))
+			)
+
+			for index := range dst {
+				dst[index] = 99
+			}
+			n, err := r.DecodeInt64s(dst)
+			if n != tt.n || !errors.Is(err, tt.err) || !slices.Equal(dst, tt.want) || source.position != tt.consumed {
+				t.Fatalf("DecodeInt64s = (%d, %v), values %v, consumed %d; want (%d, %v), values %v, consumed %d",
+					n, err, dst, source.position, tt.n, tt.err, tt.want, tt.consumed)
+			}
+
+			if err != nil {
+				requireReaderScalarFailure(t, r, err)
+				return
+			}
+
+			if value, nextErr := r.DecodeBool(); nextErr != nil || !value {
+				t.Fatalf("following boolean = (%v, %v)", value, nextErr)
+			}
+		})
+	}
+}
+
+func TestReaderDecodeUint64s(t *testing.T) {
+	tests := []struct {
+		name     string
+		wire     []byte
+		want     []uint64
+		n        int
+		consumed int
+		err      error
+	}{
+		{
+			name: "integer widths",
+			wire: []byte{0x7f, 0xcc, 0xff, 0xcd, 1, 0, 0xce, 0, 1, 0, 0,
+				0xcf, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+				0xd0, 1, 0xd1, 0, 2, 0xd2, 0, 0, 0, 3, 0xd3, 0, 0, 0, 0, 0, 0, 0, 4, 0xc3},
+			want: []uint64{127, 255, 256, 65536, math.MaxUint64, 1, 2, 3, 4},
+			n:    9, consumed: 39,
+		},
+		{name: "negative overflow", wire: []byte{7, 0xff, 8},
+			want: []uint64{7, 99, 99}, n: 1, consumed: 2, err: ErrOverflow},
+		{name: "wrong family", wire: []byte{7, 0xa1, 'x', 8},
+			want: []uint64{7, 99, 99}, n: 1, consumed: 2, err: ErrTypeMismatch},
+		{name: "container header", wire: []byte{0x93, 1, 2, 3},
+			want: []uint64{99, 99, 99}, consumed: 1, err: ErrTypeMismatch},
+		{name: "truncated element", wire: []byte{7, 0xcd, 0xff},
+			want: []uint64{7, 99, 99}, n: 1, consumed: 3, err: io.ErrUnexpectedEOF},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				source = &decoderTestReader{data: tt.wire, maxRead: 1}
+				r      = NewReader(source)
+				dst    = make([]uint64, len(tt.want))
+			)
+
+			for index := range dst {
+				dst[index] = 99
+			}
+			n, err := r.DecodeUint64s(dst)
+			if n != tt.n || !errors.Is(err, tt.err) || !slices.Equal(dst, tt.want) || source.position != tt.consumed {
+				t.Fatalf("DecodeUint64s = (%d, %v), values %v, consumed %d; want (%d, %v), values %v, consumed %d",
+					n, err, dst, source.position, tt.n, tt.err, tt.want, tt.consumed)
+			}
+
+			if err != nil {
+				requireReaderScalarFailure(t, r, err)
+				return
+			}
+
+			if value, nextErr := r.DecodeBool(); nextErr != nil || !value {
+				t.Fatalf("following boolean = (%v, %v)", value, nextErr)
+			}
+		})
+	}
+}
+
+func TestReaderDecodeFloat64s(t *testing.T) {
+	tests := []struct {
+		name     string
+		wire     []byte
+		wantBits []uint64
+		n        int
+		consumed int
+		err      error
+	}{
+		{
+			name: "mixed widths and preserved bits",
+			wire: []byte{0xca, 0x3f, 0xc0, 0, 0, 0xcb, 0x80, 0, 0, 0, 0, 0, 0, 0,
+				0xcb, 0x7f, 0xf0, 0, 0, 0, 0, 0, 0,
+				0xcb, 0x7f, 0xf8, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc,
+				0xcb, 0x7f, 0xf0, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xc3},
+			wantBits: []uint64{0x3ff8000000000000, 0x8000000000000000, 0x7ff0000000000000,
+				0x7ff8123456789abc, 0x7ff0123456789abc},
+			n: 5, consumed: 41,
+		},
+		{name: "integer mismatch", wire: []byte{0xca, 0x3f, 0xc0, 0, 0, 7, 8},
+			wantBits: []uint64{0x3ff8000000000000, 0x4058c00000000000, 0x4058c00000000000},
+			n:        1, consumed: 6, err: ErrTypeMismatch},
+		{name: "container header", wire: []byte{0x93, 1, 2, 3},
+			wantBits: []uint64{0x4058c00000000000, 0x4058c00000000000, 0x4058c00000000000},
+			consumed: 1, err: ErrTypeMismatch},
+		{name: "truncated element", wire: []byte{0xca, 0x3f, 0xc0, 0, 0, 0xcb, 0x3f},
+			wantBits: []uint64{0x3ff8000000000000, 0x4058c00000000000, 0x4058c00000000000},
+			n:        1, consumed: 7, err: io.ErrUnexpectedEOF},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				source = &decoderTestReader{data: tt.wire, maxRead: 1}
+				r      = NewReader(source)
+				dst    = make([]float64, len(tt.wantBits))
+			)
+
+			for index := range dst {
+				dst[index] = 99
+			}
+			n, err := r.DecodeFloat64s(dst)
+			if n != tt.n || !errors.Is(err, tt.err) || source.position != tt.consumed {
+				t.Fatalf("DecodeFloat64s = (%d, %v), consumed %d; want (%d, %v), consumed %d",
+					n, err, source.position, tt.n, tt.err, tt.consumed)
+			}
+
+			for index, value := range dst {
+				if math.Float64bits(value) != tt.wantBits[index] {
+					t.Fatalf("dst[%d] bits = %016x, want %016x", index, math.Float64bits(value), tt.wantBits[index])
+				}
+			}
+			if err != nil {
+				requireReaderScalarFailure(t, r, err)
+				return
+			}
+
+			if value, nextErr := r.DecodeBool(); nextErr != nil || !value {
+				t.Fatalf("following boolean = (%v, %v)", value, nextErr)
+			}
+		})
+	}
+}
+
+func TestReaderNumericBatchLifecycle(t *testing.T) {
+	var failure = errors.New("batch source failure")
+	tests := []struct {
+		name   string
+		wire   []byte
+		decode func(*testing.T, *Reader, int) (int, error)
+		empty  func(*Reader) (int, error)
+	}{
+		{
+			name: "Int64s", wire: []byte{7, 7},
+			decode: func(tb *testing.T, r *Reader, size int) (n int, err error) {
+				var dst = [2]int64{99, 99}
+				n, err = r.DecodeInt64s(dst[:size])
+				for _, value := range dst[n:] {
+					if value != 99 {
+						tb.Fatal("DecodeInt64s changed an incomplete element")
+					}
+				}
+				return n, err
+			},
+			empty: func(r *Reader) (n int, err error) { return r.DecodeInt64s(nil) },
+		},
+		{
+			name: "Uint64s", wire: []byte{7, 7},
+			decode: func(tb *testing.T, r *Reader, size int) (n int, err error) {
+				var dst = [2]uint64{99, 99}
+				n, err = r.DecodeUint64s(dst[:size])
+				for _, value := range dst[n:] {
+					if value != 99 {
+						tb.Fatal("DecodeUint64s changed an incomplete element")
+					}
+				}
+				return n, err
+			},
+			empty: func(r *Reader) (n int, err error) { return r.DecodeUint64s(nil) },
+		},
+		{
+			name: "Float64s", wire: []byte{0xca, 0x40, 0xe0, 0, 0, 0xca, 0x40, 0xe0, 0, 0},
+			decode: func(tb *testing.T, r *Reader, size int) (n int, err error) {
+				var dst = [2]float64{99, 99}
+				n, err = r.DecodeFloat64s(dst[:size])
+				for _, value := range dst[n:] {
+					if value != 99 {
+						tb.Fatal("DecodeFloat64s changed an incomplete element")
+					}
+				}
+				return n, err
+			},
+			empty: func(r *Reader) (n int, err error) { return r.DecodeFloat64s(nil) },
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, detached := range []*Reader{{}, NewReader(nil)} {
+				if n, err := tt.decode(t, detached, 2); n != 0 || err != ErrUninitialized {
+					t.Fatalf("unattached batch = (%d, %v)", n, err)
+				}
+
+				if n, err := tt.empty(detached); n != 0 || err != ErrUninitialized {
+					t.Fatalf("unattached empty batch = (%d, %v)", n, err)
+				}
+			}
+			var (
+				source = &decoderTestReader{data: tt.wire, endErr: io.EOF}
+				r      = NewReader(source)
+			)
+
+			if n, err := tt.empty(r); n != 0 || err != nil || source.reads != 0 {
+				t.Fatalf("nil batch = (%d, %v), reads %d", n, err, source.reads)
+			}
+
+			if n, err := tt.decode(t, r, 0); n != 0 || err != nil || source.reads != 0 {
+				t.Fatalf("empty batch = (%d, %v), reads %d", n, err, source.reads)
+			}
+
+			if _, err := r.peekTag(); err != nil {
+				t.Fatal(err)
+			}
+
+			var shared = *r
+			if n, err := tt.decode(t, &shared, 2); n != 2 || err != nil || source.position != len(tt.wire) {
+				t.Fatalf("batch with cached tag = (%d, %v), consumed %d", n, err, source.position)
+			}
+
+			var reads = source.reads
+			if n, err := tt.empty(r); n != 0 || err != nil || source.reads != reads {
+				t.Fatalf("empty batch with pending EOF = (%d, %v), reads %d", n, err, source.reads)
+			}
+
+			if n, err := tt.decode(t, r, 2); n != 0 || !errors.Is(err, io.EOF) || source.reads != reads {
+				t.Fatalf("batch after pending EOF = (%d, %v), reads %d", n, err, source.reads)
+			}
+
+			source = &decoderTestReader{data: tt.wire[:len(tt.wire)/2], endErr: io.EOF}
+			shared.Reset(source)
+			n, err := tt.decode(t, r, 2)
+			if n != 1 || !errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+				t.Fatalf("missing second element = (%d, %v)", n, err)
+			}
+
+			source = &decoderTestReader{data: tt.wire, endErr: failure}
+			r.Reset(source)
+			n, err = tt.decode(t, r, 2)
+			if n != 1 || !errors.Is(err, failure) || err == failure {
+				t.Fatalf("second element with source error = (%d, %v)", n, err)
+			}
+
+			reads = source.reads
+			requireReaderScalarFailure(t, r, err)
+			if nextN, nextErr := tt.decode(t, &shared, 2); nextN != 0 || nextErr != err || source.reads != reads {
+				t.Fatalf("terminal batch = (%d, %v), reads %d", nextN, nextErr, source.reads)
+			}
+
+			if emptyN, emptyErr := tt.empty(r); emptyN != 0 || emptyErr != err || source.reads != reads {
+				t.Fatalf("terminal empty batch = (%d, %v), reads %d", emptyN, emptyErr, source.reads)
+			}
+		})
+	}
+}
+
+func TestReaderNumericBatchBufferedCompatibility(t *testing.T) {
+	tests := []struct {
+		name   string
+		tag    byte
+		scalar func(*Reader) (uint64, error)
+		batch  func(*Reader, []uint64) (int, error)
+	}{
+		{
+			name: "Int64s", tag: 0xd3,
+			scalar: func(r *Reader) (bits uint64, err error) {
+				var value int64
+				value, err = r.DecodeInt64()
+				return uint64(value), err
+			},
+			batch: func(r *Reader, bits []uint64) (n int, err error) {
+				var dst = make([]int64, len(bits))
+				for index := range dst {
+					dst[index] = int64(bits[index])
+				}
+				n, err = r.DecodeInt64s(dst)
+				for index, value := range dst {
+					bits[index] = uint64(value)
+				}
+				return n, err
+			},
+		},
+		{
+			name: "Uint64s", tag: 0xcf,
+			scalar: func(r *Reader) (value uint64, err error) { return r.DecodeUint64() },
+			batch:  func(r *Reader, dst []uint64) (n int, err error) { return r.DecodeUint64s(dst) },
+		},
+		{
+			name: "Float64s", tag: 0xcb,
+			scalar: func(r *Reader) (bits uint64, err error) {
+				var value float64
+				value, err = r.DecodeFloat64()
+				return math.Float64bits(value), err
+			},
+			batch: func(r *Reader, bits []uint64) (n int, err error) {
+				var dst = make([]float64, len(bits))
+				for index := range dst {
+					dst[index] = math.Float64frombits(bits[index])
+				}
+				n, err = r.DecodeFloat64s(dst)
+				for index, value := range dst {
+					bits[index] = math.Float64bits(value)
+				}
+				return n, err
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				patterns = []uint64{0x0123456789abcdef, 0x8000000000000000,
+					0x7ff8123456789abc, 0x7ff0123456789abc, 0xffffffffffffffff}
+				wire = make([]byte, 35*9+1)
+			)
+
+			for index := 0; index < 35; index++ {
+				wire[index*9] = tt.tag
+				binary.BigEndian.PutUint64(wire[index*9+1:], patterns[index%len(patterns)])
+			}
+			wire[len(wire)-1] = 0xc3
+			for _, sourceKind := range []string{"BytesReader", "BytesBuffer", "Buffered"} {
+				for _, count := range []int{0, 1, 2, 3, 15, 16, 17, 34, 35, 36} {
+					for _, ending := range []string{"Complete", "Truncated", "Mismatch", "Overflow", "Reserved", "Extension", "MixedWidth", "PositiveFixints", "SmallThenWide", "WideThenSmall"} {
+						t.Run(fmt.Sprintf("%s/Elements%d/%s", sourceKind, count, ending), func(t *testing.T) {
+							var data = bytes.Clone(wire)
+							switch ending {
+							case "Truncated":
+								data = data[:17*9+4]
+							case "Mismatch":
+								data[17*9] = 0xa1
+							case "Overflow":
+								data[17*9] = 0xcf
+								if tt.tag == 0xcf {
+									data[17*9] = 0xd3
+								}
+
+								data[17*9+1] = 0xff
+							case "Reserved":
+								data[17*9] = 0xc1
+							case "Extension":
+								data[17*9] = 0xd4
+							case "MixedWidth":
+								var suffix = bytes.Clone(data[17*9:])
+								data = append(data[:16*9], 7)
+								data = append(data, suffix...)
+							case "PositiveFixints":
+								data = make([]byte, 36)
+								for index := 0; index < 35; index++ {
+									data[index] = byte(index)
+								}
+								data[35] = 0xc3
+							case "SmallThenWide":
+								data = append(bytes.Repeat([]byte{7}, 16), data...)
+							case "WideThenSmall":
+								data = append(data[:18:18], bytes.Repeat([]byte{7}, 32)...)
+							}
+							var (
+								reference = bytes.NewReader(data)
+								scalar    = NewReader(reference)
+								want      = make([]uint64, count)
+								got       = make([]uint64, count)
+								wantN     int
+								wantErr   error
+								source    io.Reader
+								remaining func() int
+							)
+
+							for index := range want {
+								want[index], got[index] = 42, 42
+							}
+							for wantN < count {
+								var value uint64
+								if value, wantErr = tt.scalar(scalar); wantErr != nil {
+									break
+								}
+
+								want[wantN] = value
+								wantN++
+							}
+							switch sourceKind {
+							case "BytesReader":
+								var memory = bytes.NewReader(data)
+								source, remaining = memory, memory.Len
+							case "BytesBuffer":
+								var buffer = bytes.NewBuffer(data)
+								source, remaining = buffer, buffer.Len
+							case "Buffered":
+								var memory = bytes.NewReader(data)
+								var buffer = bufio.NewReaderSize(memory, len(data))
+								if _, err := buffer.Peek(len(data)); err != nil {
+									t.Fatal(err)
+								}
+
+								source = buffer
+								remaining = func() (length int) { return buffer.Buffered() + memory.Len() }
+							}
+							var r = NewReader(source)
+							n, err := tt.batch(r, got)
+							if n != wantN || (err == nil) != (wantErr == nil) || !slices.Equal(got, want) || remaining() != reference.Len() {
+								t.Fatalf("batch = (%d, %v), values %x, remaining %d; scalar = (%d, %v), values %x, remaining %d",
+									n, err, got, remaining(), wantN, wantErr, want, reference.Len())
+							}
+
+							for _, identity := range []error{io.EOF, io.ErrUnexpectedEOF, ErrTypeMismatch, ErrOverflow, ErrInvalidFormat, ErrUnsupportedType} {
+								if errors.Is(err, identity) != errors.Is(wantErr, identity) {
+									t.Fatalf("error identity %v differs: batch %v, scalar %v", identity, err, wantErr)
+								}
+							}
+							if err != nil {
+								requireReaderScalarFailure(t, r, err)
+								if nextN, nextErr := tt.batch(r, got); nextN != 0 || nextErr != err || remaining() != reference.Len() {
+									t.Fatalf("terminal batch = (%d, %v), remaining %d", nextN, nextErr, remaining())
+								}
+							}
+						})
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestReaderNumericBatchBufferedSourceErrors(t *testing.T) {
+	var failure = errors.New("buffered batch source failure")
+	tests := []struct {
+		name string
+		tail []byte
+		end  error
+		n    int
+		err  error
+	}{
+		{name: "missing child", end: io.EOF, n: 2, err: io.EOF},
+		{name: "truncated child", tail: []byte{0xcb, 0x3f}, end: io.EOF, n: 2, err: io.ErrUnexpectedEOF},
+		{name: "pending source failure", end: failure, n: 2, err: failure},
+		{name: "partial child with failure", tail: []byte{0xcb, 0x3f}, end: failure, n: 2, err: failure},
+		{name: "complete with EOF", tail: []byte{0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}, end: io.EOF, n: 3},
+		{name: "complete with pending failure", tail: []byte{0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}, end: failure, n: 3},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var (
+				wire   = bytes.Repeat([]byte{0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}, 2)
+				source = &decoderTestReader{data: append(wire, tt.tail...), endErr: tt.end}
+				buffer = bufio.NewReaderSize(source, len(source.data))
+				r      = NewReader(buffer)
+				dst    = [3]float64{99, 99, 99}
+			)
+
+			if _, err := buffer.Peek(len(source.data)); err != nil {
+				t.Fatal(err)
+			}
+
+			n, err := r.DecodeFloat64s(dst[:])
+			if n != tt.n || !errors.Is(err, tt.err) || source.reads != 1 {
+				t.Fatalf("buffered batch = (%d, %v), source reads %d; want (%d, %v)", n, err, source.reads, tt.n, tt.err)
+			}
+
+			for index, value := range dst {
+				var want = 99.0
+				if index < n {
+					want = 1.5
+				}
+
+				if value != want {
+					t.Fatalf("dst[%d] = %v, want %v", index, value, want)
+				}
+			}
+			if err == nil {
+				if _, err = r.DecodeFloat64(); !errors.Is(err, tt.end) || source.reads != 1 {
+					t.Fatalf("pending buffered error = %v, source reads %d", err, source.reads)
+				}
+			}
+
+			requireReaderScalarFailure(t, r, err)
 		})
 	}
 }
