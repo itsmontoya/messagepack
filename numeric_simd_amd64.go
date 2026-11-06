@@ -5,7 +5,7 @@ package messagepack
 import "simd/archsimd"
 
 func numericSIMDSupported() (supported bool) {
-	return archsimd.X86.AVX()
+	return archsimd.X86.AVX2()
 }
 
 func shuffleNumericBytes(value, indices archsimd.Uint8x16) (out archsimd.Uint8x16) {
