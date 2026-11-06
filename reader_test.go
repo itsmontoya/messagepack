@@ -573,16 +573,16 @@ func TestReaderNumericBatchBufferedCompatibility(t *testing.T) {
 			var (
 				patterns = []uint64{0x0123456789abcdef, 0x8000000000000000,
 					0x7ff8123456789abc, 0x7ff0123456789abc, 0xffffffffffffffff}
-				wire = make([]byte, 35*9+1)
+				wire = make([]byte, 129*9+1)
 			)
 
-			for index := 0; index < 35; index++ {
+			for index := 0; index < 129; index++ {
 				wire[index*9] = tt.tag
 				binary.BigEndian.PutUint64(wire[index*9+1:], patterns[index%len(patterns)])
 			}
 			wire[len(wire)-1] = 0xc3
 			for _, sourceKind := range []string{"BytesReader", "BytesBuffer", "Buffered"} {
-				for _, count := range []int{0, 1, 2, 3, 15, 16, 17, 34, 35, 36} {
+				for _, count := range []int{0, 1, 2, 3, 15, 16, 17, 34, 35, 36, 63, 64, 65, 127, 128, 129, 130} {
 					for _, ending := range []string{"Complete", "Truncated", "Mismatch", "Overflow", "Reserved", "Extension", "MixedWidth", "PositiveFixints", "SmallThenWide", "WideThenSmall"} {
 						t.Run(fmt.Sprintf("%s/Elements%d/%s", sourceKind, count, ending), func(t *testing.T) {
 							var data = bytes.Clone(wire)
@@ -607,11 +607,11 @@ func TestReaderNumericBatchBufferedCompatibility(t *testing.T) {
 								data = append(data[:16*9], 7)
 								data = append(data, suffix...)
 							case "PositiveFixints":
-								data = make([]byte, 36)
-								for index := 0; index < 35; index++ {
-									data[index] = byte(index)
+								data = make([]byte, 130)
+								for index := 0; index < 129; index++ {
+									data[index] = byte(index % 128)
 								}
-								data[35] = 0xc3
+								data[129] = 0xc3
 							case "SmallThenWide":
 								data = append(bytes.Repeat([]byte{7}, 16), data...)
 							case "WideThenSmall":
@@ -692,22 +692,26 @@ func TestReaderNumericBatchBufferedSourceErrors(t *testing.T) {
 		n    int
 		err  error
 	}{
-		{name: "missing child", end: io.EOF, n: 2, err: io.EOF},
-		{name: "truncated child", tail: []byte{0xcb, 0x3f}, end: io.EOF, n: 2, err: io.ErrUnexpectedEOF},
-		{name: "pending source failure", end: failure, n: 2, err: failure},
-		{name: "partial child with failure", tail: []byte{0xcb, 0x3f}, end: failure, n: 2, err: failure},
-		{name: "complete with EOF", tail: []byte{0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}, end: io.EOF, n: 3},
-		{name: "complete with pending failure", tail: []byte{0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}, end: failure, n: 3},
+		{name: "missing child", end: io.EOF, n: 64, err: io.EOF},
+		{name: "truncated child", tail: []byte{0xcb, 0x3f}, end: io.EOF, n: 64, err: io.ErrUnexpectedEOF},
+		{name: "pending source failure", end: failure, n: 64, err: failure},
+		{name: "partial child with failure", tail: []byte{0xcb, 0x3f}, end: failure, n: 64, err: failure},
+		{name: "complete with EOF", tail: []byte{0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}, end: io.EOF, n: 65},
+		{name: "complete with pending failure", tail: []byte{0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}, end: failure, n: 65},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var (
-				wire   = bytes.Repeat([]byte{0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}, 2)
+				wire   = bytes.Repeat([]byte{0xcb, 0x3f, 0xf8, 0, 0, 0, 0, 0, 0}, 64)
 				source = &decoderTestReader{data: append(wire, tt.tail...), endErr: tt.end}
 				buffer = bufio.NewReaderSize(source, len(source.data))
 				r      = NewReader(buffer)
-				dst    = [3]float64{99, 99, 99}
+				dst    [65]float64
 			)
+
+			for index := range dst {
+				dst[index] = 99
+			}
 
 			if _, err := buffer.Peek(len(source.data)); err != nil {
 				t.Fatal(err)

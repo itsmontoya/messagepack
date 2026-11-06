@@ -11,7 +11,7 @@ import (
 // BenchmarkReaderWideNumbers keeps the input path identical with and without SIMD.
 func BenchmarkReaderWideNumbers(b *testing.B) {
 	for _, kind := range []string{"Int64", "Uint64", "Float64", "PositiveInt64", "PositiveUint64"} {
-		for _, size := range []int{1, 2, 4, 8, 16, 64, 256, 1024} {
+		for _, size := range []int{1, 2, 4, 8, 16, 63, 64, 65, 256, 1024} {
 			for _, mode := range []string{"Scalar", "Batch"} {
 				b.Run(fmt.Sprintf("%s/Elements%d/%s", kind, size, mode), func(b *testing.B) {
 					var (

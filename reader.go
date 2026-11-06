@@ -8,6 +8,9 @@ import (
 	"math"
 )
 
+// minimumNumericSIMDElements amortizes input inspection across a large slice.
+const minimumNumericSIMDElements = 64
+
 // NewReader attaches a Reader to src without read-ahead or taking ownership.
 // A nil interface leaves it unattached; finite default limits apply.
 func NewReader(src io.Reader) (out *Reader) {
@@ -103,12 +106,17 @@ func (r *Reader) DecodeInt64() (value int64, err error) {
 // It reads no container header and returns the number of completed elements.
 // On failure, dst[n:] is unchanged; EOF before an element remains io.EOF.
 // Empty dst performs no I/O but still checks attachment and stored failures.
+// Optional SIMD is considered only for slices of at least 64 elements.
 func (r *Reader) DecodeInt64s(dst []int64) (n int, err error) {
+	return r.decodeInt64s(dst, true)
+}
+
+func (r *Reader) decodeInt64s(dst []int64, allowSIMD bool) (n int, err error) {
 	if err = r.ready(); err != nil {
 		return 0, err
 	}
 
-	if numericSIMDEnabled && len(dst) >= 2 && !r.state.hasTag && !r.state.eof {
+	if numericSIMDEnabled && allowSIMD && len(dst) >= minimumNumericSIMDElements && !r.state.hasTag && !r.state.eof {
 		if n, err = decodeInt64sSIMD(r.state.reader, dst); err != nil {
 			return n, r.fail(err)
 		}
@@ -190,12 +198,17 @@ func (r *Reader) DecodeUint64() (value uint64, err error) {
 // It reads no container header and returns the number of completed elements.
 // On failure, dst[n:] is unchanged; EOF before an element remains io.EOF.
 // Empty dst performs no I/O but still checks attachment and stored failures.
+// Optional SIMD is considered only for slices of at least 64 elements.
 func (r *Reader) DecodeUint64s(dst []uint64) (n int, err error) {
+	return r.decodeUint64s(dst, true)
+}
+
+func (r *Reader) decodeUint64s(dst []uint64, allowSIMD bool) (n int, err error) {
 	if err = r.ready(); err != nil {
 		return 0, err
 	}
 
-	if numericSIMDEnabled && len(dst) >= 2 && !r.state.hasTag && !r.state.eof {
+	if numericSIMDEnabled && allowSIMD && len(dst) >= minimumNumericSIMDElements && !r.state.hasTag && !r.state.eof {
 		if n, err = decodeUint64sSIMD(r.state.reader, dst); err != nil {
 			return n, r.fail(err)
 		}
@@ -268,12 +281,17 @@ func (r *Reader) DecodeFloat64() (value float64, err error) {
 // It reads no container header and returns the number of completed elements.
 // On failure, dst[n:] is unchanged; EOF before an element remains io.EOF.
 // Empty dst performs no I/O but still checks attachment and stored failures.
+// Optional SIMD is considered only for slices of at least 64 elements.
 func (r *Reader) DecodeFloat64s(dst []float64) (n int, err error) {
+	return r.decodeFloat64s(dst, true)
+}
+
+func (r *Reader) decodeFloat64s(dst []float64, allowSIMD bool) (n int, err error) {
 	if err = r.ready(); err != nil {
 		return 0, err
 	}
 
-	if numericSIMDEnabled && len(dst) >= 2 && !r.state.hasTag && !r.state.eof {
+	if numericSIMDEnabled && allowSIMD && len(dst) >= minimumNumericSIMDElements && !r.state.hasTag && !r.state.eof {
 		if n, err = decodeFloat64sSIMD(r.state.reader, dst); err != nil {
 			return n, r.fail(err)
 		}

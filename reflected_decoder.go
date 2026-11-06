@@ -205,7 +205,7 @@ func (d *reflectedDecoder) decodeInt64s(value reflect.Value, count uint32) (err 
 			completed int
 		)
 
-		completed, err = d.reader.DecodeInt64s(scratch[:requested])
+		completed, err = d.reader.decodeInt64s(scratch[:requested], value.Kind() == reflect.Slice)
 		d.visitNumericBatch(completed, requested, err)
 		if value.Kind() == reflect.Array {
 			for index := 0; index < completed; index++ {
@@ -240,7 +240,7 @@ func (d *reflectedDecoder) decodeUint64s(value reflect.Value, count uint32) (err
 			completed int
 		)
 
-		completed, err = d.reader.DecodeUint64s(scratch[:requested])
+		completed, err = d.reader.decodeUint64s(scratch[:requested], value.Kind() == reflect.Slice)
 		d.visitNumericBatch(completed, requested, err)
 		if value.Kind() == reflect.Array {
 			for index := 0; index < completed; index++ {
@@ -275,7 +275,7 @@ func (d *reflectedDecoder) decodeFloat64s(value reflect.Value, count uint32) (er
 			completed int
 		)
 
-		completed, err = d.reader.DecodeFloat64s(scratch[:requested])
+		completed, err = d.reader.decodeFloat64s(scratch[:requested], value.Kind() == reflect.Slice)
 		d.visitNumericBatch(completed, requested, err)
 		if value.Kind() == reflect.Array {
 			for index := 0; index < completed; index++ {

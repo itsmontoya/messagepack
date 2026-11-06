@@ -12,7 +12,7 @@ import (
 // BenchmarkDecoderNumericCollections measures cached reflection through Decoder.Decode.
 func BenchmarkDecoderNumericCollections(b *testing.B) {
 	for _, encoding := range []string{"Int64Wide", "Uint64Wide", "Float64Wide", "Int64Compact", "Uint64Compact", "Int64Mixed", "Float64Widened"} {
-		for _, size := range []int{1, 2, 16, 1024} {
+		for _, size := range []int{1, 2, 16, 63, 64, 65, 1024} {
 			for _, shape := range []string{"Array", "Slice", "Struct"} {
 				for _, input := range []string{"Memory", "Fragmented"} {
 					b.Run(fmt.Sprintf("%s/Elements%d/%s/%s", encoding, size, shape, input), func(b *testing.B) {
