@@ -347,9 +347,10 @@ SIMD intrinsics, build the application with:
 GOEXPERIMENT=simd go build ./...
 ```
 
-On arm64 (NEON) and amd64 (AVX checked at runtime), batches vectorize supported
-prefixes of 64-bit integer/float encodings in pairs, and positive fixints in blocks
-of 16. The fast path inspects `bytes.Reader`, `bytes.Buffer`, or bytes already
+On arm64 (NEON) and amd64 (AVX2 checked at runtime), batches of at least 64
+elements vectorize supported prefixes of 64-bit integer/float encodings in pairs,
+and positive fixints in blocks of 16. Smaller batches use scalar decoding.
+The fast path inspects `bytes.Reader`, `bytes.Buffer`, or bytes already
 buffered in a caller-supplied `bufio.Reader`; it never fills that buffer itself.
 Other inputs, encodings, and remaining elements use scalar decoding. Cached tags
 and pending EOF also use the scalar path. Successful batches add no heap allocation.
@@ -361,6 +362,8 @@ Cached reflection handlers use these batches for arrays and slices of built-in
 `int64`, `uint64`, and `float64`, including named collections and struct fields.
 They stage at most 64 values at a time. Array prefixes update on failure; slices
 publish replacement storage only after complete success. Hooks retain priority.
+Only slices of at least 64 elements use SIMD; reflected arrays use scalar batches.
+Any final slice chunk with fewer than 64 elements also uses scalar decoding.
 Named element types, pointer/interface elements, narrower integers, float32
 targets, and byte slices keep their existing paths.
 

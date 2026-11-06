@@ -64,11 +64,12 @@
 // caller-provided slice from consecutive numeric values without a container header.
 // They return the completed element count, preserve the unfilled suffix on failure,
 // and follow scalar conversion and EOF rules without additional read-ahead.
-// GOEXPERIMENT=simd builds enable standard-library SIMD for supported numeric
-// prefixes on arm64 and AVX-capable amd64, inspecting in-memory inputs or bytes
-// already available in caller-supplied bufio.Reader buffers. Other cases use scalars.
+// GOEXPERIMENT=simd builds enable standard-library SIMD for numeric slices of at
+// least 64 elements on arm64 and AVX2-capable amd64, inspecting in-memory inputs
+// or bytes already available in caller-supplied bufio.Reader buffers.
 // Cached reflection plans use these batches for arrays and slices of built-in
 // int64, uint64, and float64 elements, including nested and named collections.
+// Reflected arrays, smaller slices, and final chunks below 64 elements stay scalar.
 // Hooks retain priority; named element types and other numeric targets stay scalar.
 //
 // # Failures and message boundaries

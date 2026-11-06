@@ -1,5 +1,58 @@
 # Optional SIMD batch decoding
 
+The current dispatch policy restricts SIMD to numeric slice batches of at least
+64 elements. Reflected arrays retain typed scalar batches, and final slice
+chunks below 64 elements stay scalar. AMD64 requires AVX2 at runtime because
+the fixint broadcasts use AVX2 instructions. This is a conservative dispatch
+policy, not a claim that 64 is the optimal threshold for every encoding or CPU.
+
+## Restricted dispatch measurements
+
+Measured November 5, 2026 with Go 1.27.2, darwin/arm64, Apple M3, and eight
+logical CPUs. Before uses `bf756ff`; after restricts dispatch to large slices.
+Both revisions use identical benchmark source, including new 63/64/65-element
+cases. Ordinary and experimental builds ran sequentially in rotating order,
+with six 100 ms samples for each of 60 workloads. Prepared inputs, reusable
+Readers/Decoders, and owned slice allocation match the benchmarks below.
+
+Median ns/op, comparing the two `GOEXPERIMENT=simd` builds:
+
+| Workload | Before | After |
+| --- | ---: | ---: |
+| Reader batch, two positive int64 fixints | 30.215 | 24.54 |
+| Reflected wide int64 slice, 2 elements | 82.55 | 110.5 |
+| Reflected wide int64 slice, 63 elements | 218.4 | 1147.5 |
+| Reflected wide int64 slice, 64 elements | 202.95 | 203.05 |
+| Reflected wide int64 slice, 65 elements | 298.15 | 299.55 |
+| Reflected wide int64 slice, 1024 elements | 3163.5 | 3142.5 |
+| Reflected wide float64 slice, 1024 elements | 2794.5 | 2788.5 |
+| Reflected wide int64 array, 1024 elements | 4689 | 20114 |
+| Buffered primitive decode, reused Reader | 96.1 | 89.885 |
+| Buffered message decode, reused Reader | 349.6 | 330.3 |
+| Buffered depth-64 Skip, reused Reader | 706.7 | 644.75 |
+
+Two-fixint calls improve by 18.8%. The four measured 1024-element numeric slice
+encodings retain their earlier SIMD throughput; benchstat found no significant
+change at p < 0.05. Excluded small wide-number slices and fixed arrays give up
+their former SIMD gains intentionally. The 65-element reflected slice uses a
+64-element batch and one scalar tail element. No workload increased B/op or
+allocs/op in either build mode. Buffered controls improved in these binaries;
+the dispatch restriction does not establish a general performance guarantee for
+unrelated scalar operations or other machines.
+
+Full tests, race tests, and go vet passed with and without GOEXPERIMENT=simd.
+Reader compatibility tests cover 63/64/65 and 127/128/129-element boundaries,
+partial results, float bits, and buffered errors after a 64-element prefix.
+Existing reflection tests cover arrays, slices, named collections, hooks, and
+scalar tails. SIMD-enabled amd64 and unsupported-architecture Linux/386 test
+binaries cross-compiled. AMD64 numeric fallback tests passed under Rosetta with
+AVX2 disabled; native AVX2 execution was not tested on this arm64 machine.
+
+## Earlier unrestricted measurements
+
+The remaining sections describe the earlier implementation, including SIMD on
+small batches and reflected arrays. They are historical results.
+
 Measured on November 5, 2026 with Go 1.27.2, darwin/arm64, Apple M3, and eight
 logical CPUs. The implementation uses standard-library `simd/archsimd` intrinsics
 on arm64 (NEON) and amd64 (runtime AVX check). Other builds use scalar decoding.

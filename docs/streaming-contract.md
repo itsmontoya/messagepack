@@ -135,9 +135,10 @@ separate field values; adjacent Go struct fields do not imply consecutive wire
 values. Default builds call the matching scalar decoder per element. Successful
 batches add no heap allocation or stream read-ahead.
 
-With `GOEXPERIMENT=simd`, standard-library `simd/archsimd` intrinsics accelerate
-supported prefixes on arm64 and AVX-capable amd64. Signed batches accept int64
-encodings and fitting uint64 encodings; unsigned batches accept uint64 encodings
+With `GOEXPERIMENT=simd`, batches of at least 64 elements can use standard-library
+`simd/archsimd` intrinsics on arm64 and AVX2-capable amd64. Smaller batches stay
+scalar. Signed batches accept int64 encodings and fitting uint64 encodings;
+unsigned batches accept uint64 encodings
 and nonnegative int64 encodings. Float batches accelerate float64 encodings and
 preserve their bits. Those nine-byte values are handled in pairs. Both integer
 batches also expand blocks of sixteen positive fixints. Other integer widths,
@@ -237,9 +238,10 @@ scratch buffers, or stream state.
 
 After accepting the array header, decoding checks the child visit budget and
 exact fixed-array length in the existing order, then checks nonempty batch
-children's depth before reading any child. Numeric handlers use the Reader batch
-APIs with at most 64 elements (512 bytes) of typed stack scratch. This staging
-bound is independent of SIMD eligibility. They do not peek individual tags;
+children's depth before reading any child. Numeric handlers use at most 64
+elements (512 bytes) of typed stack scratch. Reflected arrays always use scalar
+batches. Only slices with at least 64 elements can use SIMD, and a final chunk
+with fewer than 64 elements stays scalar. They do not peek individual tags;
 Reader decides whether the actual wire bytes and available input permit vector
 processing. Completed values update fixed-array prefixes even if the batch
 fails. Slices grow private typed storage only from completed children and publish
